@@ -1,0 +1,32 @@
+[
+  {
+    "sender": "Me",
+    "text": "Hello Maya, I finished the throttle cable adjustment. Please test the throttle response once you’re back aboard.",
+    "timestamp": "2026-06-28T11:05:00"
+  },
+  {
+    "sender": "Maya",
+    "text": "Thanks. I’ll run the engine this afternoon and confirm whether the idle is smooth and the throttle is responsive.",
+    "timestamp": "2026-06-28T11:08:00"
+  },
+  {
+    "sender": "Me",
+    "text": "If you notice any lag or sticking at low RPM, let me know so I can adjust the cable tension again.",
+    "timestamp": "2026-06-28T11:10:00"
+  },
+  {
+    "sender": "Maya",
+    "text": "Will do. Also, should I keep the engine at cruising speed for a short run, or test only in idle?",
+    "timestamp": "2026-06-28T11:12:00"
+  },
+  {
+    "sender": "Me",
+    "text": "Start with idle and low RPM, then if everything checks out, run at cruising speed for five minutes.",
+    "timestamp": "2026-06-28T11:14:00"
+  },
+  {
+    "sender": "Maya",
+    "text": "Understood. I’ll update you after the afternoon sea trial.",
+    "timestamp": "2026-06-28T11:16:00"
+  }
+]

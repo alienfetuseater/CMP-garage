@@ -1,0 +1,60 @@
+[
+  {
+    "id": "todo-001",
+    "title": "Inspect hull for osmosis",
+    "dueDate": "2026-07-10",
+    "completed": false,
+    "relatedTo": { "type": "vessel", "id": "vess-001" }
+  },
+  {
+    "id": "todo-002",
+    "title": "Order replacement impeller",
+    "dueDate": "2026-07-12",
+    "completed": false,
+    "relatedTo": { "type": "ticket", "id": "tick-002" }
+  },
+  {
+    "id": "todo-003",
+    "title": "Follow up with customer",
+    "dueDate": "2026-07-09",
+    "completed": true,
+    "relatedTo": { "type": "customer", "id": "cust-001" }
+  },
+
+  {
+    "id": "todo-004",
+    "title": "Prep parts order for June service",
+    "dueDate": "2026-06-08",
+    "completed": true,
+    "relatedTo": { "type": "vessel", "id": "vess-002" }
+  },
+  {
+    "id": "todo-005",
+    "title": "Complete June safety checklist",
+    "dueDate": "2026-06-20",
+    "completed": true,
+    "relatedTo": { "type": "customer", "id": "cust-002" }
+  },
+
+  {
+    "id": "todo-006",
+    "title": "Schedule August engine inspection",
+    "dueDate": "2026-08-02",
+    "completed": false,
+    "relatedTo": { "type": "vessel", "id": "vess-001" }
+  },
+  {
+    "id": "todo-007",
+    "title": "Reserve dock slot for August maintenance",
+    "dueDate": "2026-08-15",
+    "completed": false,
+    "relatedTo": { "type": "customer", "id": "cust-003" }
+  },
+  {
+    "id": "todo-008",
+    "title": "Order fuel filter replacement",
+    "dueDate": "2026-08-20",
+    "completed": false,
+    "relatedTo": { "type": "ticket", "id": "tick-001" }
+  }
+]

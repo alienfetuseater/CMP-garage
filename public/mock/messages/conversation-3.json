@@ -1,0 +1,32 @@
+[
+  {
+    "sender": "Me",
+    "text": "Hi Jordan, I noticed the bilge pump cycle is longer than normal. Can you keep an eye on the bilge level today?",
+    "timestamp": "2026-07-05T08:45:00"
+  },
+  {
+    "sender": "Jordan",
+    "text": "Sure, I can monitor it. Is there anything specific I should check besides the pump itself?",
+    "timestamp": "2026-07-05T08:47:00"
+  },
+  {
+    "sender": "Me",
+    "text": "Check the intake screen for debris and verify the float switch is moving freely without sticking.",
+    "timestamp": "2026-07-05T08:49:00"
+  },
+  {
+    "sender": "Jordan",
+    "text": "I’ll do that and let you know if I see any clogging or abnormal movement.",
+    "timestamp": "2026-07-05T08:50:00"
+  },
+  {
+    "sender": "Me",
+    "text": "Thanks. If the issue persists, we may need to replace the pump seals and test the discharge line.",
+    "timestamp": "2026-07-05T08:52:00"
+  },
+  {
+    "sender": "Jordan",
+    "text": "Understood. I’ll follow up after the afternoon check.",
+    "timestamp": "2026-07-05T08:54:00"
+  }
+]

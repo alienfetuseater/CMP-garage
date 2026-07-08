@@ -1,0 +1,32 @@
+[
+  {
+    "sender": "Me",
+    "text": "Hi Ben, the starboard propeller appears to have minor dings. I recommend a quick balancing and a visual inspection of the shaft.",
+    "timestamp": "2026-07-10T13:30:00"
+  },
+  {
+    "sender": "Ben",
+    "text": "Thanks. Do you want me to bring the boat into the yard today or tomorrow morning?",
+    "timestamp": "2026-07-10T13:33:00"
+  },
+  {
+    "sender": "Me",
+    "text": "Tomorrow morning is best; that gives us time to prepare the jack plate and shaft alignment tools.",
+    "timestamp": "2026-07-10T13:35:00"
+  },
+  {
+    "sender": "Ben",
+    "text": "Got it. I’ll schedule the lift and let you know when the boat is ready.",
+    "timestamp": "2026-07-10T13:37:00"
+  },
+  {
+    "sender": "Me",
+    "text": "Great. I’ll inspect the shaft and propeller once it’s out, and we can decide if a trim adjustment is also needed.",
+    "timestamp": "2026-07-10T13:40:00"
+  },
+  {
+    "sender": "Ben",
+    "text": "Sounds good. I’ll confirm the time after the yard finalizes the schedule.",
+    "timestamp": "2026-07-10T13:42:00"
+  }
+]

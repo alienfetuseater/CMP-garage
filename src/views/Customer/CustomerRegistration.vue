@@ -1,7 +1,5 @@
 <template>
-  <main>
-    <p>new vessel page</p>
-  </main>
+  <div>customer registration</div>
 </template>
 
 <script lang="ts">

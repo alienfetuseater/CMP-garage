@@ -1,0 +1,35 @@
+[
+  {
+    "id": "tick-001",
+    "customerId": "cust-001",
+    "vesselId": "vess-001",
+    "title": "Engine overheating",
+    "status": "open",
+    "priority": "high",
+    "createdAt": "2026-07-01",
+    "scheduledDate": "2026-07-08",
+    "notes": "Customer reports temp spike after 30 minutes running."
+  },
+  {
+    "id": "tick-002",
+    "customerId": "cust-002",
+    "vesselId": "vess-002",
+    "title": "Routine service - sails and rigging",
+    "status": "in_progress",
+    "priority": "medium",
+    "createdAt": "2026-06-20",
+    "scheduledDate": "2026-07-15",
+    "notes": "Check mast fittings and reefing lines."
+  },
+  {
+    "id": "tick-003",
+    "customerId": "cust-003",
+    "vesselId": "vess-003",
+    "title": "Tender engine - fuel leak",
+    "status": "closed",
+    "priority": "high",
+    "createdAt": "2026-06-30",
+    "scheduledDate": "2026-07-02",
+    "notes": "Replaced hoses and clamps."
+  }
+]
