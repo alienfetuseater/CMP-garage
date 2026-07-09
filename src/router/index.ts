@@ -44,6 +44,16 @@ const router = createRouter({
       name: 'TicketWorkOrder',
       component: () => import('../views/Ticket/TicketWorkOrder.vue'),
     },
+    {
+      path: '/Ticket',
+      name: 'Ticket',
+      component: () => import('../views/Ticket/TheTicket.vue'),
+    },
+    {
+      path: '/ToDo',
+      name: 'ToDo',
+      component: () => import('../views/ToDo/TheToDo.vue'),
+    },
   ],
 })
 

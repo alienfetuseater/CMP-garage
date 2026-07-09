@@ -7,7 +7,12 @@
       </header>
 
       <ul>
-        <li v-for="todo in todos" :key="todo.id" class="todo-item">
+        <li
+          v-for="todo in todos"
+          :key="todo.id"
+          class="todo-item clickable"
+          @click="openTodo(todo.id)"
+        >
           <div class="todo-title">{{ todo.title }}</div>
           <div class="todo-meta">
             <span>{{ todo.date }}</span>
@@ -21,6 +26,7 @@
 
 <script lang="ts">
 import { defineComponent, type PropType } from 'vue'
+import { useRouter } from 'vue-router'
 import type { TodoDisplayItem } from '@/types/mock'
 
 export default defineComponent({
@@ -35,13 +41,23 @@ export default defineComponent({
     },
   },
   emits: ['close'],
-  setup(_, { emit }) {
+  setup(props, { emit }) {
+    const router = useRouter()
+
     function close() {
+      emit('close')
+    }
+
+    function openTodo(id: string) {
+      if (!id) return
+      router.push({ name: 'ToDo', query: { id } })
       emit('close')
     }
 
     return {
       close,
+      openTodo,
+      props,
     }
   },
 })
@@ -86,6 +102,7 @@ export default defineComponent({
 .todo-item {
   padding: 10px 0;
   border-bottom: 1px solid #e5e7eb;
+  cursor: default;
 }
 
 .todo-item:last-child {
@@ -101,5 +118,8 @@ export default defineComponent({
   justify-content: space-between;
   font-size: 12px;
   color: #6b7280;
+}
+.clickable {
+  cursor: pointer;
 }
 </style>

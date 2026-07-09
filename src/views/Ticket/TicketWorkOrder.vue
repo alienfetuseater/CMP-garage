@@ -3,8 +3,8 @@
     <section class="ticket-popup">
       <header class="ticket-header">
         <div>
-          <h3>Ticket Work Order</h3>
-          <p class="ticket-subtitle">{{ ticket.title }}</p>
+          <h3 class="clickable" @click="openTicket">Ticket Work Order</h3>
+          <p class="ticket-subtitle clickable" @click="openTicket">{{ ticket.title }}</p>
         </div>
         <button class="close-btn" @click="close">✕</button>
       </header>
@@ -24,6 +24,7 @@
 
 <script lang="ts">
 import { defineComponent, type PropType } from 'vue'
+import { useRouter } from 'vue-router'
 import type { Ticket } from '@/types/mock'
 
 export default defineComponent({
@@ -34,13 +35,23 @@ export default defineComponent({
     },
   },
   emits: ['close'],
-  setup(_, { emit }) {
+  setup(props, { emit }) {
+    const router = useRouter()
     function close() {
       emit('close')
     }
 
+    function openTicket() {
+      const tid = props.ticket?.id
+      if (tid) {
+        router.push({ name: 'Ticket', query: { id: tid } })
+        emit('close')
+      }
+    }
+
     return {
       close,
+      openTicket,
     }
   },
 })

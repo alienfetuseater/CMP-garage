@@ -5,11 +5,13 @@ export interface Customer {
   email: string
   address: string
   createdAt: string
+  vesselIds?: string[]
 }
 
 export interface Vessel {
   id: string
   customerId: string
+  owner?: string
   customerName: string
   customerPhone: string
   vesselName: string
