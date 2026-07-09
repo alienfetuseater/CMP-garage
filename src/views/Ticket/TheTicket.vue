@@ -4,6 +4,8 @@
     <div v-if="loading">Loading...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <section v-else-if="ticket">
+      <h1>{{ customerName }}</h1>
+      <h2>{{ vesselName }}</h2>
       <h2>{{ ticket.title }}</h2>
       <ul class="ticket-details">
         <li><strong>ID:</strong> {{ ticket.id }}</li>
@@ -12,11 +14,11 @@
         <li><strong>Created:</strong> {{ ticket.createdAt }}</li>
         <li><strong>Scheduled:</strong> {{ ticket.scheduledDate }}</li>
         <li>
-          <strong>Customer:</strong>
+          <strong>Customer: </strong>
           <span class="link" @click="openCustomer">{{ customerName || ticket.customerId }}</span>
         </li>
         <li>
-          <strong>Vessel:</strong>
+          <strong>Vessel: </strong>
           <span class="link" @click="openVessel">{{ vesselName || ticket.vesselId }}</span>
         </li>
         <li><strong>Notes:</strong> {{ ticket.notes }}</li>
