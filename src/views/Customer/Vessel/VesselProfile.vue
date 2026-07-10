@@ -4,22 +4,25 @@
     <div v-if="loading">Loading...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <section v-else-if="vessel">
+      <div class="profile-actions">
+        <button type="button" class="primary" @click="editVessel">Edit Vessel</button>
+      </div>
       <h2>{{ vessel.vesselName }}</h2>
       <ul class="details">
-        <li><strong>ID:</strong> {{ vessel.id }}</li>
         <li>
-          <strong>Owner:</strong>
+          <strong>Owner: </strong>
           <span class="clickable owner" @click="openOwner">
             {{ vessel.customerName }} ({{ vessel.customerPhone }})
           </span>
         </li>
-        <li><strong>Make:</strong> {{ vessel.vesselMake }}</li>
-        <li><strong>Year:</strong> {{ vessel.vesselYear }}</li>
-        <li><strong>Engine:</strong> {{ vessel.engineMake }} {{ vessel.engineModel }}</li>
-        <li><strong>Hours:</strong> {{ vessel.engineHours }}</li>
+        <li><strong>Make: </strong> {{ vessel.vesselMake }}</li>
+        <li><strong>Year: </strong> {{ vessel.vesselYear }}</li>
+        <li><strong>Engine: </strong> {{ vessel.engineMake }} {{ vessel.engineModel }}</li>
+        <li><strong>Hours: </strong> {{ vessel.engineHours }}</li>
       </ul>
 
       <section class="related">
+        <h2>service history</h2>
         <h3>Todos for this vessel</h3>
         <div v-if="loadingTodos">Loading...</div>
         <div v-else>
@@ -126,6 +129,11 @@ export default defineComponent({
       if (id) router.push({ name: 'Ticket', query: { id } })
     }
 
+    function editVessel() {
+      if (!vessel.value) return
+      router.push({ name: 'RegisterVessel', query: { id: vessel.value.id } })
+    }
+
     onMounted(load)
 
     return {
@@ -140,6 +148,7 @@ export default defineComponent({
       loadingTodos,
       loadingTickets,
       openTodo,
+      editVessel,
     }
   },
 })

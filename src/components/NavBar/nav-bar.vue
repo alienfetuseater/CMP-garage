@@ -6,11 +6,6 @@
         <li><RouterLink to="/NewTicket">New Ticket</RouterLink></li>
         <li><RouterLink to="/CustomerRegistration">Customer Registration</RouterLink></li>
         <li><RouterLink to="/CustomerDirectory">Customer Directory</RouterLink></li>
-        <li>
-          <button type="button" class="theme-toggle" @click="toggleTheme">
-            {{ themeLabel }}
-          </button>
-        </li>
       </ul>
     </nav>
   </header>
@@ -18,35 +13,6 @@
 
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
-import { ref, onMounted } from 'vue'
-
-const theme = ref<'default' | 'luxury'>('default')
-const themeLabel = ref('Luxury Theme')
-
-const applyTheme = (value: 'default' | 'luxury') => {
-  const body = document.body
-  if (value === 'luxury') {
-    body.classList.add('theme-luxury')
-    themeLabel.value = 'Classic Theme'
-  } else {
-    body.classList.remove('theme-luxury')
-    themeLabel.value = 'Luxury Theme'
-  }
-}
-
-const toggleTheme = () => {
-  theme.value = theme.value === 'default' ? 'luxury' : 'default'
-  localStorage.setItem('appTheme', theme.value)
-  applyTheme(theme.value)
-}
-
-onMounted(() => {
-  const saved = localStorage.getItem('appTheme')
-  if (saved === 'luxury') {
-    theme.value = 'luxury'
-  }
-  applyTheme(theme.value)
-})
 </script>
 
 <style scoped>
@@ -104,7 +70,10 @@ a.router-link-active,
   padding: 0.5rem 0.75rem;
   border-radius: 0.375rem;
   cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .theme-toggle:hover {

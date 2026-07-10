@@ -17,6 +17,11 @@ export interface Vessel {
   vesselName: string
   vesselMake: string
   vesselYear: number
+  hullIdNumber: string
+  numberOfEngines: number
+  engineSerialNumbers: string[]
+  generator: boolean
+  boatLocation: 'trailor' | 'slip' | 'dry dock' | ''
   engineMake: string
   engineModel: string
   engineHours: number
