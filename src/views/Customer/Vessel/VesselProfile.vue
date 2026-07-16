@@ -65,12 +65,18 @@
 <script lang="ts">
 import { defineComponent, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useDataStore } from '@/stores/data'
+import { useUiStore } from '@/stores/ui'
+import { useVesselStore } from '@/stores/vessels'
+import { useTodoStore } from '@/stores/todos'
+import { useTicketStore } from '@/stores/tickets'
 import type { Vessel, Todo, Ticket } from '@/types/mock'
 
 export default defineComponent({
   setup() {
-    const store = useDataStore()
+    const uiStore = useUiStore()
+    const vesselStore = useVesselStore()
+    const todoStore = useTodoStore()
+    const ticketStore = useTicketStore()
     const route = useRoute()
     const router = useRouter()
     const vessel = ref<Vessel | null>(null)
@@ -88,11 +94,11 @@ export default defineComponent({
         const id = String(route.query.id || '')
         if (!id) throw new Error('No vessel id provided')
 
-        await store.fetchAllData()
-        vessel.value = store.vesselById(id)
+        await uiStore.fetchAllData()
+        vessel.value = vesselStore.vesselById(id)
 
-        const allTodos = store.todos
-        const allTickets = store.tickets
+        const allTodos = todoStore.todos
+        const allTickets = ticketStore.tickets
 
         todosForVessel.value = allTodos.filter(
           (t) => t.relatedTo?.type === 'vessel' && t.relatedTo.id === id,

@@ -107,7 +107,9 @@
 import { defineComponent, ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { apiFetch } from '@/api'
-import { useDataStore } from '@/stores/data'
+import { useUiStore } from '@/stores/ui'
+import { useCustomerStore } from '@/stores/customers'
+import { useVesselStore } from '@/stores/vessels'
 import type { Customer, Vessel } from '@/types/mock'
 
 type Form = {
@@ -142,7 +144,9 @@ function downloadJSON(filename: string, data: unknown) {
 export default defineComponent({
   setup() {
     const router = useRouter()
-    const store = useDataStore()
+    const uiStore = useUiStore()
+    const customerStore = useCustomerStore()
+    const vesselStore = useVesselStore()
     const customers = ref<Customer[]>([])
     const loading = ref(false)
     const error = ref<string | null>(null)
@@ -197,7 +201,7 @@ export default defineComponent({
 
     onMounted(async () => {
       try {
-        customers.value = await store.fetchCustomers()
+        customers.value = await customerStore.fetchCustomers()
       } catch {
         customers.value = []
       }
@@ -205,8 +209,8 @@ export default defineComponent({
       const vesselId = String(route.query.id || route.query.vesselId || '')
       if (vesselId) {
         try {
-          await store.fetchAllData()
-          const existing = store.vesselById(vesselId)
+          await uiStore.fetchAllData()
+          const existing = vesselStore.vesselById(vesselId)
           if (!existing) throw new Error('Vessel not found')
           editId.value = vesselId
           previousOwnerId.value = existing.customerId
@@ -266,14 +270,14 @@ export default defineComponent({
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
           })
-          store.addVessel(saved)
+          vesselStore.addVessel(saved)
         } else {
           saved = await apiFetch<Vessel>('/newBoat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
           })
-          store.addVessel(saved)
+          vesselStore.addVessel(saved)
         }
 
         success.value = true

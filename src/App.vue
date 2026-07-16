@@ -2,12 +2,12 @@
 import { onMounted } from 'vue'
 import { RouterView } from 'vue-router'
 import NavBar from './components/NavBar/nav-bar.vue'
-import { useDataStore } from '@/stores/data'
+import { useUiStore } from '@/stores/ui'
 
-const dataStore = useDataStore()
+const uiStore = useUiStore()
 
 onMounted(() => {
-  dataStore.fetchAllData().catch(() => {})
+  uiStore.fetchAllData().catch(() => {})
 })
 </script>
 

@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:5173/api/CMPGarage'
+const API_BASE = '/api/CMPGarage'
 
 export async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${endpoint}`, options)

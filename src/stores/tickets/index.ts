@@ -11,6 +11,7 @@ export const useTicketStore = defineStore('tickets', () => {
     fetchTickets: (force?: boolean) => actions.fetchTickets(s, force),
     addTicket: (ticket: Ticket) => actions.addTicket(s, ticket),
     ticketById: (id: string) => actions.ticketById(s, id),
-    ticketsForVessel: (vesselId: string) => actions.ticketsForVessel(s, vesselId),
+    ticketsForVessel: (id: string) => actions.ticketsForVessel(s, id),
+    getTicket: (id: string) => actions.getTicket(s, id),
   }
 })

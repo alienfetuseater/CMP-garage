@@ -37,20 +37,24 @@
 <script lang="ts">
 import { defineComponent, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useDataStore } from '@/stores/data'
+import { useUiStore } from '@/stores/ui'
+import { useCustomerStore } from '@/stores/customers'
+import { useVesselStore } from '@/stores/vessels'
 import type { Customer, Vessel } from '@/types/mock'
 
 export default defineComponent({
   setup() {
-    const store = useDataStore()
-    const customers = store.customers
-    const vesselsArr = computed(() => store.vessels)
-    const loading = store.loading
-    const error = store.error
+    const uiStore = useUiStore()
+    const customerStore = useCustomerStore()
+    const vesselStore = useVesselStore()
+    const customers = customerStore.customers
+    const vesselsArr = computed(() => vesselStore.vessels)
+    const loading = uiStore.loading
+    const error = uiStore.error
 
     async function load() {
       try {
-        await Promise.all([store.fetchCustomers(), store.fetchVessels()])
+        await Promise.all([customerStore.fetchCustomers(), vesselStore.fetchVessels()])
       } catch (err) {
         console.error(err)
       }

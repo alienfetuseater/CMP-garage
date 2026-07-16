@@ -36,7 +36,7 @@
 import { defineComponent, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { apiFetch } from '@/api'
-import { useDataStore } from '@/stores/data'
+import { useCustomerStore } from '@/stores/customers'
 import type { Customer } from '@/types/mock'
 
 export default defineComponent({
@@ -47,7 +47,7 @@ export default defineComponent({
     const success = ref(false)
 
     const router = useRouter()
-    const store = useDataStore()
+    const customerStore = useCustomerStore()
 
     async function submit() {
       loading.value = true
@@ -62,7 +62,7 @@ export default defineComponent({
           body: JSON.stringify(payload),
         })
 
-        store.addCustomer(saved)
+        customerStore.addCustomer(saved)
 
         const newId = saved?.id ?? null
         success.value = true

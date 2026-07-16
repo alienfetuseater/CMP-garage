@@ -23,7 +23,10 @@ import HomeCalender from '../components/Calender/home-calender.vue'
 import ToDoList from '../components/ToDo/ToDoList.vue'
 import ToDoPopup from '../components/ToDo/ToDo.vue'
 import TicketWorkOrder from './Ticket/TicketWorkOrder.vue'
-import { useDataStore } from '@/stores/data'
+import { useUiStore } from '@/stores/ui'
+import { useVesselStore } from '@/stores/vessels'
+import { useTicketStore } from '@/stores/tickets'
+import { useTodoStore } from '@/stores/todos'
 import type { Ticket, Todo, TodoDisplayItem } from '@/types/mock'
 
 export default defineComponent({
@@ -34,20 +37,23 @@ export default defineComponent({
     TicketWorkOrder,
   },
   setup() {
-    const store = useDataStore()
-    const todos = store.todos
-    const tickets = store.tickets
+    const uiStore = useUiStore()
+    const vesselStore = useVesselStore()
+    const ticketStore = useTicketStore()
+    const todoStore = useTodoStore()
+    const todos = todoStore.todos
+    const tickets = ticketStore.tickets
     const selectedDay = ref<string | null>(null)
     const selectedTodos = ref<TodoDisplayItem[]>([])
     const selectedTicket = ref<Ticket | null>(null)
-    const isLoaded = store.loaded
-    const error = store.error
+    const isLoaded = uiStore.loaded
+    const error = uiStore.error
 
-    const vesselCount = computed(() => store.vessels.length)
+    const vesselCount = computed(() => vesselStore.vessels.length)
 
     async function loadData() {
       try {
-        await store.fetchAllData()
+        await uiStore.fetchAllData()
       } catch (err) {
         // store.error is updated by the store's fetchAllData() call
         console.error(err)

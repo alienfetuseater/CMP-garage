@@ -31,12 +31,18 @@
 <script lang="ts">
 import { defineComponent, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useDataStore } from '@/stores/data'
+import { useUiStore } from '@/stores/ui'
+import { useTicketStore } from '@/stores/tickets'
+import { useCustomerStore } from '@/stores/customers'
+import { useVesselStore } from '@/stores/vessels'
 import type { Ticket, Customer, Vessel } from '@/types/mock'
 
 export default defineComponent({
   setup() {
-    const store = useDataStore()
+    const uiStore = useUiStore()
+    const ticketStore = useTicketStore()
+    const customerStore = useCustomerStore()
+    const vesselStore = useVesselStore()
     const route = useRoute()
     const router = useRouter()
     const ticket = ref<Ticket | null>(null)
@@ -51,15 +57,15 @@ export default defineComponent({
         const id = String(route.query.id || '')
         if (!id) throw new Error('No ticket id provided')
 
-        await store.fetchAllData()
-        ticket.value = store.ticketById(id)
+        await uiStore.fetchAllData()
+        ticket.value = ticketStore.ticketById(id)
 
         if (!ticket.value) {
           throw new Error('Ticket not found')
         }
 
-        const customers = store.customers
-        const vessels = store.vessels
+        const customers = customerStore.customers
+        const vessels = vesselStore.vessels
 
         const cid = ticket.value.customerId
         const c = customers.find((x) => x.id === cid)

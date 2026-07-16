@@ -31,12 +31,18 @@
 <script lang="ts">
 import { defineComponent, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useDataStore } from '@/stores/data'
+import { useUiStore } from '@/stores/ui'
+import { useTodoStore } from '@/stores/todos'
+import { useCustomerStore } from '@/stores/customers'
+import { useVesselStore } from '@/stores/vessels'
 import type { Todo, Customer, Vessel } from '@/types/mock'
 
 export default defineComponent({
   setup() {
-    const store = useDataStore()
+    const uiStore = useUiStore()
+    const todoStore = useTodoStore()
+    const customerStore = useCustomerStore()
+    const vesselStore = useVesselStore()
     const route = useRoute()
     const router = useRouter()
     const todo = ref<Todo | null>(null)
@@ -53,15 +59,15 @@ export default defineComponent({
         const id = String(route.query.id || '')
         if (!id) throw new Error('No todo id provided')
 
-        await store.fetchAllData()
-        todo.value = store.todoById(id)
+        await uiStore.fetchAllData()
+        todo.value = todoStore.todoById(id)
 
         if (!todo.value) {
           throw new Error('Todo not found')
         }
 
-        const customers = store.customers
-        const vessels = store.vessels
+        const customers = customerStore.customers
+        const vessels = vesselStore.vessels
 
         const related = todo.value.relatedTo
         if (related) {

@@ -35,33 +35,34 @@
 <script lang="ts">
 import { defineComponent, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useDataStore } from '@/stores/data'
+import { useUiStore } from '@/stores/ui'
+import { useCustomerStore } from '@/stores/customers'
+import { useVesselStore } from '@/stores/vessels'
 import type { Customer, Vessel } from '@/types/mock'
 
 export default defineComponent({
   setup() {
-    const store = useDataStore()
+    const uiStore = useUiStore()
+    const customerStore = useCustomerStore()
+    const vesselStore = useVesselStore()
     const route = useRoute()
     const router = useRouter()
     const customer = ref<Customer | null>(null)
     const vessels = ref<Vessel[]>([])
-    const loading = store.loading
-    const error = store.error
+    const loading = uiStore.loading
+    const error = uiStore.error
 
     async function load() {
-      loading.value = true
       try {
-        await store.fetchAllData()
+        await uiStore.fetchAllData()
 
         const id = String(route.query.id || '')
         if (!id) throw new Error('No customer id provided')
 
-        customer.value = store.customerById(id)
-        vessels.value = store.vessels.filter((v) => v.customerId === id || v.owner === id)
+        customer.value = customerStore.customerById(id)
+        vessels.value = vesselStore.vessels.filter((v) => v.customerId === id || v.owner === id)
       } catch (err) {
         error.value = err instanceof Error ? err.message : String(err)
-      } finally {
-        loading.value = false
       }
     }
 
