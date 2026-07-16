@@ -31,10 +31,12 @@
 <script lang="ts">
 import { defineComponent, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import type { Todo } from '@/types/mock'
+import { useDataStore } from '@/stores/data'
+import type { Todo, Customer, Vessel } from '@/types/mock'
 
 export default defineComponent({
   setup() {
+    const store = useDataStore()
     const route = useRoute()
     const router = useRouter()
     const todo = ref<Todo | null>(null)
@@ -51,53 +53,35 @@ export default defineComponent({
         const id = String(route.query.id || '')
         if (!id) throw new Error('No todo id provided')
 
-        const res = await fetch('/mock/todos.json')
-        if (!res.ok) throw new Error('Failed to load todos')
-        const list: Todo[] = await res.json()
-        todo.value = list.find((t) => t.id === id) ?? null
+        await store.fetchAllData()
+        todo.value = store.todoById(id)
 
-        // if related to vessel, load vessel and owner info; if related to customer, load customer info
-        try {
-          const related = todo.value?.relatedTo
-          if (related) {
-            // load customers (prefer localStorage)
-            let customers: { id: string; name: string }[] = []
-            const local = localStorage.getItem('mockCustomers')
-            if (local) {
-              try {
-                customers = JSON.parse(local)
-              } catch {
-                customers = []
-              }
-            } else {
-              const cres = await fetch('/mock/customers.json')
-              if (cres.ok) customers = await cres.json()
-            }
+        if (!todo.value) {
+          throw new Error('Todo not found')
+        }
 
-            if (related.type === 'vessel') {
-              const vres = await fetch('/mock/vessels.json')
-              if (vres.ok) {
-                const map = await vres.json()
-                const v = map[related.id]
-                if (v) {
-                  vesselId.value = v.id
-                  vesselName.value = v.vesselName
-                  ownerId.value = v.customerId ?? v.owner ?? null
-                  if (ownerId.value) {
-                    const c = customers.find((x) => x.id === ownerId.value)
-                    ownerName.value = c ? c.name : ownerId.value
-                  }
-                }
+        const customers = store.customers
+        const vessels = store.vessels
+
+        const related = todo.value.relatedTo
+        if (related) {
+          if (related.type === 'vessel') {
+            const v = vessels.find((x) => x.id === related.id)
+            if (v) {
+              vesselId.value = v.id
+              vesselName.value = v.vesselName
+              ownerId.value = v.customerId ?? v.owner ?? null
+              if (ownerId.value) {
+                const c = customers.find((x) => x.id === ownerId.value)
+                ownerName.value = c ? c.name : ownerId.value
               }
-            } else if (related.type === 'customer') {
-              const cid = related.id
-              ownerId.value = cid
-              const c = customers.find((x) => x.id === cid)
-              ownerName.value = c ? c.name : cid
             }
+          } else if (related.type === 'customer') {
+            const cid = related.id
+            ownerId.value = cid
+            const c = customers.find((x) => x.id === cid)
+            ownerName.value = c ? c.name : cid
           }
-        } catch (metaErr) {
-          console.warn('Failed to load metadata for todo', metaErr)
         }
       } catch (err) {
         error.value = err instanceof Error ? err.message : String(err)

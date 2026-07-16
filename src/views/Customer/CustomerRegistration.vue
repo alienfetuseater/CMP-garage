@@ -35,6 +35,8 @@
 <script lang="ts">
 import { defineComponent, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { apiFetch } from '@/api'
+import { useDataStore } from '@/stores/data'
 import type { Customer } from '@/types/mock'
 
 export default defineComponent({
@@ -45,6 +47,7 @@ export default defineComponent({
     const success = ref(false)
 
     const router = useRouter()
+    const store = useDataStore()
 
     async function submit() {
       loading.value = true
@@ -52,101 +55,25 @@ export default defineComponent({
       success.value = false
       const payload = { ...form.value }
 
-      let newId: string | null = null
-
-      // try posting to local API first; if it fails, fall back to localStorage
-      let apiErrorMsg: string | null = null
       try {
-        const res = await fetch('http://localhost:4000/api/customers', {
+        const saved = await apiFetch<Customer>('/newCustomer', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         })
 
-        if (res.ok) {
-          const saved = await res.json()
-          newId = saved?.id ?? null
-          success.value = true
-          form.value = { name: '', phone: '', email: '', address: '' }
-          if (newId) {
-            router.push({ name: 'CustomerProfile', query: { id: newId } })
-            return
-          }
-          return
-        }
+        store.addCustomer(saved)
 
-        apiErrorMsg = `API responded ${res.status} ${res.statusText}`
-        console.warn('CustomerRegistration: API POST failed', apiErrorMsg)
-      } catch (err) {
-        apiErrorMsg = err instanceof Error ? err.message : String(err)
-        console.warn('CustomerRegistration: API POST error', apiErrorMsg)
-      }
-
-      // fallback: save into localStorage and offer download of the updated JSON
-      try {
-        let list: Customer[] = []
-        const local = localStorage.getItem('mockCustomers')
-        if (local) {
-          try {
-            list = JSON.parse(local)
-          } catch (pe) {
-            console.warn('CustomerRegistration: failed to parse local mockCustomers, resetting', pe)
-            list = []
-          }
-        } else {
-          const res = await fetch('/mock/customers.json')
-          if (res.ok) {
-            try {
-              list = await res.json()
-            } catch (je) {
-              console.warn('CustomerRegistration: failed to parse /mock/customers.json', je)
-              list = []
-            }
-          } else {
-            list = []
-          }
-        }
-
-        const id = `cust-${String(Math.floor(Math.random() * 90000) + 10000)}`
-        const createdAt = new Date().toISOString().slice(0, 10)
-        const newCustomer = {
-          id,
-          name: payload.name,
-          phone: payload.phone || '',
-          email: payload.email || '',
-          address: payload.address || '',
-          createdAt,
-        }
-
-        list.push(newCustomer)
-        newId = newCustomer.id
-        localStorage.setItem('mockCustomers', JSON.stringify(list))
-
-        // trigger download so user can persist changes manually if desired
-        try {
-          const blob = new Blob([JSON.stringify(list, null, 2)], { type: 'application/json' })
-          const url = URL.createObjectURL(blob)
-          const a = document.createElement('a')
-          a.href = url
-          a.download = 'customers.updated.json'
-          a.click()
-          URL.revokeObjectURL(url)
-        } catch (dlErr) {
-          console.warn('CustomerRegistration: download failed', dlErr)
-        }
-
+        const newId = saved?.id ?? null
         success.value = true
         form.value = { name: '', phone: '', email: '', address: '' }
+
         if (newId) {
           router.push({ name: 'CustomerProfile', query: { id: newId } })
           return
         }
-      } catch (err2) {
-        const fallbackMsg = err2 instanceof Error ? err2.message : String(err2)
-        error.value = apiErrorMsg
-          ? `API error: ${apiErrorMsg}; Fallback error: ${fallbackMsg}`
-          : fallbackMsg
-        console.error('CustomerRegistration: final error', error.value)
+      } catch (err) {
+        error.value = err instanceof Error ? err.message : String(err)
       } finally {
         loading.value = false
       }
@@ -159,12 +86,17 @@ export default defineComponent({
 
 <style scoped>
 .customer-registration {
+  min-height: calc(100vh - 24px);
   padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 form {
   display: grid;
   gap: 8px;
   max-width: 480px;
+  width: 100%;
 }
 label {
   display: flex;

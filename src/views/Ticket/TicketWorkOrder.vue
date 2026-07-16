@@ -4,7 +4,7 @@
       <header class="ticket-header">
         <div>
           <h3 class="clickable" @click="openTicket">Ticket Work Order</h3>
-          <p class="ticket-subtitle clickable" @click="openTicket">{{ ticket.title }}</p>
+          <p class="ticket-subtitle clickable" @click="openTicket">{{ ticket.service_title }}</p>
         </div>
         <button class="close-btn" @click="close">✕</button>
       </header>

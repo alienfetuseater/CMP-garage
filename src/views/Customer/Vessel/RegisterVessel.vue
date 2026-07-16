@@ -106,6 +106,8 @@
 <script lang="ts">
 import { defineComponent, ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { apiFetch } from '@/api'
+import { useDataStore } from '@/stores/data'
 import type { Customer, Vessel } from '@/types/mock'
 
 type Form = {
@@ -140,6 +142,7 @@ function downloadJSON(filename: string, data: unknown) {
 export default defineComponent({
   setup() {
     const router = useRouter()
+    const store = useDataStore()
     const customers = ref<Customer[]>([])
     const loading = ref(false)
     const error = ref<string | null>(null)
@@ -193,35 +196,18 @@ export default defineComponent({
     }
 
     onMounted(async () => {
-      const local = localStorage.getItem('mockCustomers')
-      if (local) {
-        try {
-          customers.value = JSON.parse(local)
-        } catch {
-          customers.value = []
-        }
-      } else {
-        const res = await fetch('/mock/customers.json')
-        if (res.ok) customers.value = await res.json()
+      try {
+        customers.value = await store.fetchCustomers()
+      } catch {
+        customers.value = []
       }
 
       const vesselId = String(route.query.id || route.query.vesselId || '')
       if (vesselId) {
-        let map: Record<string, Vessel> = {}
-        const localV = localStorage.getItem('mockVessels')
-        if (localV) {
-          try {
-            map = JSON.parse(localV)
-          } catch {
-            map = {}
-          }
-        } else {
-          const vres = await fetch('/mock/vessels.json')
-          if (vres.ok) map = await vres.json()
-        }
-
-        const existing = map[vesselId]
-        if (existing) {
+        try {
+          await store.fetchAllData()
+          const existing = store.vesselById(vesselId)
+          if (!existing) throw new Error('Vessel not found')
           editId.value = vesselId
           previousOwnerId.value = existing.customerId
           form.value.customerId = existing.customerId
@@ -236,6 +222,8 @@ export default defineComponent({
           form.value.engineMake = existing.engineMake
           form.value.engineModel = existing.engineModel
           form.value.engineHours = existing.engineHours
+        } catch {
+          // ignore failure to load existing vessel
         }
       }
 
@@ -253,30 +241,11 @@ export default defineComponent({
         if (!validateSerialNumbers())
           throw new Error('Please provide a serial number or mark N/A for every engine')
 
-        // load existing vessels
-        let map: Record<string, Vessel> = {}
-        const localV = localStorage.getItem('mockVessels')
-        if (localV) {
-          try {
-            map = JSON.parse(localV)
-          } catch {
-            map = {}
-          }
-        } else {
-          const vres = await fetch('/mock/vessels.json')
-          if (vres.ok) map = await vres.json()
-        }
-
-        const id = editId.value || `vess-${String(Math.floor(Math.random() * 90000) + 10000)}`
-        const ownerId = form.value.customerId
-        const owner = customers.value.find((c) => c.id === ownerId)
-
-        const newVessel: Vessel = {
-          id,
-          customerId: ownerId,
-          owner: ownerId,
-          customerName: owner ? owner.name : '',
-          customerPhone: owner ? owner.phone : '',
+        const payload = {
+          customerId: form.value.customerId,
+          owner: form.value.customerId,
+          customerName: customers.value.find((c) => c.id === form.value.customerId)?.name ?? '',
+          customerPhone: customers.value.find((c) => c.id === form.value.customerId)?.phone ?? '',
           vesselName: form.value.vesselName,
           vesselMake: form.value.vesselMake,
           vesselYear: form.value.vesselYear ?? 0,
@@ -290,46 +259,25 @@ export default defineComponent({
           engineHours: form.value.engineHours ?? 0,
         }
 
-        map[id] = newVessel
-        localStorage.setItem('mockVessels', JSON.stringify(map))
-
-        // update customers list to include vessel id
-        let custList: Customer[] = []
-        const localC = localStorage.getItem('mockCustomers')
-        if (localC) {
-          try {
-            custList = JSON.parse(localC)
-          } catch {
-            custList = customers.value.slice()
-          }
+        let saved: Vessel
+        if (editId.value) {
+          saved = await apiFetch<Vessel>(`/updateBoat/${encodeURIComponent(editId.value)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          })
+          store.addVessel(saved)
         } else {
-          const cres = await fetch('/mock/customers.json')
-          if (cres.ok) custList = await cres.json()
-          else custList = customers.value.slice()
+          saved = await apiFetch<Vessel>('/newBoat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          })
+          store.addVessel(saved)
         }
-
-        const ci = custList.find((c) => c.id === ownerId)
-        if (ci) {
-          ci.vesselIds = ci.vesselIds ?? []
-          if (!ci.vesselIds.includes(id)) ci.vesselIds.push(id)
-        }
-
-        if (editId.value && previousOwnerId.value && previousOwnerId.value !== ownerId) {
-          const oldOwner = custList.find((c) => c.id === previousOwnerId.value)
-          if (oldOwner?.vesselIds) {
-            oldOwner.vesselIds = oldOwner.vesselIds.filter((vid) => vid !== id)
-          }
-        }
-
-        localStorage.setItem('mockCustomers', JSON.stringify(custList))
-
-        // offer downloads so developer can persist changes manually
-        downloadJSON('vessels.updated.json', map)
-        downloadJSON('customers.updated.json', custList)
 
         success.value = true
-        // route to vessel profile
-        router.push({ name: 'VesselProfile', query: { id } })
+        router.push({ name: 'VesselProfile', query: { id: saved.id } })
       } catch (err) {
         error.value = err instanceof Error ? err.message : String(err)
       } finally {

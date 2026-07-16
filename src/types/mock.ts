@@ -40,16 +40,28 @@ export interface Todo {
   relatedTo: TodoRelated
 }
 
+export type TicketStatus = 'open' | 'in progress' | 'completed' | 'closed' | 'cancelled' | 'on hold'
+
+export type TicketPriority = 'low' | 'medium' | 'high'
+
+export type ServiceCategory = 'inspection' | 'repair' | 'maintenance' | 'upgrade'
+
+export type DiagnosticLevel = 'good' | 'monitor' | 'action' | 'N/A'
+export type TicketDiagnostics = Record<string, DiagnosticLevel>
+
 export interface Ticket {
   id: string
   customerId: string
   vesselId: string
-  title: string
-  status: string
-  priority: string
+  service_category: ServiceCategory
+  service_title: string
+  status: TicketStatus
+  priority: TicketPriority
   createdAt: string
   scheduledDate: string
   notes: string
+  messages?: Message[]
+  diagnostics?: TicketDiagnostics
 }
 
 export interface TodoDisplayItem {

@@ -35,58 +35,29 @@
 <script lang="ts">
 import { defineComponent, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import type { Customer, Vessel, VesselMap } from '@/types/mock'
+import { useDataStore } from '@/stores/data'
+import type { Customer, Vessel } from '@/types/mock'
 
 export default defineComponent({
   setup() {
+    const store = useDataStore()
     const route = useRoute()
     const router = useRouter()
     const customer = ref<Customer | null>(null)
     const vessels = ref<Vessel[]>([])
-    const loading = ref(true)
-    const error = ref<string | null>(null)
+    const loading = store.loading
+    const error = store.error
 
     async function load() {
       loading.value = true
       try {
+        await store.fetchAllData()
+
         const id = String(route.query.id || '')
         if (!id) throw new Error('No customer id provided')
 
-        // prefer localStorage override when present
-        const local = localStorage.getItem('mockCustomers')
-        if (local) {
-          const list: Customer[] = JSON.parse(local)
-          customer.value = list.find((c) => c.id === id) ?? null
-        } else {
-          const res = await fetch('/mock/customers.json')
-          if (!res.ok) throw new Error('Failed to load customers')
-          const list: Customer[] = await res.json()
-          customer.value = list.find((c) => c.id === id) ?? null
-        }
-
-        // load vessels and filter by owner or customerId
-        try {
-          const vres = await fetch('/mock/vessels.json')
-          if (vres.ok) {
-            const map: VesselMap = await vres.json()
-            const all = Object.values(map)
-            function hasOwner(x: unknown): x is { owner: string } {
-              return (
-                typeof x === 'object' &&
-                x !== null &&
-                'owner' in x &&
-                typeof (x as Record<string, unknown>)['owner'] === 'string'
-              )
-            }
-
-            vessels.value = all.filter(
-              (v) => v.customerId === id || (hasOwner(v) && v.owner === id),
-            )
-          }
-        } catch (vErr) {
-          // ignore vessel load errors, user still sees customer
-          console.warn('Failed to load vessels', vErr)
-        }
+        customer.value = store.customerById(id)
+        vessels.value = store.vessels.filter((v) => v.customerId === id || v.owner === id)
       } catch (err) {
         error.value = err instanceof Error ? err.message : String(err)
       } finally {

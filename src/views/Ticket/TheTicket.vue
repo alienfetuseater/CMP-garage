@@ -6,7 +6,7 @@
     <section v-else-if="ticket">
       <h1>{{ customerName }}</h1>
       <h2>{{ vesselName }}</h2>
-      <h2>{{ ticket.title }}</h2>
+      <h2>{{ ticket.service_title }}</h2>
       <ul class="ticket-details">
         <li><strong>ID:</strong> {{ ticket.id }}</li>
         <li><strong>Status:</strong> {{ ticket.status }}</li>
@@ -31,10 +31,12 @@
 <script lang="ts">
 import { defineComponent, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import type { Ticket, Customer, Vessel, VesselMap } from '@/types/mock'
+import { useDataStore } from '@/stores/data'
+import type { Ticket, Customer, Vessel } from '@/types/mock'
 
 export default defineComponent({
   setup() {
+    const store = useDataStore()
     const route = useRoute()
     const router = useRouter()
     const ticket = ref<Ticket | null>(null)
@@ -49,46 +51,23 @@ export default defineComponent({
         const id = String(route.query.id || '')
         if (!id) throw new Error('No ticket id provided')
 
-        const res = await fetch('/mock/tickets.json')
-        if (!res.ok) throw new Error('Failed to load tickets')
-        const list: Ticket[] = await res.json()
-        ticket.value = list.find((t) => t.id === id) ?? null
+        await store.fetchAllData()
+        ticket.value = store.ticketById(id)
 
-        // load metadata to display names (prefer localStorage for customers)
-        try {
-          let customers: Customer[] = []
-          const local = localStorage.getItem('mockCustomers')
-          if (local) {
-            try {
-              customers = JSON.parse(local)
-            } catch {
-              customers = []
-            }
-          } else {
-            const cres = await fetch('/mock/customers.json')
-            if (cres.ok) customers = await cres.json()
-          }
-
-          const vres = await fetch('/mock/vessels.json')
-          if (vres.ok) {
-            const map: VesselMap = await vres.json()
-            const vessels: Vessel[] = Object.values(map)
-
-            const cid = ticket.value?.customerId
-            if (cid) {
-              const c = customers.find((x) => x.id === cid)
-              customerName.value = c ? c.name : cid
-            }
-
-            const vid = ticket.value?.vesselId
-            if (vid) {
-              const v = vessels.find((x) => x.id === vid)
-              vesselName.value = v ? v.vesselName : vid
-            }
-          }
-        } catch (metaErr) {
-          console.warn('Failed to load customer/vessel metadata', metaErr)
+        if (!ticket.value) {
+          throw new Error('Ticket not found')
         }
+
+        const customers = store.customers
+        const vessels = store.vessels
+
+        const cid = ticket.value.customerId
+        const c = customers.find((x) => x.id === cid)
+        customerName.value = c ? c.name : cid
+
+        const vid = ticket.value.vesselId
+        const v = vessels.find((x) => x.id === vid)
+        vesselName.value = v ? v.vesselName : vid
       } catch (err) {
         error.value = err instanceof Error ? err.message : String(err)
       } finally {

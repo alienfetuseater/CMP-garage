@@ -50,7 +50,7 @@
               class="ticket-item clickable"
               @click="openTicket(tk.id)"
             >
-              <strong>{{ tk.title }}</strong> — {{ tk.status }} — {{ tk.priority }} —
+              <strong>{{ tk.service_title }}</strong> — {{ tk.status }} — {{ tk.priority }} —
               {{ tk.scheduledDate }}
             </li>
           </ul>
@@ -65,10 +65,12 @@
 <script lang="ts">
 import { defineComponent, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useDataStore } from '@/stores/data'
 import type { Vessel, Todo, Ticket } from '@/types/mock'
 
 export default defineComponent({
   setup() {
+    const store = useDataStore()
     const route = useRoute()
     const router = useRouter()
     const vessel = ref<Vessel | null>(null)
@@ -86,20 +88,11 @@ export default defineComponent({
         const id = String(route.query.id || '')
         if (!id) throw new Error('No vessel id provided')
 
-        const [vesRes, todosRes, ticketsRes] = await Promise.all([
-          fetch('/mock/vessels.json'),
-          fetch('/mock/todos.json'),
-          fetch('/mock/tickets.json'),
-        ])
+        await store.fetchAllData()
+        vessel.value = store.vesselById(id)
 
-        if (!vesRes.ok || !todosRes.ok || !ticketsRes.ok)
-          throw new Error('Failed to load mock data')
-
-        const map = await vesRes.json()
-        vessel.value = map[id] ?? null
-
-        const allTodos: Todo[] = await todosRes.json()
-        const allTickets: Ticket[] = await ticketsRes.json()
+        const allTodos = store.todos
+        const allTickets = store.tickets
 
         todosForVessel.value = allTodos.filter(
           (t) => t.relatedTo?.type === 'vessel' && t.relatedTo.id === id,

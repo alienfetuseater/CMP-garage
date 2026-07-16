@@ -35,41 +35,24 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, computed } from 'vue'
+import { defineComponent, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import type { Customer, Vessel, VesselMap } from '@/types/mock'
+import { useDataStore } from '@/stores/data'
+import type { Customer, Vessel } from '@/types/mock'
 
 export default defineComponent({
   setup() {
-    const customers = ref<Customer[]>([])
-    const vessels = ref<VesselMap | null>(null)
-    const loading = ref(true)
-    const error = ref<string | null>(null)
-
-    const vesselsArr = computed(() =>
-      vessels.value ? Object.values(vessels.value) : ([] as Vessel[]),
-    )
+    const store = useDataStore()
+    const customers = store.customers
+    const vesselsArr = computed(() => store.vessels)
+    const loading = store.loading
+    const error = store.error
 
     async function load() {
-      loading.value = true
       try {
-        // prefer localStorage override when present (registered without API)
-        const local = localStorage.getItem('mockCustomers')
-        if (local) {
-          customers.value = JSON.parse(local)
-        } else {
-          const custRes = await fetch('/mock/customers.json')
-          if (!custRes.ok) throw new Error('Failed to load customers')
-          customers.value = await custRes.json()
-        }
-
-        const vesRes = await fetch('/mock/vessels.json')
-        if (!vesRes.ok) throw new Error('Failed to load vessels')
-        vessels.value = await vesRes.json()
+        await Promise.all([store.fetchCustomers(), store.fetchVessels()])
       } catch (err) {
-        error.value = err instanceof Error ? err.message : String(err)
-      } finally {
-        loading.value = false
+        console.error(err)
       }
     }
 
