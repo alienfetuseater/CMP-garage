@@ -62,95 +62,76 @@
   </main>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref, onMounted } from 'vue'
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUiStore } from '@/stores/ui'
 import { useVesselStore } from '@/stores/vessels'
-import { useTodoStore } from '@/stores/todos'
+import { useTodoStore } from '@/stores/reminders'
 import { useTicketStore } from '@/stores/tickets'
 import type { Vessel, Todo, Ticket } from '@/types/mock'
 
-export default defineComponent({
-  setup() {
-    const uiStore = useUiStore()
-    const vesselStore = useVesselStore()
-    const todoStore = useTodoStore()
-    const ticketStore = useTicketStore()
-    const route = useRoute()
-    const router = useRouter()
-    const vessel = ref<Vessel | null>(null)
-    const loading = ref(true)
-    const error = ref<string | null>(null)
+const uiStore = useUiStore()
+const vesselStore = useVesselStore()
+const todoStore = useTodoStore()
+const ticketStore = useTicketStore()
+const route = useRoute()
+const router = useRouter()
+const vessel = ref<Vessel | null>(null)
+const loading = ref(true)
+const error = ref<string | null>(null)
 
-    const todosForVessel = ref<Todo[]>([])
-    const ticketsForVessel = ref<Ticket[]>([])
-    const loadingTodos = ref(false)
-    const loadingTickets = ref(false)
+const todosForVessel = ref<Todo[]>([])
+const ticketsForVessel = ref<Ticket[]>([])
+const loadingTodos = ref(false)
+const loadingTickets = ref(false)
 
-    async function load() {
-      loading.value = true
-      try {
-        const id = String(route.query.id || '')
-        if (!id) throw new Error('No vessel id provided')
+async function load() {
+  loading.value = true
+  try {
+    const id = String(route.query.id || '')
+    if (!id) throw new Error('No vessel id provided')
 
-        await uiStore.fetchAllData()
-        vessel.value = vesselStore.vesselById(id)
+    await uiStore.fetchAllData()
+    vessel.value = vesselStore.vesselById(id)
 
-        const allTodos = todoStore.todos
-        const allTickets = ticketStore.tickets
+    const allTodos = todoStore.todos
+    const allTickets = ticketStore.tickets
 
-        todosForVessel.value = allTodos.filter(
-          (t) => t.relatedTo?.type === 'vessel' && t.relatedTo.id === id,
-        )
-        ticketsForVessel.value = allTickets.filter((t) => t.vesselId === id)
-      } catch (err) {
-        error.value = err instanceof Error ? err.message : String(err)
-      } finally {
-        loading.value = false
-      }
-    }
+    todosForVessel.value = allTodos.filter(
+      (t) => t.relatedTo?.type === 'vessel' && t.relatedTo.id === id,
+    )
+    ticketsForVessel.value = allTickets.filter((t) => t.vesselId === id)
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : String(err)
+  } finally {
+    loading.value = false
+  }
+}
 
-    function goBack() {
-      router.push({ name: 'CustomerDirectory' })
-    }
+function goBack() {
+  router.push({ name: 'CustomerDirectory' })
+}
 
-    function openOwner() {
-      const id = vessel.value?.customerId ?? (vessel.value as unknown as { owner?: string })?.owner
-      if (id) router.push({ name: 'CustomerProfile', query: { id } })
-    }
+function openOwner() {
+  const id = vessel.value?.customerId ?? (vessel.value as unknown as { owner?: string })?.owner
+  if (id) router.push({ name: 'CustomerProfile', query: { id } })
+}
 
-    function openTodo(id: string) {
-      if (id) router.push({ name: 'ToDo', query: { id } })
-    }
+function openTodo(id: string) {
+  if (id) router.push({ name: 'ToDo', query: { id } })
+}
 
-    function openTicket(id: string) {
-      if (id) router.push({ name: 'Ticket', query: { id } })
-    }
+function openTicket(id: string) {
+  if (id) router.push({ name: 'Ticket', query: { id } })
+}
 
-    function editVessel() {
-      if (!vessel.value) return
-      router.push({ name: 'RegisterVessel', query: { id: vessel.value.id } })
-    }
+function editVessel() {
+  if (!vessel.value) return
+  router.push({ name: 'RegisterVessel', query: { id: vessel.value.id } })
+}
 
-    onMounted(load)
-
-    return {
-      vessel,
-      loading,
-      error,
-      goBack,
-      openOwner,
-      openTicket,
-      todosForVessel,
-      ticketsForVessel,
-      loadingTodos,
-      loadingTickets,
-      openTodo,
-      editVessel,
-    }
-  },
-})
+onMounted(load)
 </script>
 
 <style scoped>

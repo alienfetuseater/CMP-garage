@@ -22,39 +22,29 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, type PropType } from 'vue'
+<script setup lang="ts">
 import { useRouter } from 'vue-router'
 import type { Ticket } from '@/types/mock'
 
-export default defineComponent({
-  props: {
-    ticket: {
-      type: Object as PropType<Ticket>,
-      required: true,
-    },
-  },
-  emits: ['close'],
-  setup(props, { emit }) {
-    const router = useRouter()
-    function close() {
-      emit('close')
-    }
+const props = defineProps<{
+  ticket: Ticket
+}>()
+const emit = defineEmits<{
+  (e: 'close'): void
+}>()
 
-    function openTicket() {
-      const tid = props.ticket?.id
-      if (tid) {
-        router.push({ name: 'Ticket', query: { id: tid } })
-        emit('close')
-      }
-    }
+const router = useRouter()
+function close() {
+  emit('close')
+}
 
-    return {
-      close,
-      openTicket,
-    }
-  },
-})
+function openTicket() {
+  const tid = props.ticket?.id
+  if (tid) {
+    router.push({ name: 'Ticket', query: { id: tid } })
+    emit('close')
+  }
+}
 </script>
 
 <style scoped>

@@ -32,66 +32,52 @@
   </main>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref, onMounted } from 'vue'
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUiStore } from '@/stores/ui'
 import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
 import type { Customer, Vessel } from '@/types/mock'
 
-export default defineComponent({
-  setup() {
-    const uiStore = useUiStore()
-    const customerStore = useCustomerStore()
-    const vesselStore = useVesselStore()
-    const route = useRoute()
-    const router = useRouter()
-    const customer = ref<Customer | null>(null)
-    const vessels = ref<Vessel[]>([])
-    const loading = uiStore.loading
-    const error = uiStore.error
+const uiStore = useUiStore()
+const customerStore = useCustomerStore()
+const vesselStore = useVesselStore()
+const route = useRoute()
+const router = useRouter()
+const customer = ref<Customer | null>(null)
+const vessels = ref<Vessel[]>([])
+const loading = uiStore.loading
+const error = uiStore.error
 
-    async function load() {
-      try {
-        await uiStore.fetchAllData()
+async function load() {
+  try {
+    await uiStore.fetchAllData()
 
-        const id = String(route.query.id || '')
-        if (!id) throw new Error('No customer id provided')
+    const id = String(route.query.id || '')
+    if (!id) throw new Error('No customer id provided')
 
-        customer.value = customerStore.customerById(id)
-        vessels.value = vesselStore.vessels.filter((v) => v.customerId === id || v.owner === id)
-      } catch (err) {
-        error.value = err instanceof Error ? err.message : String(err)
-      }
-    }
+    customer.value = customerStore.customerById(id)
+    vessels.value = vesselStore.vessels.filter((v) => v.customerId === id || v.owner === id)
+  } catch (err) {
+    uiStore.error = err instanceof Error ? err.message : String(err)
+  }
+}
 
-    function goBack() {
-      router.push({ name: 'CustomerDirectory' })
-    }
+function goBack() {
+  router.push({ name: 'CustomerDirectory' })
+}
 
-    function addNewVessel() {
-      if (!customer.value) return
-      router.push({ name: 'RegisterVessel', query: { ownerId: customer.value.id } })
-    }
+function addNewVessel() {
+  if (!customer.value) return
+  router.push({ name: 'RegisterVessel', query: { ownerId: customer.value.id } })
+}
 
-    function openVessel(v: Vessel) {
-      router.push({ name: 'VesselProfile', query: { id: v.id } })
-    }
+function openVessel(v: Vessel) {
+  router.push({ name: 'VesselProfile', query: { id: v.id } })
+}
 
-    onMounted(load)
-
-    return {
-      customer,
-      vessels,
-      loading,
-      error,
-      goBack,
-      addNewVessel,
-      openVessel,
-    }
-  },
-})
+onMounted(load)
 </script>
 
 <style scoped>

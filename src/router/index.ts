@@ -42,7 +42,7 @@ const router = createRouter({
     {
       path: '/TicketWorkOrder',
       name: 'TicketWorkOrder',
-      component: () => import('../views/Ticket/TicketWorkOrder.vue'),
+      component: () => import('../components/Ticket/TicketPopUp.vue'),
     },
     {
       path: '/Ticket',
@@ -50,9 +50,9 @@ const router = createRouter({
       component: () => import('../views/Ticket/TheTicket.vue'),
     },
     {
-      path: '/ToDo',
-      name: 'ToDo',
-      component: () => import('../views/ToDo/TheToDo.vue'),
+      path: '/Reminder',
+      name: 'Reminder',
+      component: () => import('../views/Reminder/TheReminder.vue'),
     },
   ],
 })

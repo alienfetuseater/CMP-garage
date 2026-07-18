@@ -32,56 +32,50 @@
   </main>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref } from 'vue'
+<script setup lang="ts">
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { apiFetch } from '@/api'
 import { useCustomerStore } from '@/stores/customers'
 import type { Customer } from '@/types/mock'
 
-export default defineComponent({
-  setup() {
-    const form = ref({ name: '', phone: '', email: '', address: '' })
-    const loading = ref(false)
-    const error = ref<string | null>(null)
-    const success = ref(false)
+const form = ref({ name: '', phone: '', email: '', address: '' })
+const loading = ref(false)
+const error = ref<string | null>(null)
+const success = ref(false)
 
-    const router = useRouter()
-    const customerStore = useCustomerStore()
+const router = useRouter()
+const customerStore = useCustomerStore()
 
-    async function submit() {
-      loading.value = true
-      error.value = null
-      success.value = false
-      const payload = { ...form.value }
+async function submit() {
+  loading.value = true
+  error.value = null
+  success.value = false
+  const payload = { ...form.value }
 
-      try {
-        const saved = await apiFetch<Customer>('/newCustomer', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        })
+  try {
+    const saved = await apiFetch<Customer>('/newCustomer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
 
-        customerStore.addCustomer(saved)
+    customerStore.addCustomer(saved)
 
-        const newId = saved?.id ?? null
-        success.value = true
-        form.value = { name: '', phone: '', email: '', address: '' }
+    const newId = saved?.id ?? null
+    success.value = true
+    form.value = { name: '', phone: '', email: '', address: '' }
 
-        if (newId) {
-          router.push({ name: 'CustomerProfile', query: { id: newId } })
-          return
-        }
-      } catch (err) {
-        error.value = err instanceof Error ? err.message : String(err)
-      } finally {
-        loading.value = false
-      }
+    if (newId) {
+      router.push({ name: 'CustomerProfile', query: { id: newId } })
+      return
     }
-
-    return { form, loading, error, success, submit }
-  },
-})
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : String(err)
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <style scoped>

@@ -34,54 +34,41 @@
   </main>
 </template>
 
-<script lang="ts">
-import { defineComponent, computed, onMounted } from 'vue'
+<script setup lang="ts">
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUiStore } from '@/stores/ui'
 import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
 import type { Customer, Vessel } from '@/types/mock'
 
-export default defineComponent({
-  setup() {
-    const uiStore = useUiStore()
-    const customerStore = useCustomerStore()
-    const vesselStore = useVesselStore()
-    const customers = customerStore.customers
-    const vesselsArr = computed(() => vesselStore.vessels)
-    const loading = uiStore.loading
-    const error = uiStore.error
+const uiStore = useUiStore()
+const customerStore = useCustomerStore()
+const vesselStore = useVesselStore()
+const customers = customerStore.customers
+const vesselsArr = computed(() => vesselStore.vessels)
+const loading = uiStore.loading
+const error = uiStore.error
 
-    async function load() {
-      try {
-        await Promise.all([customerStore.fetchCustomers(), vesselStore.fetchVessels()])
-      } catch (err) {
-        console.error(err)
-      }
-    }
+async function load() {
+  try {
+    await Promise.all([customerStore.fetchCustomers(), vesselStore.fetchVessels()])
+  } catch (err) {
+    console.error(err)
+  }
+}
 
-    onMounted(load)
+onMounted(load)
 
-    const router = useRouter()
+const router = useRouter()
 
-    function openCustomer(customer: Customer) {
-      router.push({ name: 'CustomerProfile', query: { id: customer.id } })
-    }
+function openCustomer(customer: Customer) {
+  router.push({ name: 'CustomerProfile', query: { id: customer.id } })
+}
 
-    function openVessel(vessel: Vessel) {
-      router.push({ name: 'VesselProfile', query: { id: vessel.id } })
-    }
-
-    return {
-      customers,
-      vesselsArr,
-      loading,
-      error,
-      openCustomer,
-      openVessel,
-    }
-  },
-})
+function openVessel(vessel: Vessel) {
+  router.push({ name: 'VesselProfile', query: { id: vessel.id } })
+}
 </script>
 
 <style scoped>

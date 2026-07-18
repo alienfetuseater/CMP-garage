@@ -24,8 +24,8 @@
         @click="selectDate(cell)"
       >
         <div class="day-number" v-if="cell.inMonth">{{ cell.day }}</div>
-        <div v-if="cell.dateKey && todosByDate[cell.dateKey]?.length" class="todo-badge">
-          {{ todosByDate[cell.dateKey]?.length }}
+        <div v-if="cell.dateKey && remindersByDate[cell.dateKey]?.length" class="reminder-badge">
+          {{ remindersByDate[cell.dateKey]?.length }}
         </div>
       </div>
     </div>
@@ -34,10 +34,12 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import type { Todo } from '@/types/mock'
+import type { Reminder } from '@/types/mock'
 
-const props = defineProps<{ todos: Todo[] }>()
-const emit = defineEmits<{ (e: 'select-date', payload: { date: string; todos: Todo[] }): void }>()
+const props = defineProps<{ reminders: Reminder[] }>()
+const emit = defineEmits<{
+  (e: 'select-date', payload: { date: string; reminders: Reminder[] }): void
+}>()
 
 const today = new Date()
 const year = ref(today.getFullYear())
@@ -65,15 +67,15 @@ function dateKey(y: number, m: number, d: number) {
 
 const selectedDate = ref<string | null>(null)
 
-const todosByDate = computed(() => {
-  return props.todos.reduce(
-    (map, todo) => {
-      const dueDate = todo.dueDate
+const remindersByDate = computed(() => {
+  return props.reminders.reduce(
+    (map, reminder) => {
+      const dueDate = reminder.dueDate
       const existing = map[dueDate] ?? []
-      map[dueDate] = [...existing, todo]
+      map[dueDate] = [...existing, reminder]
       return map
     },
-    {} as Record<string, Todo[]>,
+    {} as Record<string, Reminder[]>,
   )
 })
 
@@ -130,7 +132,7 @@ function selectDate(cell: { inMonth: boolean; dateKey: string | null; day: numbe
   selectedDate.value = cell.dateKey
   emit('select-date', {
     date: cell.dateKey,
-    todos: todosByDate.value[cell.dateKey] || [],
+    reminders: remindersByDate.value[cell.dateKey] || [],
   })
 }
 </script>
@@ -191,7 +193,7 @@ function selectDate(cell: { inMonth: boolean; dateKey: string | null; day: numbe
   background: #e0f2fe;
   border: 1px solid #60a5fa;
 }
-.todo-badge {
+.reminder-badge {
   margin-top: 4px;
   padding: 2px 6px;
   background: #f59e0b;
@@ -200,34 +202,34 @@ function selectDate(cell: { inMonth: boolean; dateKey: string | null; day: numbe
   font-size: 11px;
   font-weight: 600;
 }
-.todo-panel {
+.reminder-panel {
   margin-top: 16px;
   padding: 12px;
   border: 1px solid #d1d5db;
   border-radius: 8px;
   background: #f8fafc;
 }
-.todo-panel-header {
+.reminder-panel-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 10px;
 }
-.todo-list {
+.reminder-list {
   list-style: none;
   padding: 0;
   margin: 0;
 }
-.todo-item {
+.reminder-item {
   display: flex;
   justify-content: space-between;
   padding: 8px 0;
   border-bottom: 1px solid #e5e7eb;
 }
-.todo-item:last-child {
+.reminder-item:last-child {
   border-bottom: none;
 }
-.todo-status {
+.reminder-status {
   font-size: 12px;
   color: #6b7280;
 }
@@ -238,7 +240,7 @@ function selectDate(cell: { inMonth: boolean; dateKey: string | null; day: numbe
   color: #374151;
   font-weight: 700;
 }
-.no-todos {
+.no-reminders {
   color: #6b7280;
 }
 </style>

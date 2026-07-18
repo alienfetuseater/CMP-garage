@@ -27,17 +27,17 @@ export interface Vessel {
   engineHours: number
 }
 
-export interface TodoRelated {
+export interface ReminderRelated {
   type: 'customer' | 'vessel' | 'ticket'
   id: string
 }
 
-export interface Todo {
+export interface Reminder {
   id: string
   title: string
   dueDate: string
   completed: boolean
-  relatedTo: TodoRelated
+  relatedTo: ReminderRelated
 }
 
 export type TicketStatus = 'open' | 'in progress' | 'completed' | 'closed' | 'cancelled' | 'on hold'
@@ -64,13 +64,13 @@ export interface Ticket {
   diagnostics?: TicketDiagnostics
 }
 
-export interface TodoDisplayItem {
+export interface ReminderDisplayItem {
   id: string
   title: string
   date: string
   completed: boolean
   status: string
-  type: 'todo' | 'ticket'
+  type: 'reminder' | 'ticket'
 }
 
 export interface Message {

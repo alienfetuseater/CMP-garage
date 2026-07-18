@@ -1,7 +1,7 @@
 import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
 import { useTicketStore } from '@/stores/tickets'
-import { useTodoStore } from '@/stores/todos'
+import { useReminderStore } from '@/stores/reminders'
 import type { UiState } from './state'
 
 export const fetchAllData = async (state: UiState, force = false) => {
@@ -12,13 +12,13 @@ export const fetchAllData = async (state: UiState, force = false) => {
     const customers = useCustomerStore()
     const vessels = useVesselStore()
     const tickets = useTicketStore()
-    const todos = useTodoStore()
+    const reminders = useReminderStore()
 
     await Promise.all([
       customers.fetchCustomers(force),
       vessels.fetchVessels(force),
       tickets.fetchTickets(force),
-      todos.fetchTodos(force),
+      reminders.fetchReminders(force),
     ])
 
     state.loaded = true
