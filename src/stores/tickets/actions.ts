@@ -3,10 +3,22 @@ import type { Ticket } from '@/types/mock'
 import type { TicketsState } from './state'
 import { useUiStore } from '@/stores/ui'
 
+type TicketApiRecord = Ticket & {
+  _id?: string
+}
+
+const normalizeTicket = (record: TicketApiRecord): Ticket => {
+  return {
+    ...record,
+    id: String(record.id ?? record._id ?? ''),
+  }
+}
+
 export const fetchTickets = async (state: TicketsState, force = false) => {
   if (!force && state.tickets.length > 0) return state.tickets
-  const data = await apiFetch<Ticket[]>('/getAllTickets')
-  state.tickets.splice(0, state.tickets.length, ...data)
+  const data = await apiFetch<TicketApiRecord[]>('/getAllTickets')
+  const normalized = data.map(normalizeTicket)
+  state.tickets.splice(0, state.tickets.length, ...normalized)
   return state.tickets
 }
 
@@ -17,7 +29,7 @@ export const addTicket = (state: TicketsState, ticket: Ticket) => {
 }
 
 export const ticketById = (state: TicketsState, id: string) => {
-  return state.tickets.find((t) => t.id === id) ?? null
+  return state.tickets.find((t) => String(t.id) === String(id)) ?? null
 }
 
 export const ticketsForVessel = (state: TicketsState, vesselId: string) => {

@@ -9,7 +9,7 @@
         <button class="close-btn" @click="close">✕</button>
       </header>
 
-      <ul class="ticket-details">
+      <ul class="ticket-details clickable" @click="openTicket">
         <li><strong>ID:</strong> {{ ticket.id }}</li>
         <li><strong>Status:</strong> {{ ticket.status }}</li>
         <li><strong>Priority:</strong> {{ ticket.priority }}</li>
@@ -39,7 +39,11 @@ function close() {
 }
 
 function openTicket() {
-  const tid = props.ticket?.id
+  const tid = String(
+    (props.ticket as Ticket & { _id?: string })?.id ??
+      (props.ticket as Ticket & { _id?: string })?._id ??
+      '',
+  )
   if (tid) {
     router.push({ name: 'Ticket', query: { id: tid } })
     emit('close')

@@ -3,10 +3,34 @@ import type { Reminder } from '@/types/mock'
 import type { RemindersState } from './state'
 import { useUiStore } from '@/stores/ui'
 
+type ReminderApiRecord = Reminder & {
+  _id?: string
+  relatedTo?: {
+    type: 'customer' | 'vessel' | 'ticket'
+    id?: string
+    _id?: string
+  }
+}
+
+const normalizeReminder = (record: ReminderApiRecord): Reminder => {
+  const normalizedId = String(record.id ?? record._id ?? '')
+  const relatedId = String(record.relatedTo?.id ?? record.relatedTo?._id ?? '')
+
+  return {
+    ...record,
+    id: normalizedId,
+    relatedTo: {
+      type: record.relatedTo?.type ?? 'customer',
+      id: relatedId,
+    },
+  }
+}
+
 export const fetchReminders = async (state: RemindersState, force = false) => {
   if (!force && state.reminders.length > 0) return state.reminders
-  const data = await apiFetch<Reminder[]>('/getAllReminders')
-  state.reminders.splice(0, state.reminders.length, ...data)
+  const data = await apiFetch<ReminderApiRecord[]>('/getAllReminders')
+  const normalized = data.map(normalizeReminder)
+  state.reminders.splice(0, state.reminders.length, ...normalized)
   return state.reminders
 }
 
@@ -17,7 +41,7 @@ export const addReminder = (state: RemindersState, reminder: Reminder) => {
 }
 
 export const reminderById = (state: RemindersState, id: string) => {
-  return state.reminders.find((t) => t.id === id) ?? null
+  return state.reminders.find((t) => String(t.id) === String(id)) ?? null
 }
 
 export const remindersForVessel = (state: RemindersState, vesselId: string) => {

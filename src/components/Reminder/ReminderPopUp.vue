@@ -11,7 +11,7 @@
           v-for="reminder in reminders"
           :key="reminder.id"
           class="reminder-item clickable"
-          @click="openreminder(reminder.id)"
+          @click="openreminder(reminder)"
         >
           <div class="reminder-title">{{ reminder.title }}</div>
           <div class="reminder-meta">
@@ -47,9 +47,10 @@ function close() {
   emit('close')
 }
 
-function openreminder(id: string) {
+function openreminder(reminder: ReminderDisplayItem & { _id?: string }) {
+  const id = String(reminder.id ?? reminder._id ?? '')
   if (!id) return
-  router.push({ name: 'reminder', query: { id } })
+  router.push({ name: 'Reminder', query: { id } })
   emit('close')
 }
 </script>
