@@ -40,9 +40,9 @@ const router = createRouter({
       component: () => import('../views/Ticket/NewTicket.vue'),
     },
     {
-      path: '/TicketWorkOrder',
-      name: 'TicketWorkOrder',
-      component: () => import('../components/Ticket/TicketPopUp.vue'),
+      path: '/TicketPopUp',
+      name: 'TicketPopUp',
+      component: () => import('../components/Ticket/PopUp.vue'),
     },
     {
       path: '/Ticket',

@@ -1,3 +1,4 @@
+import { reactive } from 'vue'
 import type { Reminder } from '@/types/mock'
 
 export type RemindersState = {
@@ -5,7 +6,7 @@ export type RemindersState = {
 }
 
 export default function state(): RemindersState {
-  return {
+  return reactive({
     reminders: [],
-  }
+  })
 }

@@ -24,8 +24,13 @@
         @click="selectDate(cell)"
       >
         <div class="day-number" v-if="cell.inMonth">{{ cell.day }}</div>
-        <div v-if="cell.dateKey && remindersByDate[cell.dateKey]?.length" class="reminder-badge">
-          {{ remindersByDate[cell.dateKey]?.length }}
+        <div v-if="cell.dateKey && hasItems(cell.dateKey)" class="day-markers">
+          <span v-if="remindersByDate[cell.dateKey]?.length" class="day-marker reminder-marker">
+            {{ remindersByDate[cell.dateKey]?.length }}
+          </span>
+          <span v-if="ticketsByDate[cell.dateKey]?.length" class="day-marker ticket-marker">
+            {{ ticketsByDate[cell.dateKey]?.length }}
+          </span>
         </div>
       </div>
     </div>
@@ -34,11 +39,11 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import type { Reminder } from '@/types/mock'
+import type { Reminder, Ticket } from '@/types/mock'
 
-const props = defineProps<{ reminders: Reminder[] }>()
+const props = defineProps<{ reminders: Reminder[]; tickets: Ticket[] }>()
 const emit = defineEmits<{
-  (e: 'select-date', payload: { date: string; reminders: Reminder[] }): void
+  (e: 'select-date', payload: { date: string; reminders: Reminder[]; tickets: Ticket[] }): void
 }>()
 
 const today = new Date()
@@ -65,12 +70,18 @@ function dateKey(y: number, m: number, d: number) {
   return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
 }
 
+function toDayKey(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value.slice(0, 10)
+  return date.toISOString().slice(0, 10)
+}
+
 const selectedDate = ref<string | null>(null)
 
 const remindersByDate = computed(() => {
   return props.reminders.reduce(
     (map, reminder) => {
-      const dueDate = reminder.dueDate
+      const dueDate = toDayKey(reminder.dueDate)
       const existing = map[dueDate] ?? []
       map[dueDate] = [...existing, reminder]
       return map
@@ -78,6 +89,22 @@ const remindersByDate = computed(() => {
     {} as Record<string, Reminder[]>,
   )
 })
+
+const ticketsByDate = computed(() => {
+  return props.tickets.reduce(
+    (map, ticket) => {
+      const dueDate = toDayKey(ticket.scheduledDate)
+      const existing = map[dueDate] ?? []
+      map[dueDate] = [...existing, ticket]
+      return map
+    },
+    {} as Record<string, Ticket[]>,
+  )
+})
+
+function hasItems(dateKey: string) {
+  return Boolean(remindersByDate.value[dateKey]?.length || ticketsByDate.value[dateKey]?.length)
+}
 
 const firstOfMonth = computed(() => new Date(year.value, month.value, 1))
 const daysInMonth = computed(() => new Date(year.value, month.value + 1, 0).getDate())
@@ -133,6 +160,7 @@ function selectDate(cell: { inMonth: boolean; dateKey: string | null; day: numbe
   emit('select-date', {
     date: cell.dateKey,
     reminders: remindersByDate.value[cell.dateKey] || [],
+    tickets: ticketsByDate.value[cell.dateKey] || [],
   })
 }
 </script>
@@ -193,14 +221,28 @@ function selectDate(cell: { inMonth: boolean; dateKey: string | null; day: numbe
   background: #e0f2fe;
   border: 1px solid #60a5fa;
 }
-.reminder-badge {
+.day-markers {
+  display: flex;
+  gap: 4px;
   margin-top: 4px;
-  padding: 2px 6px;
-  background: #f59e0b;
-  color: white;
+}
+.day-marker {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
   border-radius: 999px;
-  font-size: 11px;
-  font-weight: 600;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.reminder-marker {
+  background: #f59e0b;
+}
+.ticket-marker {
+  background: #2563eb;
 }
 .reminder-panel {
   margin-top: 16px;

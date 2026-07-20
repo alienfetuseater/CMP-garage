@@ -1,41 +1,32 @@
 <template>
   <div class="reminder-popup-backdrop" @click.self="close">
     <section class="reminder-popup">
-      <header class="reminder-popup-header">
-        <h3>reminders for {{ date }}</h3>
+      <header class="reminder-header">
+        <div>
+          <h3 class="clickable" @click="openReminder">Reminder</h3>
+          <p class="reminder-subtitle clickable" @click="openReminder">
+            {{ reminder.title }}
+          </p>
+        </div>
         <button class="close-btn" @click="close">✕</button>
       </header>
 
-      <ul>
-        <li
-          v-for="reminder in reminders"
-          :key="reminder.id"
-          class="reminder-item clickable"
-          @click="openreminder(reminder)"
-        >
-          <div class="reminder-title">{{ reminder.title }}</div>
-          <div class="reminder-meta">
-            <span>{{ reminder.date }}</span>
-            <span>{{ reminder.status }}</span>
-          </div>
-        </li>
+      <ul class="reminder-details clickable" @click="openReminder">
+        <li class="reminder-item clickable"><strong>status:</strong> {{ reminder.status }}</li>
+        <li class="reminder-item clickable"><strong>due date:</strong>{{ reminder.date }}</li>
       </ul>
     </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { type PropType } from 'vue'
+import type { PropType } from 'vue'
 import { useRouter } from 'vue-router'
 import type { ReminderDisplayItem } from '@/types/mock'
 
-defineProps({
-  date: {
-    type: String,
-    required: true,
-  },
-  reminders: {
-    type: Array as PropType<ReminderDisplayItem[]>,
+const props = defineProps({
+  reminder: {
+    type: Object as PropType<ReminderDisplayItem>,
     required: true,
   },
 })
@@ -45,6 +36,10 @@ const router = useRouter()
 
 function close() {
   emit('close')
+}
+
+function openReminder() {
+  openreminder(props.reminder)
 }
 
 function openreminder(reminder: ReminderDisplayItem & { _id?: string }) {
@@ -59,7 +54,7 @@ function openreminder(reminder: ReminderDisplayItem & { _id?: string }) {
 .reminder-popup-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.45);
+  background: rgba(15, 23, 42, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -67,20 +62,30 @@ function openreminder(reminder: ReminderDisplayItem & { _id?: string }) {
 }
 
 .reminder-popup {
-  width: min(90vw, 420px);
+  width: min(90vw, 520px);
   max-height: 80vh;
   overflow-y: auto;
-  background: white;
-  border-radius: 12px;
-  padding: 18px;
-  box-shadow: 0 20px 35px rgba(15, 23, 42, 0.15);
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 22px 40px rgba(15, 23, 42, 0.18);
 }
 
-.reminder-popup-header {
+.reminder-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.reminder-header h3 {
+  margin: 0;
+}
+
+.reminder-subtitle {
+  margin: 4px 0 0;
+  color: #6b7280;
 }
 
 .close-btn {
@@ -91,14 +96,26 @@ function openreminder(reminder: ReminderDisplayItem & { _id?: string }) {
   font-weight: 700;
 }
 
+.reminder-details {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
 .reminder-item {
-  padding: 10px 0;
+  padding: 12px 0;
   border-bottom: 1px solid #e5e7eb;
   cursor: default;
 }
 
 .reminder-item:last-child {
   border-bottom: none;
+}
+
+.reminder-item strong {
+  display: inline-block;
+  width: 125px;
+  color: #111827;
 }
 
 .reminder-title {

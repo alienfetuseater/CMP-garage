@@ -1,3 +1,5 @@
+import { reactive } from 'vue'
+
 export type UiState = {
   loading: boolean
   loaded: boolean
@@ -5,9 +7,9 @@ export type UiState = {
 }
 
 export default function state(): UiState {
-  return {
+  return reactive({
     loading: false,
     loaded: false,
     error: null,
-  }
+  })
 }

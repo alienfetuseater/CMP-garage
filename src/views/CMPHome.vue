@@ -1,84 +1,106 @@
 <template>
   <main>
-    <HomeCalender :reminders="reminders" @select-date="handleDateSelect" />
+    <p v-if="uiLoading" class="home-status">Loading reminders...</p>
+    <p v-else-if="uiError" class="home-status error">{{ uiError }}</p>
 
-    <section class="dashboard-panels">
-      <reminderList :reminders="reminderDisplayItems" @select-reminder="openreminder" />
-    </section>
+    <HomeCalender :reminders="reminders" :tickets="tickets" @select-date="handleDateSelect" />
 
-    <TicketWorkOrder v-if="selectedTicket" :ticket="selectedTicket" @close="closeTicketPopup" />
-
-    <reminderPopup
+    <SingleDayPopUP
       v-if="selectedDay"
       :date="selectedDay"
-      :reminders="selectedReminders"
-      @close="closereminderPopup"
+      :reminders="selectedDayReminders"
+      :tickets="selectedDayTickets"
+      @close="closeSingleDayPopup"
+    />
+
+    <section class="dashboard-panels">
+      <ReminderList :reminders="reminderDisplayItems" @select-reminder="openReminder" />
+      <TicketList :tickets="ticketDisplayItems" @select-ticket="openTicket" />
+    </section>
+
+    <TicketPopUp v-if="selectedTicket" :ticket="selectedTicket" @close="closeTicketPopup" />
+
+    <ReminderPopup
+      v-if="selectedReminder"
+      :reminder="selectedReminder"
+      @close="closeReminderPopup"
     />
   </main>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import HomeCalender from '../components/Calender/home-calender.vue'
-import reminderList from '../components/Reminder/ReminderList.vue'
-import reminderPopup from '../components/Reminder/ReminderPopUp.vue'
-import TicketWorkOrder from '../components/Ticket/TicketPopUp.vue'
+import ReminderList from '../components/Reminder/ReminderList.vue'
+import TicketList from '../components/Ticket/TicketList.vue'
+import ReminderPopup from '../components/Reminder/ReminderPopUp.vue'
+import TicketPopUp from '../components/Ticket/PopUp.vue'
 import { useUiStore } from '@/stores/ui'
 import { useTicketStore } from '@/stores/tickets'
 import { useReminderStore } from '@/stores/reminders'
 import type { Ticket, Reminder, ReminderDisplayItem } from '@/types/mock'
+import SingleDayPopUP from '../components/Calender/SingleDayPopUP.vue'
 
 const uiStore = useUiStore()
 const ticketStore = useTicketStore()
-const tickets = ticketStore.tickets
 const reminderStore = useReminderStore()
-const reminders = reminderStore.reminders
+const uiLoading = computed(() => uiStore.loading)
+const uiError = computed(() => uiStore.error)
+const tickets = computed(() => ticketStore.tickets)
+const reminders = computed(() => reminderStore.reminders)
+
 const selectedDay = ref<string | null>(null)
-const selectedReminders = ref<ReminderDisplayItem[]>([])
+const selectedDayReminders = ref<Reminder[]>([])
+const selectedDayTickets = ref<Ticket[]>([])
+const selectedReminder = ref<ReminderDisplayItem | null>(null)
 const selectedTicket = ref<Ticket | null>(null)
 
 async function loadData() {
   try {
     await uiStore.fetchAllData()
   } catch (err) {
-    // store.error is updated by the store's fetchAllData() call
     console.error(err)
   }
 }
 
 onMounted(loadData)
 
-function handleDateSelect(payload: { date: string; reminders: Reminder[] }) {
+function handleDateSelect(payload: { date: string; reminders: Reminder[]; tickets: Ticket[] }) {
   selectedDay.value = payload.date
-  selectedReminders.value = payload.reminders.map((reminder) => ({
-    id: reminder.id,
-    title: reminder.title,
-    date: reminder.dueDate,
-    completed: reminder.completed,
-    status: reminder.completed ? 'Completed' : 'Open',
-    type: 'reminder' as const,
-  }))
+  selectedDayReminders.value = payload.reminders
+  selectedDayTickets.value = payload.tickets
+  selectedReminder.value = null
+  selectedTicket.value = null
 }
 
-function closereminderPopup() {
+function closeSingleDayPopup() {
   selectedDay.value = null
-  selectedReminders.value = []
+  selectedDayReminders.value = []
+  selectedDayTickets.value = []
+  selectedReminder.value = null
+  selectedTicket.value = null
 }
 
-function openreminder(reminder: ReminderDisplayItem) {
+function closeReminderPopup() {
+  selectedReminder.value = null
+}
+
+function openReminder(reminder: ReminderDisplayItem) {
   if (reminder.type === 'ticket') {
-    const ticket = tickets.find((item) => item.id === reminder.id)
+    const ticket = tickets.value.find((item) => item.id === reminder.id)
     if (ticket) {
       selectedTicket.value = ticket
     }
   } else {
-    selectedDay.value = reminder.date
-    selectedReminders.value = [reminder]
+    selectedDay.value = null
+    selectedReminder.value = reminder
+    selectedDayReminders.value = []
+    selectedDayTickets.value = []
   }
 }
 
 const reminderDisplayItems = computed<ReminderDisplayItem[]>(() => {
-  const reminderItems = reminders.map((reminder: Reminder) => ({
+  return reminders.value.map((reminder: Reminder) => ({
     id: reminder.id,
     title: reminder.title,
     date: reminder.dueDate,
@@ -86,8 +108,10 @@ const reminderDisplayItems = computed<ReminderDisplayItem[]>(() => {
     status: reminder.completed ? 'Completed' : 'Open',
     type: 'reminder' as const,
   }))
+})
 
-  const ticketItems = tickets.map((ticket) => ({
+const ticketDisplayItems = computed<ReminderDisplayItem[]>(() => {
+  return tickets.value.map((ticket) => ({
     id: ticket.id,
     title: ticket.service_title,
     date: ticket.scheduledDate,
@@ -96,11 +120,14 @@ const reminderDisplayItems = computed<ReminderDisplayItem[]>(() => {
     status: ticket.status,
     type: 'ticket' as const,
   }))
-
-  return [...reminderItems, ...ticketItems].sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
-  )
 })
+
+function openTicket(ticketItem: ReminderDisplayItem) {
+  const ticket = tickets.value.find((item) => item.id === ticketItem.id)
+  if (ticket) {
+    selectedTicket.value = ticket
+  }
+}
 
 function closeTicketPopup() {
   selectedTicket.value = null
@@ -113,6 +140,10 @@ function closeTicketPopup() {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
   margin-top: 20px;
+}
+
+.home-status {
+  margin-bottom: 12px;
 }
 
 .error {

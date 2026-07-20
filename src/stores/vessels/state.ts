@@ -1,3 +1,4 @@
+import { reactive } from 'vue'
 import type { Vessel } from '@/types/mock'
 
 export type VesselsState = {
@@ -5,7 +6,7 @@ export type VesselsState = {
 }
 
 export default function state(): VesselsState {
-  return {
+  return reactive({
     vessels: [],
-  }
+  })
 }

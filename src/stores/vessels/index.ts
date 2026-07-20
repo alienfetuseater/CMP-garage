@@ -9,12 +9,11 @@ export const useVesselStore = defineStore('vessels', () => {
 
   const vesselCount = computed(() => s.vessels.length)
 
-  return {
-    ...s,
+  return Object.assign(s, {
     vesselCount,
     fetchVessels: (force?: boolean) => actions.fetchVessels(s, force),
     addVessel: (vessel: Vessel) => actions.addVessel(s, vessel),
     vesselById: (id: string) => actions.vesselById(s, id),
     getVessel: (id: string) => actions.getVessel(s, id),
-  }
+  })
 })

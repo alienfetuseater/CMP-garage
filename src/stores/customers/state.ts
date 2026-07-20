@@ -1,3 +1,4 @@
+import { reactive } from 'vue'
 import type { Customer } from '@/types/mock'
 
 export type CustomersState = {
@@ -5,7 +6,7 @@ export type CustomersState = {
 }
 
 export default function state(): CustomersState {
-  return {
+  return reactive({
     customers: [],
-  }
+  })
 }

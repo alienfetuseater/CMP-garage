@@ -1,3 +1,4 @@
+import { reactive } from 'vue'
 import type { Ticket } from '@/types/mock'
 
 export type TicketsState = {
@@ -5,7 +6,7 @@ export type TicketsState = {
 }
 
 export default function state(): TicketsState {
-  return {
+  return reactive({
     tickets: [],
-  }
+  })
 }
