@@ -207,7 +207,9 @@ function buildUpdatedNotes(currentNotes: string, statusChanged: boolean, noteTex
   const entries: string[] = []
 
   if (statusChanged) {
-    entries.push(`[${now}] Status changed to ${updateStatus.value === 'completed' ? 'Completed' : 'Open'}`)
+    entries.push(
+      `[${now}] Status changed to ${updateStatus.value === 'completed' ? 'Completed' : 'Open'}`,
+    )
   }
 
   if (noteText) {
@@ -248,7 +250,11 @@ async function saveUpdate() {
 
     reminder.value = {
       ...saved,
-      id: String((saved as Reminder & { _id?: string }).id ?? (saved as Reminder & { _id?: string })._id ?? reminder.value.id),
+      id: String(
+        (saved as Reminder & { _id?: string }).id ??
+          (saved as Reminder & { _id?: string })._id ??
+          reminder.value.id,
+      ),
       notes: String(saved.notes ?? ''),
     }
     reminderStore.addReminder(reminder.value)

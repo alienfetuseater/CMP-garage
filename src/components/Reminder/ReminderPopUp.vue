@@ -14,7 +14,9 @@
       <ul class="reminder-details clickable" @click="openReminder">
         <li class="reminder-item clickable"><strong>status:</strong> {{ reminder.status }}</li>
         <li class="reminder-item clickable"><strong>due date:</strong>{{ reminder.date }}</li>
-        <li class="reminder-item clickable"><strong>notes:</strong> {{ reminder.notes || 'none' }}</li>
+        <li class="reminder-item clickable">
+          <strong>notes:</strong> {{ reminder.notes || 'none' }}
+        </li>
       </ul>
     </section>
   </div>
