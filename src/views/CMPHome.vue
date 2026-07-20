@@ -40,6 +40,7 @@ import { useTicketStore } from '@/stores/tickets'
 import { useReminderStore } from '@/stores/reminders'
 import type { Ticket, Reminder, ReminderDisplayItem } from '@/types/mock'
 import SingleDayPopUP from '../components/Calender/SingleDayPopUP.vue'
+import { formatLocalDateTime } from '@/utils/datetime'
 
 const uiStore = useUiStore()
 const ticketStore = useTicketStore()
@@ -103,7 +104,7 @@ const reminderDisplayItems = computed<ReminderDisplayItem[]>(() => {
   return reminders.value.map((reminder: Reminder) => ({
     id: reminder.id,
     title: reminder.title,
-    date: reminder.dueDate,
+    date: formatLocalDateTime(reminder.dueDate),
     completed: reminder.completed,
     status: reminder.completed ? 'Completed' : 'Open',
     type: 'reminder' as const,
@@ -114,7 +115,7 @@ const ticketDisplayItems = computed<ReminderDisplayItem[]>(() => {
   return tickets.value.map((ticket) => ({
     id: ticket.id,
     title: ticket.service_title,
-    date: ticket.scheduledDate,
+    date: formatLocalDateTime(ticket.scheduledDate),
     completed:
       ticket.status.toLowerCase() === 'completed' || ticket.status.toLowerCase() === 'closed',
     status: ticket.status,

@@ -35,8 +35,8 @@
           <!-- <li><strong>ID</strong> {{ ticket.id }}</li> -->
           <li><strong>Status</strong> {{ ticket.status }}</li>
           <li><strong>Priority</strong> {{ ticket.priority }}</li>
-          <li><strong>Created</strong> {{ ticket.createdAt }}</li>
-          <li><strong>Scheduled</strong> {{ ticket.scheduledDate }}</li>
+          <li><strong>Created</strong> {{ formatLocalDateTime(ticket.createdAt) }}</li>
+          <li><strong>Scheduled</strong> {{ formatLocalDateTime(ticket.scheduledDate) }}</li>
         </ul>
 
         <section class="plan-block">
@@ -139,6 +139,7 @@ import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
 import { apiFetch } from '@/api'
 import type { DiagnosticLevel, PlanActionItem, Ticket } from '@/types/mock'
+import { formatLocalDateTime } from '@/utils/datetime'
 
 const uiStore = useUiStore()
 const ticketStore = useTicketStore()

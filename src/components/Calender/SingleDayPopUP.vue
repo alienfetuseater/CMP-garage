@@ -3,7 +3,7 @@
     <section class="single-day-popup">
       <header class="single-day-header">
         <div>
-          <h3>Schedule for {{ date }}</h3>
+          <h3>Schedule for {{ formattedDate }}</h3>
           <p class="single-day-subtitle">
             {{
               entries.length
@@ -42,6 +42,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Reminder, ReminderDisplayItem, Ticket } from '@/types/mock'
+import { formatLocalDateTime, formatLocalDate } from '@/utils/datetime'
 
 type DayEntry =
   | {
@@ -72,18 +73,19 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
+const formattedDate = computed(() => formatLocalDate(props.date))
 
 const entries = computed<DayEntry[]>(() => {
   const reminderEntries = props.reminders.map((reminder) => ({
     id: reminder.id,
     type: 'reminder' as const,
     title: reminder.title,
-    date: reminder.dueDate,
+    date: formatLocalDateTime(reminder.dueDate),
     status: reminder.completed ? 'Completed' : 'Open',
     reminder: {
       id: reminder.id,
       title: reminder.title,
-      date: reminder.dueDate,
+      date: formatLocalDateTime(reminder.dueDate),
       completed: reminder.completed,
       status: reminder.completed ? 'Completed' : 'Open',
       type: 'reminder' as const,
@@ -94,7 +96,7 @@ const entries = computed<DayEntry[]>(() => {
     id: ticket.id,
     type: 'ticket' as const,
     title: ticket.service_title,
-    date: ticket.scheduledDate,
+    date: formatLocalDateTime(ticket.scheduledDate),
     status: ticket.status,
     ticket,
   }))

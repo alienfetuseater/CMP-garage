@@ -91,7 +91,7 @@
                   <strong>{{ ticket.service_title }}</strong>
                   <span>{{ ticket.status }}</span>
                   <span>{{ ticket.priority }}</span>
-                  <span>{{ ticket.scheduledDate }}</span>
+                  <span>{{ formatLocalDateTime(ticket.scheduledDate) }}</span>
                 </li>
               </ul>
               <div v-else class="empty-state">No repairs for this vessel.</div>
@@ -116,7 +116,7 @@
                   <strong>{{ ticket.service_title }}</strong>
                   <span>{{ ticket.status }}</span>
                   <span>{{ ticket.priority }}</span>
-                  <span>{{ ticket.scheduledDate }}</span>
+                  <span>{{ formatLocalDateTime(ticket.scheduledDate) }}</span>
                 </li>
               </ul>
               <div v-else class="empty-state">No maintenance jobs for this vessel.</div>
@@ -141,7 +141,7 @@
                   <strong>{{ ticket.service_title }}</strong>
                   <span>{{ ticket.status }}</span>
                   <span>{{ ticket.priority }}</span>
-                  <span>{{ ticket.scheduledDate }}</span>
+                  <span>{{ formatLocalDateTime(ticket.scheduledDate) }}</span>
                 </li>
               </ul>
               <div v-else class="empty-state">No upgrades for this vessel.</div>
@@ -163,6 +163,7 @@ import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
 import { useTicketStore } from '@/stores/tickets'
 import type { Vessel, Ticket } from '@/types/mock'
+import { formatLocalDateTime } from '@/utils/datetime'
 
 const uiStore = useUiStore()
 const customerStore = useCustomerStore()
@@ -206,7 +207,7 @@ const diagnosticHistory = computed(() =>
       return {
         key: ticket.id,
         title: ticket.service_title,
-        date: ticket.scheduledDate,
+        date: formatLocalDateTime(ticket.scheduledDate),
         summary: ticket.status,
         details:
           entries.length > 0

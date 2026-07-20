@@ -12,9 +12,9 @@
       <ul class="ticket-details clickable" @click="openTicket">
         <li><strong>Status:</strong> {{ ticket.status }}</li>
         <li><strong>Priority:</strong> {{ ticket.priority }}</li>
-        <li><strong>Scheduled Date:</strong> {{ ticket.scheduledDate }}</li>
-        <li><strong>Customer name:</strong> {{ ticket.customerId }}</li>
-        <li><strong>Vessel name:</strong> {{ ticket.vesselId }}</li>
+        <li><strong>Scheduled Date:</strong> {{ formatLocalDateTime(ticket.scheduledDate) }}</li>
+        <li><strong>Customer name:</strong> {{ customerName }}</li>
+        <li><strong>Vessel name:</strong> {{ vesselName }}</li>
         <li><strong>Notes:</strong> {{ ticket.notes }}</li>
       </ul>
     </section>
@@ -22,8 +22,13 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Ticket } from '@/types/mock'
+import { formatLocalDateTime } from '@/utils/datetime'
+import { useCustomerStore } from '@/stores/customers'
+import { useVesselStore } from '@/stores/vessels'
+import { resolveTicketCustomerName, resolveTicketVesselName } from '@/utils/ticketDisplay'
 
 const props = defineProps<{
   ticket: Ticket
@@ -33,6 +38,14 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
+const customerStore = useCustomerStore()
+const vesselStore = useVesselStore()
+
+const customerName = computed(() =>
+  resolveTicketCustomerName(props.ticket, customerStore.customers),
+)
+const vesselName = computed(() => resolveTicketVesselName(props.ticket, vesselStore.vessels))
+
 function close() {
   emit('close')
 }

@@ -134,11 +134,19 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { apiFetch } from '@/api'
 import { useTicketStore } from '@/stores/tickets'
+import { useCustomerStore } from '@/stores/customers'
+import { useVesselStore } from '@/stores/vessels'
+import { useUiStore } from '@/stores/ui'
 import type { PlanActionItem, Ticket } from '@/types/mock'
+import { toLocalDateKey } from '@/utils/datetime'
+import { resolveTicketCustomerName, resolveTicketVesselName } from '@/utils/ticketDisplay'
 
 const route = useRoute()
 const router = useRouter()
+const uiStore = useUiStore()
 const ticketStore = useTicketStore()
+const customerStore = useCustomerStore()
+const vesselStore = useVesselStore()
 
 const submitting = ref(false)
 const success = ref(false)
@@ -179,15 +187,15 @@ function hydrateFromQuery() {
 }
 
 function hydrateFromTicket(ticket: Ticket) {
-  form.customerName = ticket.customerName ?? form.customerName
-  form.vesselName = ticket.vesselName ?? form.vesselName
+  form.customerName = resolveTicketCustomerName(ticket, customerStore.customers)
+  form.vesselName = resolveTicketVesselName(ticket, vesselStore.vessels)
   form.customerId = String(ticket.customerId ?? '')
   form.vesselId = String(ticket.vesselId ?? '')
   form.service_category = ticket.service_category
   form.service_title = ticket.service_title
   form.status = ticket.status
   form.priority = ticket.priority
-  form.scheduledDate = ticket.scheduledDate ? String(ticket.scheduledDate).slice(0, 10) : ''
+  form.scheduledDate = ticket.scheduledDate ? toLocalDateKey(ticket.scheduledDate) : ''
   form.notes = ticket.notes ?? ''
   form.planOfAction = (ticket.planOfAction ?? []).map((item) =>
     makePlanItem(item.text ?? '', Boolean(item.completed)),
@@ -198,6 +206,7 @@ async function loadForEdit() {
   if (!isEditMode.value) return
 
   const id = editTicketId.value
+  await uiStore.fetchAllData()
   await ticketStore.fetchTickets(true)
   let existing = ticketStore.ticketById(id)
 

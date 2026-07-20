@@ -26,7 +26,7 @@
             <span class="owner-divider">•</span>
             <span class="owner-label">Vessel</span>
             <span class="clickable owner owner-link" @click="openVessel">
-              {{ vesselName || reminder.relatedTo?.id }}
+              {{ vesselName }}
             </span>
           </template>
 
@@ -34,7 +34,7 @@
             <span class="owner-divider">•</span>
             <span class="owner-label">Customer</span>
             <span class="clickable owner owner-link" @click="openOwner">
-              {{ ownerName || reminder.relatedTo?.id }}
+              {{ ownerName }}
             </span>
           </template>
 
@@ -42,14 +42,13 @@
             <span class="owner-divider">•</span>
             <span class="owner-label">Owner</span>
             <span class="clickable owner owner-link" @click="openOwner">
-              {{ ownerName || ownerId }}
+              {{ ownerName }}
             </span>
           </template>
         </div>
 
         <ul class="details">
-          <li><strong>ID</strong> {{ reminder.id }}</li>
-          <li><strong>Due Date</strong> {{ reminder.dueDate }}</li>
+          <li><strong>Due Date</strong> {{ formatLocalDateTime(reminder.dueDate) }}</li>
           <li><strong>Completed</strong> {{ reminder.completed ? 'Yes' : 'No' }}</li>
           <li><strong>Related Type</strong> {{ reminder.relatedTo?.type }}</li>
         </ul>
@@ -68,6 +67,7 @@ import { useReminderStore } from '@/stores/reminders'
 import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
 import type { Reminder } from '@/types/mock'
+import { formatLocalDateTime } from '@/utils/datetime'
 
 const uiStore = useUiStore()
 const reminderStore = useReminderStore()

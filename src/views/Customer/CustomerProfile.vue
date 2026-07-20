@@ -20,7 +20,7 @@
           <li><strong>Phone</strong> {{ customer.phone }}</li>
           <li><strong>Email</strong> {{ customer.email }}</li>
           <li><strong>Address</strong> {{ customer.address }}</li>
-          <li><strong>Profile created</strong> {{ customer.createdAt }}</li>
+          <li><strong>Profile created</strong> {{ formatLocalDateTime(customer.createdAt) }}</li>
         </ul>
 
         <div class="vessel-list">
@@ -60,6 +60,7 @@ import { useUiStore } from '@/stores/ui'
 import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
 import type { Customer, Vessel } from '@/types/mock'
+import { formatLocalDateTime } from '@/utils/datetime'
 
 const uiStore = useUiStore()
 const customerStore = useCustomerStore()

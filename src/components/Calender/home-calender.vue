@@ -40,6 +40,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { Reminder, Ticket } from '@/types/mock'
+import { toLocalDateKey } from '@/utils/datetime'
 
 const props = defineProps<{ reminders: Reminder[]; tickets: Ticket[] }>()
 const emit = defineEmits<{
@@ -71,9 +72,7 @@ function dateKey(y: number, m: number, d: number) {
 }
 
 function toDayKey(value: string) {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value.slice(0, 10)
-  return date.toISOString().slice(0, 10)
+  return toLocalDateKey(value)
 }
 
 const selectedDate = ref<string | null>(null)
