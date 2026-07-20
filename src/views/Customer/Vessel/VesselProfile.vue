@@ -1,93 +1,201 @@
 <template>
   <main class="vessel-profile">
-    <button class="back" @click="goBack">← Back</button>
-    <div v-if="loading">Loading...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
-    <section v-else-if="vessel">
-      <div class="profile-actions">
-        <button type="button" class="primary" @click="editVessel">Edit Vessel</button>
-      </div>
-      <h2>{{ vessel.vesselName }}</h2>
-      <ul class="details">
-        <li>
-          <strong>Owner: </strong>
-          <span class="clickable owner" @click="openOwner">
+    <div class="vessel-profile-shell">
+      <button class="back" @click="goBack">← Back</button>
+
+      <div v-if="loading" class="status-card">Loading...</div>
+      <div v-else-if="error" class="status-card error">{{ error }}</div>
+
+      <section v-else-if="vessel" class="profile-card">
+        <header class="profile-header">
+          <div>
+            <p class="eyebrow">Vessel profile</p>
+            <h2>{{ vessel.vesselName }}</h2>
+          </div>
+
+          <button type="button" class="primary action-btn" @click="editVessel">Edit Vessel</button>
+        </header>
+
+        <div class="owner-strip">
+          <span class="owner-label">Owner</span>
+          <span class="clickable owner owner-link" @click="openOwner">
             {{ vessel.customerName }} ({{ vessel.customerPhone }})
           </span>
-        </li>
-        <li><strong>Make: </strong> {{ vessel.vesselMake }}</li>
-        <li><strong>Year: </strong> {{ vessel.vesselYear }}</li>
-        <li><strong>Engine: </strong> {{ vessel.engineMake }} {{ vessel.engineModel }}</li>
-        <li><strong>Hours: </strong> {{ vessel.engineHours }}</li>
-      </ul>
-
-      <section class="related">
-        <h2>service history</h2>
-        <h3>Reminders for this vessel</h3>
-        <div v-if="loadingTodos">Loading...</div>
-        <div v-else>
-          <ul v-if="remindersForVessel.length">
-            <li
-              v-for="t in remindersForVessel"
-              :key="t.id"
-              class="todo-item clickable"
-              @click="openReminder(t.id)"
-            >
-              <strong>{{ t.title }}</strong> — {{ t.dueDate }} —
-              {{ t.completed ? 'Completed' : 'Open' }}
-            </li>
-          </ul>
-          <div v-else class="small">No reminders for this vessel.</div>
         </div>
 
-        <h3 style="margin-top: 12px">Tickets for this vessel</h3>
-        <div v-if="loadingTickets">Loading...</div>
-        <div v-else>
-          <ul v-if="ticketsForVessel.length">
-            <li
-              v-for="tk in ticketsForVessel"
-              :key="tk.id"
-              class="ticket-item clickable"
-              @click="openTicket(tk.id)"
-            >
-              <strong>{{ tk.service_title }}</strong> — {{ tk.status }} — {{ tk.priority }} —
-              {{ tk.scheduledDate }}
-            </li>
-          </ul>
-          <div v-else class="small">No tickets for this vessel.</div>
-        </div>
+        <ul class="details">
+          <li><strong>Make</strong> {{ vessel.vesselMake }}</li>
+          <li><strong>Year</strong> {{ vessel.vesselYear }}</li>
+          <li><strong>Engine</strong> {{ vessel.engineMake }} {{ vessel.engineModel }}</li>
+          <li><strong>Hours</strong> {{ vessel.engineHours }}</li>
+        </ul>
+
+        <section class="related">
+          <div class="section-heading">
+            <h3>Service History</h3>
+          </div>
+
+          <div class="history-block">
+            <div class="history-header">
+              <h4>Diagnostic History</h4>
+              <span class="count">{{ diagnosticHistory.length }}</span>
+            </div>
+
+            <div v-if="diagnosticHistory.length">
+              <ul class="history-list">
+                <li v-for="entry in diagnosticHistory" :key="entry.key" class="history-item">
+                  <strong>{{ entry.title }}</strong>
+                  <span>{{ entry.date }}</span>
+                  <span>{{ entry.summary }}</span>
+                  <span>{{ entry.details }}</span>
+                </li>
+              </ul>
+            </div>
+            <div v-else class="empty-state">No diagnostics on record for this vessel.</div>
+          </div>
+
+          <div class="history-block">
+            <div class="history-header">
+              <h4>Repair History</h4>
+              <span class="count">{{ repairHistory.length }}</span>
+            </div>
+
+            <div v-if="loadingTickets">Loading...</div>
+            <div v-else>
+              <ul v-if="repairHistory.length" class="history-list">
+                <li
+                  v-for="ticket in repairHistory"
+                  :key="ticket.id"
+                  class="history-item clickable"
+                  @click="openTicket(ticket.id)"
+                >
+                  <strong>{{ ticket.service_title }}</strong>
+                  <span>{{ ticket.status }}</span>
+                  <span>{{ ticket.priority }}</span>
+                  <span>{{ ticket.scheduledDate }}</span>
+                </li>
+              </ul>
+              <div v-else class="empty-state">No repairs for this vessel.</div>
+            </div>
+          </div>
+
+          <div class="history-block">
+            <div class="history-header">
+              <h4>Maintenance History</h4>
+              <span class="count">{{ maintenanceHistory.length }}</span>
+            </div>
+
+            <div v-if="loadingTickets">Loading...</div>
+            <div v-else>
+              <ul v-if="maintenanceHistory.length" class="history-list">
+                <li
+                  v-for="ticket in maintenanceHistory"
+                  :key="ticket.id"
+                  class="history-item clickable"
+                  @click="openTicket(ticket.id)"
+                >
+                  <strong>{{ ticket.service_title }}</strong>
+                  <span>{{ ticket.status }}</span>
+                  <span>{{ ticket.priority }}</span>
+                  <span>{{ ticket.scheduledDate }}</span>
+                </li>
+              </ul>
+              <div v-else class="empty-state">No maintenance jobs for this vessel.</div>
+            </div>
+          </div>
+
+          <div class="history-block">
+            <div class="history-header">
+              <h4>Upgrades History</h4>
+              <span class="count">{{ upgradeHistory.length }}</span>
+            </div>
+
+            <div v-if="loadingTickets">Loading...</div>
+            <div v-else>
+              <ul v-if="upgradeHistory.length" class="history-list">
+                <li
+                  v-for="ticket in upgradeHistory"
+                  :key="ticket.id"
+                  class="history-item clickable"
+                  @click="openTicket(ticket.id)"
+                >
+                  <strong>{{ ticket.service_title }}</strong>
+                  <span>{{ ticket.status }}</span>
+                  <span>{{ ticket.priority }}</span>
+                  <span>{{ ticket.scheduledDate }}</span>
+                </li>
+              </ul>
+              <div v-else class="empty-state">No upgrades for this vessel.</div>
+            </div>
+          </div>
+        </section>
       </section>
-    </section>
-    <div v-else>No vessel found.</div>
+
+      <div v-else class="status-card">No vessel found.</div>
+    </div>
   </main>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUiStore } from '@/stores/ui'
+import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
-import { useReminderStore } from '@/stores/reminders'
 import { useTicketStore } from '@/stores/tickets'
-import type { Vessel, Reminder, Ticket } from '@/types/mock'
+import type { Vessel, Ticket } from '@/types/mock'
 
 const uiStore = useUiStore()
+const customerStore = useCustomerStore()
 const vesselStore = useVesselStore()
-const reminderStore = useReminderStore()
 const ticketStore = useTicketStore()
 const route = useRoute()
 const router = useRouter()
-const vessel = ref<Vessel | null>(null)
-const loading = ref(true)
-const error = ref<string | null>(null)
 
-const remindersForVessel = ref<Reminder[]>([])
+const vessel = ref<Vessel | null>(null)
 const ticketsForVessel = ref<Ticket[]>([])
-const loadingTodos = ref(false)
-const loadingTickets = ref(false)
+
+const loading = computed(() => uiStore.loading)
+const error = computed(() => uiStore.error)
+const loadingTickets = computed(() => false)
+
+const diagnosticHistory = computed(() =>
+  ticketsForVessel.value
+    .filter((ticket) => ticket.service_category === 'inspection' && ticket.diagnostics)
+    .map((ticket) => {
+      const diagnostics = ticket.diagnostics ?? {}
+      const entries = Object.entries(diagnostics).filter(
+        ([, value]) => value !== undefined && value !== null && String(value).trim() !== '',
+      )
+
+      return {
+        key: ticket.id,
+        title: ticket.service_title,
+        date: ticket.scheduledDate,
+        summary: ticket.status,
+        details:
+          entries.length > 0
+            ? entries
+                .map(([key, value]) => `${key.replace(/_/g, ' ')}: ${String(value).toUpperCase()}`)
+                .join(' · ')
+            : 'No diagnostic readings captured',
+      }
+    }),
+)
+
+const repairHistory = computed(() =>
+  ticketsForVessel.value.filter((ticket) => ticket.service_category === 'repair'),
+)
+
+const maintenanceHistory = computed(() =>
+  ticketsForVessel.value.filter((ticket) => ticket.service_category === 'maintenance'),
+)
+
+const upgradeHistory = computed(() =>
+  ticketsForVessel.value.filter((ticket) => ticket.service_category === 'upgrade'),
+)
 
 async function load() {
-  loading.value = true
   try {
     const id = String(route.query.id || '')
     if (!id) throw new Error('No vessel id provided')
@@ -95,17 +203,9 @@ async function load() {
     await uiStore.fetchAllData()
     vessel.value = vesselStore.vesselById(id)
 
-    const allReminders = reminderStore.reminders
-    const allTickets = ticketStore.tickets
-
-    remindersForVessel.value = allReminders.filter(
-      (t) => t.relatedTo?.type === 'vessel' && t.relatedTo.id === id,
-    )
-    ticketsForVessel.value = allTickets.filter((t) => t.vesselId === id)
+    ticketsForVessel.value = ticketStore.tickets.filter((ticket) => ticket.vesselId === id)
   } catch (err) {
-    error.value = err instanceof Error ? err.message : String(err)
-  } finally {
-    loading.value = false
+    uiStore.error = err instanceof Error ? err.message : String(err)
   }
 }
 
@@ -114,8 +214,26 @@ function goBack() {
 }
 
 function openOwner() {
-  const id = vessel.value?.customerId ?? (vessel.value as unknown as { owner?: string })?.owner
-  if (id) router.push({ name: 'CustomerProfile', query: { id } })
+  if (!vessel.value) return
+
+  const ownerId = vessel.value.customerId ?? (vessel.value as unknown as { owner?: string })?.owner
+  const matchedById = ownerId ? customerStore.customerById(ownerId) : null
+
+  if (matchedById) {
+    router.push({ name: 'CustomerProfile', query: { id: matchedById.id } })
+    return
+  }
+
+  const matchedCustomer =
+    customerStore.customers.find(
+      (customer) =>
+        customer.name === vessel.value?.customerName ||
+        customer.phone === vessel.value?.customerPhone,
+    ) ?? null
+
+  if (matchedCustomer) {
+    router.push({ name: 'CustomerProfile', query: { id: matchedCustomer.id } })
+  }
 }
 
 function openReminder(id: string) {
@@ -136,31 +254,206 @@ onMounted(load)
 
 <style scoped>
 .vessel-profile {
-  padding: 12px;
+  min-height: calc(100vh - 24px);
+  padding: 24px 16px 40px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
 }
+
+.vessel-profile-shell {
+  width: min(100%, 920px);
+}
+
+.profile-card,
+.status-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+  padding: 24px;
+}
+
+.status-card {
+  text-align: center;
+  color: #334155;
+}
+
 .back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   border: none;
   background: transparent;
   color: #2563eb;
   cursor: pointer;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  padding: 0;
+  font-weight: 600;
 }
+
+.profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.profile-header h2 {
+  margin: 0;
+  font-size: 2rem;
+  line-height: 1.1;
+  color: #0f172a;
+}
+
+.action-btn {
+  white-space: nowrap;
+}
+
+.owner-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #eff6ff;
+  color: #0f172a;
+  margin-bottom: 20px;
+}
+
+.owner-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+.owner-link {
+  font-weight: 600;
+}
+
 .details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
   list-style: none;
   padding: 0;
+  margin: 0;
 }
+
 .details li {
-  padding: 8px 0;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 14px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #0f172a;
 }
+
+.details strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #475569;
+}
+
+.related {
+  margin-top: 24px;
+}
+
+.section-heading h3 {
+  margin: 0 0 14px;
+  color: #0f172a;
+}
+
+.history-block + .history-block {
+  margin-top: 18px;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.history-header h4 {
+  margin: 0;
+  color: #0f172a;
+}
+
+.count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+.history-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.history-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  align-items: center;
+  padding: 14px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.history-item:hover {
+  transform: translateY(-2px);
+  border-color: #bfdbfe;
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.12);
+}
+
+.empty-state {
+  padding: 16px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  color: #475569;
+  background: #f8fafc;
+  text-align: center;
+}
+
 .owner {
   color: #2563eb;
   cursor: pointer;
 }
+
 .ticket-item {
   color: inherit;
   cursor: pointer;
 }
+
 .error {
   color: #b91c1c;
 }
