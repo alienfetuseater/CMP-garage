@@ -25,6 +25,7 @@ export interface Vessel {
   engineMake: string
   engineModel: string
   engineHours: number
+  diagnostics?: VesselDiagnostics
 }
 
 export interface ReminderRelated {
@@ -47,7 +48,7 @@ export type TicketPriority = 'low' | 'medium' | 'high'
 export type ServiceCategory = 'inspection' | 'repair' | 'maintenance' | 'upgrade'
 
 export type DiagnosticLevel = 'good' | 'monitor' | 'action' | 'N/A'
-export type TicketDiagnostics = Record<string, DiagnosticLevel>
+export type VesselDiagnostics = Record<string, DiagnosticLevel>
 
 export interface Ticket {
   id: string
@@ -61,7 +62,6 @@ export interface Ticket {
   scheduledDate: string
   notes: string
   messages?: Message[]
-  diagnostics?: TicketDiagnostics
 }
 
 export interface ReminderDisplayItem {
