@@ -13,14 +13,33 @@
             <h2>{{ vessel.vesselName }}</h2>
           </div>
 
-          <button type="button" class="primary action-btn" @click="editVessel">Edit Vessel</button>
+          <div class="header-actions">
+            <button type="button" class="primary action-btn" @click="editVessel">
+              Edit Vessel
+            </button>
+            <button type="button" class="primary action-btn secondary-btn" @click="createTicket">
+              New Ticket
+            </button>
+          </div>
         </header>
 
         <div class="owner-strip">
-          <span class="owner-label">Owner</span>
-          <span class="clickable owner owner-link" @click="openOwner">
-            {{ vessel.customerName }} ({{ vessel.customerPhone }})
-          </span>
+          <div class="owner-card clickable" @click="openOwner">
+            <div class="owner-field">
+              <span class="owner-field-label">Name:</span>
+              <span class="owner-field-value">{{ vessel.customerName }}</span>
+            </div>
+
+            <div class="owner-field">
+              <span class="owner-field-label">Phone:</span>
+              <span class="owner-field-value">{{ ownerPhone }}</span>
+            </div>
+
+            <div class="owner-field">
+              <span class="owner-field-label">Address:</span>
+              <span class="owner-field-value">{{ ownerAddress }}</span>
+            </div>
+          </div>
         </div>
 
         <ul class="details">
@@ -159,6 +178,22 @@ const loading = computed(() => uiStore.loading)
 const error = computed(() => uiStore.error)
 const loadingTickets = computed(() => false)
 
+const ownerId = computed(() => {
+  if (!vessel.value) return null
+  return vessel.value.customerId ?? (vessel.value as unknown as { owner?: string })?.owner ?? null
+})
+
+const ownerCustomer = computed(() => {
+  const id = ownerId.value
+  if (!id) return null
+
+  return customerStore.customerById(id)
+})
+
+const ownerPhone = computed(() => ownerCustomer.value?.phone ?? vessel.value?.customerPhone ?? '')
+
+const ownerAddress = computed(() => ownerCustomer.value?.address ?? 'No address available')
+
 const diagnosticHistory = computed(() =>
   ticketsForVessel.value
     .filter((ticket) => ticket.service_category === 'inspection' && ticket.diagnostics)
@@ -216,8 +251,7 @@ function goBack() {
 function openOwner() {
   if (!vessel.value) return
 
-  const ownerId = vessel.value.customerId ?? (vessel.value as unknown as { owner?: string })?.owner
-  const matchedById = ownerId ? customerStore.customerById(ownerId) : null
+  const matchedById = ownerId.value ? customerStore.customerById(ownerId.value) : null
 
   if (matchedById) {
     router.push({ name: 'CustomerProfile', query: { id: matchedById.id } })
@@ -236,10 +270,6 @@ function openOwner() {
   }
 }
 
-function openReminder(id: string) {
-  if (id) router.push({ name: 'Reminder', query: { id } })
-}
-
 function openTicket(id: string) {
   if (id) router.push({ name: 'Ticket', query: { id } })
 }
@@ -247,6 +277,20 @@ function openTicket(id: string) {
 function editVessel() {
   if (!vessel.value) return
   router.push({ name: 'RegisterVessel', query: { id: vessel.value.id } })
+}
+
+function createTicket() {
+  if (!vessel.value) return
+
+  router.push({
+    name: 'NewTicket',
+    query: {
+      customerName: vessel.value.customerName,
+      vesselName: vessel.value.vesselName,
+      vesselId: vessel.value.id,
+      customerId: ownerId.value ?? '',
+    },
+  })
 }
 
 onMounted(load)
@@ -320,6 +364,19 @@ onMounted(load)
   white-space: nowrap;
 }
 
+.header-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.secondary-btn {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
 .owner-strip {
   display: flex;
   flex-wrap: wrap;
@@ -342,6 +399,33 @@ onMounted(load)
 
 .owner-link {
   font-weight: 600;
+}
+
+.owner-card {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+}
+
+.owner-field {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  width: 100%;
+}
+
+.owner-field-label {
+  font-size: 0.95rem;
+  color: #475569;
+  font-weight: 700;
+  min-width: 72px;
+}
+
+.owner-field-value {
+  font-size: 1rem;
+  color: #0f172a;
+  font-weight: 600;
+  flex: 1;
 }
 
 .details {

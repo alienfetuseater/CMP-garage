@@ -10,12 +10,11 @@
       </header>
 
       <ul class="ticket-details clickable" @click="openTicket">
-        <li><strong>ID:</strong> {{ ticket.id }}</li>
         <li><strong>Status:</strong> {{ ticket.status }}</li>
         <li><strong>Priority:</strong> {{ ticket.priority }}</li>
         <li><strong>Scheduled Date:</strong> {{ ticket.scheduledDate }}</li>
-        <li><strong>Customer ID:</strong> {{ ticket.customerId }}</li>
-        <li><strong>Vessel ID:</strong> {{ ticket.vesselId }}</li>
+        <li><strong>Customer name:</strong> {{ ticket.customerId }}</li>
+        <li><strong>Vessel name:</strong> {{ ticket.vesselId }}</li>
         <li><strong>Notes:</strong> {{ ticket.notes }}</li>
       </ul>
     </section>
