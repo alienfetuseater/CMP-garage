@@ -49,10 +49,18 @@ export type ServiceCategory = 'inspection' | 'repair' | 'maintenance' | 'upgrade
 export type DiagnosticLevel = 'good' | 'monitor' | 'action' | 'N/A'
 export type TicketDiagnostics = Record<string, DiagnosticLevel>
 
+export interface PlanActionItem {
+  id: string
+  text: string
+  completed: boolean
+}
+
 export interface Ticket {
   id: string
   customerId: string
   vesselId: string
+  customerName?: string
+  vesselName?: string
   service_category: ServiceCategory
   service_title: string
   status: TicketStatus
@@ -60,6 +68,7 @@ export interface Ticket {
   createdAt: string
   scheduledDate: string
   notes: string
+  planOfAction?: PlanActionItem[]
   messages?: Message[]
   diagnostics?: TicketDiagnostics
 }

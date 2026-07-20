@@ -6,8 +6,8 @@
       <section class="profile-card">
         <header class="profile-header">
           <div>
-            <p class="eyebrow">Ticket creation</p>
-            <h2>New Ticket</h2>
+            <p class="eyebrow">{{ isEditMode ? 'Ticket update' : 'Ticket creation' }}</p>
+            <h2>{{ isEditMode ? 'Update Work Order' : 'Create Work Order' }}</h2>
           </div>
         </header>
 
@@ -15,22 +15,40 @@
           <div class="form-grid">
             <label>
               Customer Name
-              <input v-model="form.customerName" />
+              <input
+                v-model="form.customerName"
+                :disabled="isEditMode"
+                :class="{ immutable: isEditMode }"
+              />
             </label>
 
             <label>
               Vessel Name
-              <input v-model="form.vesselName" />
+              <input
+                v-model="form.vesselName"
+                :disabled="isEditMode"
+                :class="{ immutable: isEditMode }"
+              />
             </label>
 
             <label>
               Customer ID
-              <input v-model="form.customerId" required />
+              <input
+                v-model="form.customerId"
+                required
+                :disabled="isEditMode"
+                :class="{ immutable: isEditMode }"
+              />
             </label>
 
             <label>
               Vessel ID
-              <input v-model="form.vesselId" required />
+              <input
+                v-model="form.vesselId"
+                required
+                :disabled="isEditMode"
+                :class="{ immutable: isEditMode }"
+              />
             </label>
 
             <label>
@@ -80,8 +98,27 @@
             <textarea v-model="form.notes" rows="5" />
           </label>
 
+          <section class="plan-section">
+            <div class="section-heading">
+              <h3>Plan of Action</h3>
+              <p>Add tasks and check them off to track work progress.</p>
+            </div>
+
+            <div class="plan-list">
+              <div v-for="(item, index) in form.planOfAction" :key="item.id" class="plan-row">
+                <input v-model="item.completed" type="checkbox" class="plan-check" />
+                <input v-model="item.text" class="plan-input" placeholder="Task description" />
+                <button type="button" class="ghost" @click="removePlanItem(index)">Remove</button>
+              </div>
+            </div>
+
+            <button type="button" class="ghost" @click="addPlanItem">Add Plan Item</button>
+          </section>
+
           <div class="actions">
-            <button type="submit" class="primary" :disabled="submitting">Create Ticket</button>
+            <button type="submit" class="primary" :disabled="submitting">
+              {{ isEditMode ? 'Update Ticket' : 'Create Ticket' }}
+            </button>
             <span v-if="submitting">Saving...</span>
             <span v-if="success" class="success">Saved</span>
             <span v-if="error" class="error">{{ error }}</span>
@@ -93,11 +130,11 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { apiFetch } from '@/api'
 import { useTicketStore } from '@/stores/tickets'
-import type { Ticket } from '@/types/mock'
+import type { PlanActionItem, Ticket } from '@/types/mock'
 
 const route = useRoute()
 const router = useRouter()
@@ -106,6 +143,14 @@ const ticketStore = useTicketStore()
 const submitting = ref(false)
 const success = ref(false)
 const error = ref<string | null>(null)
+const editTicketId = computed(() => String(route.query.id || ''))
+const isEditMode = computed(() => Boolean(editTicketId.value))
+
+const makePlanItem = (text = '', completed = false): PlanActionItem => ({
+  id: globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`,
+  text,
+  completed,
+})
 
 const form = reactive({
   customerName: '',
@@ -118,6 +163,7 @@ const form = reactive({
   priority: 'medium',
   scheduledDate: '',
   notes: '',
+  planOfAction: [] as PlanActionItem[],
 })
 
 function hydrateFromQuery() {
@@ -132,6 +178,51 @@ function hydrateFromQuery() {
   if (vesselName) form.vesselName = vesselName
 }
 
+function hydrateFromTicket(ticket: Ticket) {
+  form.customerName = ticket.customerName ?? form.customerName
+  form.vesselName = ticket.vesselName ?? form.vesselName
+  form.customerId = String(ticket.customerId ?? '')
+  form.vesselId = String(ticket.vesselId ?? '')
+  form.service_category = ticket.service_category
+  form.service_title = ticket.service_title
+  form.status = ticket.status
+  form.priority = ticket.priority
+  form.scheduledDate = ticket.scheduledDate ? String(ticket.scheduledDate).slice(0, 10) : ''
+  form.notes = ticket.notes ?? ''
+  form.planOfAction = (ticket.planOfAction ?? []).map((item) =>
+    makePlanItem(item.text ?? '', Boolean(item.completed)),
+  )
+}
+
+async function loadForEdit() {
+  if (!isEditMode.value) return
+
+  const id = editTicketId.value
+  await ticketStore.fetchTickets(true)
+  let existing = ticketStore.ticketById(id)
+
+  if (!existing) {
+    const refreshed = await apiFetch<Ticket[]>('/getAllTickets')
+    const normalized = refreshed.map((record) => ({
+      ...record,
+      id: String(record.id ?? (record as Ticket & { _id?: string })._id ?? ''),
+    }))
+    existing = normalized.find((record) => record.id === id) ?? null
+    if (existing) ticketStore.addTicket(existing)
+  }
+
+  if (!existing) throw new Error('Ticket not found')
+  hydrateFromTicket(existing)
+}
+
+function addPlanItem() {
+  form.planOfAction.push(makePlanItem())
+}
+
+function removePlanItem(index: number) {
+  form.planOfAction.splice(index, 1)
+}
+
 async function submit() {
   submitting.value = true
   success.value = false
@@ -140,19 +231,35 @@ async function submit() {
   try {
     const payload = {
       ...form,
-      createdAt: new Date().toISOString(),
-      messages: [],
+      planOfAction: form.planOfAction
+        .map((item) => ({ ...item, text: item.text.trim() }))
+        .filter((item) => item.text.length > 0),
     }
 
-    const saved = await apiFetch<Ticket>('/newTicket', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
+    const saved = isEditMode.value
+      ? await apiFetch<Ticket>(`/updateTicket/${encodeURIComponent(editTicketId.value)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+      : await apiFetch<Ticket>('/newTicket', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...payload,
+            createdAt: new Date().toISOString(),
+            messages: [],
+          }),
+        })
 
     ticketStore.addTicket(saved)
     success.value = true
-    router.push({ name: 'Ticket', query: { id: saved.id } })
+    const savedId = String(saved.id ?? (saved as Ticket & { _id?: string })._id ?? '')
+    if (!savedId) {
+      throw new Error('Ticket saved, but no ticket id was returned')
+    }
+
+    router.push({ name: 'Ticket', query: { id: savedId } })
   } catch (err) {
     error.value = err instanceof Error ? err.message : String(err)
   } finally {
@@ -165,6 +272,13 @@ function goBack() {
 }
 
 onMounted(hydrateFromQuery)
+onMounted(async () => {
+  try {
+    await loadForEdit()
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : String(err)
+  }
+})
 </script>
 
 <style scoped>
@@ -252,6 +366,36 @@ onMounted(hydrateFromQuery)
   font-size: 0.95rem;
 }
 
+.plan-section {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #dbeafe;
+  border-radius: 16px;
+  background: #f8fbff;
+}
+
+.plan-list {
+  display: grid;
+  gap: 10px;
+}
+
+.plan-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.plan-check {
+  width: 18px;
+  height: 18px;
+}
+
+.plan-input {
+  min-width: 0;
+}
+
 .diagnostics-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -280,6 +424,11 @@ textarea {
   color: #0f172a;
 }
 
+.immutable {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
 textarea {
   resize: vertical;
 }
@@ -304,6 +453,16 @@ textarea {
 .primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.ghost {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .error {

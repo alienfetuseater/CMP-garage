@@ -13,7 +13,10 @@
             <h2>{{ ticket.service_title }}</h2>
           </div>
 
-          <div class="ticket-badge">{{ ticket.status }}</div>
+          <div class="header-actions">
+            <div class="ticket-badge">{{ ticket.status }}</div>
+            <button type="button" class="secondary" @click="editWork">Update Work</button>
+          </div>
         </header>
 
         <div class="owner-strip">
@@ -35,6 +38,23 @@
           <li><strong>Created</strong> {{ ticket.createdAt }}</li>
           <li><strong>Scheduled</strong> {{ ticket.scheduledDate }}</li>
         </ul>
+
+        <section class="plan-block">
+          <div class="section-heading">
+            <h3>Plan of Action</h3>
+            <p>
+              {{ completedPlanCount }} of {{ totalPlanCount }} items complete ({{ planProgress }}%)
+            </p>
+          </div>
+
+          <div v-if="totalPlanCount > 0" class="plan-items">
+            <label v-for="item in planItems" :key="item.id" class="plan-item">
+              <input type="checkbox" :checked="item.completed" disabled />
+              <span :class="{ done: item.completed }">{{ item.text }}</span>
+            </label>
+          </div>
+          <div v-else class="empty-state">No plan items have been added to this ticket yet.</div>
+        </section>
 
         <section class="diagnostics-section">
           <div class="section-heading diagnostics-heading">
@@ -111,14 +131,14 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted } from 'vue'
+import { computed, reactive, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUiStore } from '@/stores/ui'
 import { useTicketStore } from '@/stores/tickets'
 import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
 import { apiFetch } from '@/api'
-import type { DiagnosticLevel, Ticket } from '@/types/mock'
+import type { DiagnosticLevel, PlanActionItem, Ticket } from '@/types/mock'
 
 const uiStore = useUiStore()
 const ticketStore = useTicketStore()
@@ -214,14 +234,37 @@ const diagnostics = reactive<Record<(typeof diagnosticFields)[number], Diagnosti
   ),
 )
 
+const planItems = computed<PlanActionItem[]>(() => ticket.value?.planOfAction ?? [])
+const totalPlanCount = computed(() => planItems.value.length)
+const completedPlanCount = computed(() => planItems.value.filter((item) => item.completed).length)
+const planProgress = computed(() => {
+  if (!totalPlanCount.value) return 0
+  return Math.round((completedPlanCount.value / totalPlanCount.value) * 100)
+})
+
 async function load() {
   loading.value = true
+  error.value = null
   try {
     const id = String(route.query.id || '')
     if (!id) throw new Error('No ticket id provided')
 
-    await uiStore.fetchAllData()
+    await uiStore.fetchAllData(true)
     ticket.value = ticketStore.ticketById(id)
+
+    if (!ticket.value) {
+      const refreshedTickets = await apiFetch<Ticket[]>('/getAllTickets')
+      const normalizedTickets = refreshedTickets.map((record) => ({
+        ...record,
+        id: String(record.id ?? (record as Ticket & { _id?: string })._id ?? ''),
+      }))
+
+      const matchedTicket = normalizedTickets.find((record) => record.id === id) ?? null
+      if (matchedTicket) {
+        ticketStore.addTicket(matchedTicket)
+        ticket.value = matchedTicket
+      }
+    }
 
     if (!ticket.value) {
       throw new Error('Ticket not found')
@@ -301,6 +344,13 @@ function openVessel() {
   if (vid) router.push({ name: 'VesselProfile', query: { id: vid } })
 }
 
+function editWork() {
+  const tid = ticket.value?.id
+  if (tid) {
+    router.push({ name: 'NewTicket', query: { id: tid } })
+  }
+}
+
 onMounted(load)
 </script>
 
@@ -351,6 +401,12 @@ onMounted(load)
   align-items: flex-start;
   gap: 16px;
   margin-bottom: 18px;
+}
+
+.header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .eyebrow {
@@ -436,6 +492,30 @@ onMounted(load)
   margin-top: 24px;
 }
 
+.plan-block {
+  margin-top: 24px;
+  display: grid;
+  gap: 12px;
+}
+
+.plan-items {
+  display: grid;
+  gap: 8px;
+}
+
+.plan-item {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  color: #0f172a;
+  font-weight: 500;
+}
+
+.plan-item .done {
+  text-decoration: line-through;
+  color: #64748b;
+}
+
 .diagnostics-section {
   margin-top: 24px;
   display: grid;
@@ -517,6 +597,16 @@ onMounted(load)
 .diagnostic-group-header h4 {
   margin: 0;
   color: #0f172a;
+}
+
+.secondary {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .diagnostics-grid {
