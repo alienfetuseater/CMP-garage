@@ -54,6 +54,11 @@ const router = createRouter({
       name: 'Reminder',
       component: () => import('../views/Reminder/TheReminder.vue'),
     },
+    {
+      path: '/NewReminder',
+      name: 'NewReminder',
+      component: () => import('../views/Reminder/NewReminder.vue'),
+    },
   ],
 })
 

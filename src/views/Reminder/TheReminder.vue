@@ -13,8 +13,11 @@
             <h2>{{ reminder.title }}</h2>
           </div>
 
-          <div class="reminder-badge">
-            {{ reminder.completed ? 'Completed' : 'Open' }}
+          <div class="header-actions">
+            <div class="reminder-badge">
+              {{ reminder.completed ? 'Completed' : 'Open' }}
+            </div>
+            <button type="button" class="secondary" @click="startUpdate">Update Reminder</button>
           </div>
         </header>
 
@@ -52,6 +55,53 @@
           <li><strong>Completed</strong> {{ reminder.completed ? 'Yes' : 'No' }}</li>
           <li><strong>Related Type</strong> {{ reminder.relatedTo?.type }}</li>
         </ul>
+
+        <section v-if="showUpdateForm" class="update-block">
+          <div class="section-heading">
+            <h3>Update Reminder</h3>
+            <p>Set the latest status and add an update note.</p>
+          </div>
+
+          <div class="update-grid">
+            <label>
+              Status
+              <select v-model="updateStatus">
+                <option value="open">Open</option>
+                <option value="completed">Completed</option>
+              </select>
+            </label>
+
+            <label class="full-width">
+              Update Note
+              <textarea
+                v-model="updateNote"
+                rows="4"
+                placeholder="Add a note about this reminder update"
+              />
+            </label>
+          </div>
+
+          <div class="actions">
+            <button type="button" class="primary" :disabled="savingUpdate" @click="saveUpdate">
+              Save Update
+            </button>
+            <button type="button" class="ghost" :disabled="savingUpdate" @click="cancelUpdate">
+              Cancel
+            </button>
+            <span v-if="savingUpdate">Saving...</span>
+            <span v-if="updateSuccess" class="success">Updated</span>
+            <span v-if="updateError" class="error">{{ updateError }}</span>
+          </div>
+        </section>
+
+        <section class="notes-block">
+          <div class="section-heading">
+            <h3>Notes</h3>
+          </div>
+
+          <div v-if="reminder.notes" class="notes-card">{{ reminder.notes }}</div>
+          <div v-else class="empty-state">No notes provided for this reminder.</div>
+        </section>
       </section>
 
       <div v-else class="status-card">No reminder found.</div>
@@ -68,6 +118,7 @@ import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
 import type { Reminder } from '@/types/mock'
 import { formatLocalDateTime } from '@/utils/datetime'
+import { apiFetch } from '@/api'
 
 const uiStore = useUiStore()
 const reminderStore = useReminderStore()
@@ -82,6 +133,12 @@ const vesselName = ref<string | null>(null)
 const vesselId = ref<string | null>(null)
 const ownerId = ref<string | null>(null)
 const ownerName = ref<string | null>(null)
+const showUpdateForm = ref(false)
+const updateStatus = ref<'open' | 'completed'>('open')
+const updateNote = ref('')
+const savingUpdate = ref(false)
+const updateSuccess = ref(false)
+const updateError = ref<string | null>(null)
 
 async function load() {
   loading.value = true
@@ -128,6 +185,82 @@ async function load() {
 
 function goBack() {
   router.back()
+}
+
+function startUpdate() {
+  if (!reminder.value) return
+  showUpdateForm.value = true
+  updateStatus.value = reminder.value.completed ? 'completed' : 'open'
+  updateNote.value = ''
+  updateSuccess.value = false
+  updateError.value = null
+}
+
+function cancelUpdate() {
+  showUpdateForm.value = false
+  updateNote.value = ''
+  updateError.value = null
+}
+
+function buildUpdatedNotes(currentNotes: string, statusChanged: boolean, noteText: string) {
+  const now = formatLocalDateTime(new Date())
+  const entries: string[] = []
+
+  if (statusChanged) {
+    entries.push(`[${now}] Status changed to ${updateStatus.value === 'completed' ? 'Completed' : 'Open'}`)
+  }
+
+  if (noteText) {
+    entries.push(`[${now}] ${noteText}`)
+  }
+
+  if (entries.length === 0) return currentNotes
+  return currentNotes ? `${currentNotes}\n\n${entries.join('\n')}` : entries.join('\n')
+}
+
+async function saveUpdate() {
+  if (!reminder.value) return
+
+  savingUpdate.value = true
+  updateSuccess.value = false
+  updateError.value = null
+
+  try {
+    const nextCompleted = updateStatus.value === 'completed'
+    const statusChanged = nextCompleted !== reminder.value.completed
+    const trimmedNote = updateNote.value.trim()
+
+    if (!statusChanged && !trimmedNote) {
+      throw new Error('No changes to save. Update status or add an update note.')
+    }
+
+    const payload = {
+      completed: nextCompleted,
+      notes: buildUpdatedNotes(reminder.value.notes ?? '', statusChanged, trimmedNote),
+    }
+
+    const rid = String(reminder.value.id || '')
+    const saved = await apiFetch<Reminder>(`/updateReminder/${encodeURIComponent(rid)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+
+    reminder.value = {
+      ...saved,
+      id: String((saved as Reminder & { _id?: string }).id ?? (saved as Reminder & { _id?: string })._id ?? reminder.value.id),
+      notes: String(saved.notes ?? ''),
+    }
+    reminderStore.addReminder(reminder.value)
+
+    updateSuccess.value = true
+    showUpdateForm.value = false
+    updateNote.value = ''
+  } catch (err) {
+    updateError.value = err instanceof Error ? err.message : String(err)
+  } finally {
+    savingUpdate.value = false
+  }
 }
 
 function openVessel() {
@@ -190,6 +323,12 @@ onMounted(load)
   align-items: flex-start;
   gap: 16px;
   margin-bottom: 18px;
+}
+
+.header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .eyebrow {
@@ -275,8 +414,118 @@ onMounted(load)
   color: #475569;
 }
 
+.update-block {
+  margin-top: 24px;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #dbeafe;
+  border-radius: 16px;
+  background: #f8fbff;
+}
+
+.update-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #334155;
+  font-weight: 600;
+}
+
+select,
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font: inherit;
+  background: #ffffff;
+  color: #0f172a;
+}
+
+textarea {
+  resize: vertical;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.primary {
+  border: 1px solid #1d4ed8;
+  background: #2563eb;
+  color: #ffffff;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primary:disabled,
+.ghost:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ghost {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.notes-block {
+  margin-top: 24px;
+}
+
+.notes-card {
+  margin-top: 8px;
+  padding: 14px 16px;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: #f8fbff;
+  color: #0f172a;
+  white-space: pre-wrap;
+}
+
+.empty-state {
+  margin-top: 8px;
+  color: #64748b;
+}
+
 .error {
   color: #b91c1c;
+}
+
+.success {
+  color: #059669;
+}
+
+.secondary {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .link,
@@ -289,5 +538,11 @@ onMounted(load)
 .owner:hover,
 .back:hover {
   text-decoration: underline;
+}
+
+@media (max-width: 720px) {
+  .update-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

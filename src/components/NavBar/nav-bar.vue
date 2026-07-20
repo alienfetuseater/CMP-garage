@@ -4,6 +4,7 @@
       <ul>
         <li><RouterLink to="/">CMPHome</RouterLink></li>
         <li><RouterLink to="/NewTicket">New Ticket</RouterLink></li>
+        <li><RouterLink to="/NewReminder">New Reminder</RouterLink></li>
         <li><RouterLink to="/CustomerRegistration">Customer Registration</RouterLink></li>
         <li><RouterLink to="/CustomerDirectory">Customer Directory</RouterLink></li>
       </ul>

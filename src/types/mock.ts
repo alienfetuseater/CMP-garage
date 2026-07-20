@@ -37,6 +37,7 @@ export interface Reminder {
   title: string
   dueDate: string
   completed: boolean
+  notes: string
   relatedTo: ReminderRelated
 }
 
@@ -79,6 +80,7 @@ export interface ReminderDisplayItem {
   date: string
   completed: boolean
   status: string
+  notes?: string
   type: 'reminder' | 'ticket'
 }
 

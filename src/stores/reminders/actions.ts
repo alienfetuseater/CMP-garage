@@ -19,6 +19,7 @@ const normalizeReminder = (record: ReminderApiRecord): Reminder => {
   return {
     ...record,
     id: normalizedId,
+    notes: String(record.notes ?? ''),
     relatedTo: {
       type: record.relatedTo?.type ?? 'customer',
       id: relatedId,
@@ -35,9 +36,10 @@ export const fetchReminders = async (state: RemindersState, force = false) => {
 }
 
 export const addReminder = (state: RemindersState, reminder: Reminder) => {
-  const index = state.reminders.findIndex((t) => t.id === reminder.id)
-  if (index >= 0) state.reminders[index] = reminder
-  else state.reminders.push(reminder)
+  const normalized = normalizeReminder(reminder)
+  const index = state.reminders.findIndex((t) => t.id === normalized.id)
+  if (index >= 0) state.reminders[index] = normalized
+  else state.reminders.push(normalized)
 }
 
 export const reminderById = (state: RemindersState, id: string) => {

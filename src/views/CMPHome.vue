@@ -107,6 +107,7 @@ const reminderDisplayItems = computed<ReminderDisplayItem[]>(() => {
     date: formatLocalDateTime(reminder.dueDate),
     completed: reminder.completed,
     status: reminder.completed ? 'Completed' : 'Open',
+    notes: reminder.notes,
     type: 'reminder' as const,
   }))
 })
