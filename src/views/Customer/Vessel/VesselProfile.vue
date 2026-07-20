@@ -23,21 +23,21 @@
 
       <section class="related">
         <h2>service history</h2>
-        <h3>Todos for this vessel</h3>
+        <h3>Reminders for this vessel</h3>
         <div v-if="loadingTodos">Loading...</div>
         <div v-else>
-          <ul v-if="todosForVessel.length">
+          <ul v-if="remindersForVessel.length">
             <li
-              v-for="t in todosForVessel"
+              v-for="t in remindersForVessel"
               :key="t.id"
               class="todo-item clickable"
-              @click="openTodo(t.id)"
+              @click="openReminder(t.id)"
             >
               <strong>{{ t.title }}</strong> — {{ t.dueDate }} —
               {{ t.completed ? 'Completed' : 'Open' }}
             </li>
           </ul>
-          <div v-else class="small">No todos for this vessel.</div>
+          <div v-else class="small">No reminders for this vessel.</div>
         </div>
 
         <h3 style="margin-top: 12px">Tickets for this vessel</h3>
@@ -67,13 +67,13 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUiStore } from '@/stores/ui'
 import { useVesselStore } from '@/stores/vessels'
-import { useTodoStore } from '@/stores/reminders'
+import { useReminderStore } from '@/stores/reminders'
 import { useTicketStore } from '@/stores/tickets'
-import type { Vessel, Todo, Ticket } from '@/types/mock'
+import type { Vessel, Reminder, Ticket } from '@/types/mock'
 
 const uiStore = useUiStore()
 const vesselStore = useVesselStore()
-const todoStore = useTodoStore()
+const reminderStore = useReminderStore()
 const ticketStore = useTicketStore()
 const route = useRoute()
 const router = useRouter()
@@ -81,7 +81,7 @@ const vessel = ref<Vessel | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
 
-const todosForVessel = ref<Todo[]>([])
+const remindersForVessel = ref<Reminder[]>([])
 const ticketsForVessel = ref<Ticket[]>([])
 const loadingTodos = ref(false)
 const loadingTickets = ref(false)
@@ -95,10 +95,10 @@ async function load() {
     await uiStore.fetchAllData()
     vessel.value = vesselStore.vesselById(id)
 
-    const allTodos = todoStore.todos
+    const allReminders = reminderStore.reminders
     const allTickets = ticketStore.tickets
 
-    todosForVessel.value = allTodos.filter(
+    remindersForVessel.value = allReminders.filter(
       (t) => t.relatedTo?.type === 'vessel' && t.relatedTo.id === id,
     )
     ticketsForVessel.value = allTickets.filter((t) => t.vesselId === id)
@@ -118,8 +118,8 @@ function openOwner() {
   if (id) router.push({ name: 'CustomerProfile', query: { id } })
 }
 
-function openTodo(id: string) {
-  if (id) router.push({ name: 'ToDo', query: { id } })
+function openReminder(id: string) {
+  if (id) router.push({ name: 'Reminder', query: { id } })
 }
 
 function openTicket(id: string) {

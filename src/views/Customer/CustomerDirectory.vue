@@ -35,8 +35,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useUiStore } from '@/stores/ui'
 import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
@@ -45,20 +45,27 @@ import type { Customer, Vessel } from '@/types/mock'
 const uiStore = useUiStore()
 const customerStore = useCustomerStore()
 const vesselStore = useVesselStore()
+const route = useRoute()
 const customers = customerStore.customers
 const vesselsArr = computed(() => vesselStore.vessels)
-const loading = uiStore.loading
-const error = uiStore.error
+const loading = computed(() => uiStore.loading)
+const error = computed(() => uiStore.error)
 
 async function load() {
   try {
-    await Promise.all([customerStore.fetchCustomers(), vesselStore.fetchVessels()])
+    await uiStore.fetchAllData(true)
   } catch (err) {
     console.error(err)
   }
 }
 
-onMounted(load)
+watch(
+  () => route.fullPath,
+  () => {
+    load()
+  },
+  { immediate: true },
+)
 
 const router = useRouter()
 
