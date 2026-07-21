@@ -99,7 +99,11 @@
             <h3>Notes</h3>
           </div>
 
-          <div v-if="reminder.notes" class="notes-card">{{ reminder.notes }}</div>
+          <div v-if="noteEntries.length" class="notes-stack">
+            <div v-for="(entry, index) in noteEntries" :key="index" class="notes-card">
+              {{ entry }}
+            </div>
+          </div>
           <div v-else class="empty-state">No notes provided for this reminder.</div>
         </section>
       </section>
@@ -110,7 +114,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUiStore } from '@/stores/ui'
 import { useReminderStore } from '@/stores/reminders'
@@ -119,6 +123,7 @@ import { useVesselStore } from '@/stores/vessels'
 import type { Reminder } from '@/types/mock'
 import { formatLocalDateTime } from '@/utils/datetime'
 import { apiFetch } from '@/api'
+import { splitNoteHistory } from '@/utils/notes'
 
 const uiStore = useUiStore()
 const reminderStore = useReminderStore()
@@ -139,6 +144,7 @@ const updateNote = ref('')
 const savingUpdate = ref(false)
 const updateSuccess = ref(false)
 const updateError = ref<string | null>(null)
+const noteEntries = computed(() => splitNoteHistory(reminder.value?.notes))
 
 async function load() {
   loading.value = true
@@ -502,13 +508,18 @@ textarea {
 }
 
 .notes-card {
-  margin-top: 8px;
   padding: 14px 16px;
   border: 1px solid #dbeafe;
   border-radius: 12px;
   background: #f8fbff;
   color: #0f172a;
   white-space: pre-wrap;
+}
+
+.notes-stack {
+  margin-top: 8px;
+  display: grid;
+  gap: 10px;
 }
 
 .empty-state {

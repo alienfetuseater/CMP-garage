@@ -56,6 +56,12 @@ export interface PlanActionItem {
   completed: boolean
 }
 
+export interface RequiredPartItem {
+  id: string
+  text: string
+  completed: boolean
+}
+
 export interface Ticket {
   id: string
   customerId: string
@@ -69,7 +75,10 @@ export interface Ticket {
   createdAt: string
   scheduledDate: string
   notes: string
+  summaryOfWorkPerformed?: string
+  summaryOfFurtherRecommendations?: string
   planOfAction?: PlanActionItem[]
+  requiredParts?: RequiredPartItem[]
   messages?: Message[]
   diagnostics?: TicketDiagnostics
 }

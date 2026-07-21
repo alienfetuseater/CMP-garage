@@ -11,7 +11,7 @@
           </div>
         </header>
 
-        <form class="ticket-form" @submit.prevent="submit">
+        <form class="ticket-form" @submit.prevent="submit()">
           <div class="form-grid">
             <label>
               Customer Name
@@ -93,10 +93,37 @@
             <input v-model="form.service_title" required />
           </label>
 
-          <label>
+          <label v-if="!isEditMode">
             Notes
             <textarea v-model="form.notes" rows="5" />
           </label>
+
+          <section v-else class="plan-section">
+            <div class="section-heading">
+              <h3>Notes History</h3>
+              <p>Previous notes are read-only. Add a fresh update note below.</p>
+            </div>
+
+            <div v-if="existingNoteEntries.length" class="notes-stack">
+              <div
+                v-for="(entry, index) in existingNoteEntries"
+                :key="index"
+                class="immutable-notes"
+              >
+                {{ entry }}
+              </div>
+            </div>
+            <div v-else class="empty-state">No previous notes yet.</div>
+
+            <label>
+              New Update Note
+              <textarea
+                v-model="newUpdateNote"
+                rows="4"
+                placeholder="Add a fresh update note for this work order"
+              />
+            </label>
+          </section>
 
           <section class="plan-section">
             <div class="section-heading">
@@ -115,9 +142,74 @@
             <button type="button" class="ghost" @click="addPlanItem">Add Plan Item</button>
           </section>
 
+          <section class="plan-section">
+            <div class="section-heading">
+              <h3>Required Parts</h3>
+              <p>Add required parts and check them off as they are acquired or installed.</p>
+            </div>
+
+            <div class="plan-list">
+              <div v-for="(item, index) in form.requiredParts" :key="item.id" class="plan-row">
+                <input v-model="item.completed" type="checkbox" class="plan-check" />
+                <input v-model="item.text" class="plan-input" placeholder="Part name" />
+                <button type="button" class="ghost" @click="removeRequiredPartItem(index)">
+                  Remove
+                </button>
+              </div>
+            </div>
+
+            <button type="button" class="ghost" @click="addRequiredPartItem">
+              Add Required Part
+            </button>
+          </section>
+
+          <section v-if="isEditMode && showCloseOutSections" class="plan-section">
+            <div class="section-heading">
+              <h3>Summary of Work Performed</h3>
+              <p>Describe the work completed before final close-out.</p>
+            </div>
+
+            <textarea
+              v-model="form.summaryOfWorkPerformed"
+              rows="5"
+              placeholder="Enter summary of work performed"
+            />
+          </section>
+
+          <section v-if="isEditMode && showCloseOutSections" class="plan-section">
+            <div class="section-heading">
+              <h3>Summary of Further Recommendations</h3>
+              <p>Document any recommendations for future service.</p>
+            </div>
+
+            <textarea
+              v-model="form.summaryOfFurtherRecommendations"
+              rows="5"
+              placeholder="Enter summary of further recommendations"
+            />
+          </section>
+
           <div class="actions">
             <button type="submit" class="primary" :disabled="submitting">
               {{ isEditMode ? 'Update Ticket' : 'Create Ticket' }}
+            </button>
+            <button
+              v-if="isEditMode"
+              type="button"
+              class="ghost"
+              :disabled="submitting"
+              @click="startCloseOut"
+            >
+              Close Out Ticket
+            </button>
+            <button
+              v-if="isEditMode && showCloseOutSections"
+              type="button"
+              class="danger"
+              :disabled="submitting || !canFinalizeCloseOut"
+              @click="finalizeCloseOut"
+            >
+              Close Ticket - Final
             </button>
             <span v-if="submitting">Saving...</span>
             <span v-if="success" class="success">Saved</span>
@@ -137,9 +229,10 @@ import { useTicketStore } from '@/stores/tickets'
 import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
 import { useUiStore } from '@/stores/ui'
-import type { PlanActionItem, Ticket } from '@/types/mock'
-import { toLocalDateKey } from '@/utils/datetime'
+import type { PlanActionItem, RequiredPartItem, Ticket } from '@/types/mock'
+import { formatLocalDateTime, toLocalDateKey } from '@/utils/datetime'
 import { resolveTicketCustomerName, resolveTicketVesselName } from '@/utils/ticketDisplay'
+import { splitNoteHistory } from '@/utils/notes'
 
 const route = useRoute()
 const router = useRouter()
@@ -153,8 +246,18 @@ const success = ref(false)
 const error = ref<string | null>(null)
 const editTicketId = computed(() => String(route.query.id || ''))
 const isEditMode = computed(() => Boolean(editTicketId.value))
+const existingNotes = ref('')
+const newUpdateNote = ref('')
+const existingNoteEntries = computed(() => splitNoteHistory(existingNotes.value))
+const showCloseOutSections = ref(false)
 
 const makePlanItem = (text = '', completed = false): PlanActionItem => ({
+  id: globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`,
+  text,
+  completed,
+})
+
+const makeRequiredPartItem = (text = '', completed = false): RequiredPartItem => ({
   id: globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`,
   text,
   completed,
@@ -171,7 +274,18 @@ const form = reactive({
   priority: 'medium',
   scheduledDate: '',
   notes: '',
+  summaryOfWorkPerformed: '',
+  summaryOfFurtherRecommendations: '',
   planOfAction: [] as PlanActionItem[],
+  requiredParts: [] as RequiredPartItem[],
+})
+
+const canFinalizeCloseOut = computed(() => {
+  if (!showCloseOutSections.value) return false
+  return (
+    form.summaryOfWorkPerformed.trim().length > 0 &&
+    form.summaryOfFurtherRecommendations.trim().length > 0
+  )
 })
 
 function hydrateFromQuery() {
@@ -196,9 +310,16 @@ function hydrateFromTicket(ticket: Ticket) {
   form.status = ticket.status
   form.priority = ticket.priority
   form.scheduledDate = ticket.scheduledDate ? toLocalDateKey(ticket.scheduledDate) : ''
-  form.notes = ticket.notes ?? ''
+  existingNotes.value = ticket.notes ?? ''
+  newUpdateNote.value = ''
+  form.notes = ''
+  form.summaryOfWorkPerformed = ticket.summaryOfWorkPerformed ?? ''
+  form.summaryOfFurtherRecommendations = ticket.summaryOfFurtherRecommendations ?? ''
   form.planOfAction = (ticket.planOfAction ?? []).map((item) =>
     makePlanItem(item.text ?? '', Boolean(item.completed)),
+  )
+  form.requiredParts = (ticket.requiredParts ?? []).map((item) =>
+    makeRequiredPartItem(item.text ?? '', Boolean(item.completed)),
   )
 }
 
@@ -232,17 +353,64 @@ function removePlanItem(index: number) {
   form.planOfAction.splice(index, 1)
 }
 
-async function submit() {
+function addRequiredPartItem() {
+  form.requiredParts.push(makeRequiredPartItem())
+}
+
+function removeRequiredPartItem(index: number) {
+  form.requiredParts.splice(index, 1)
+}
+
+function appendUpdateNote(previousNotes: string, noteText: string): string {
+  const trimmed = noteText.trim()
+  if (!trimmed) return previousNotes
+
+  const entry = `[${formatLocalDateTime(new Date())}] ${trimmed}`
+  return previousNotes ? `${previousNotes}\n\n${entry}` : entry
+}
+
+function buildInitialNote(noteText: string): string {
+  const trimmed = noteText.trim()
+  if (!trimmed) return ''
+  return `[${formatLocalDateTime(new Date())}] ${trimmed}`
+}
+
+function startCloseOut() {
+  showCloseOutSections.value = true
+  error.value = null
+}
+
+async function finalizeCloseOut() {
+  if (!canFinalizeCloseOut.value) {
+    error.value = 'Please complete both close-out summary sections before finalizing.'
+    return
+  }
+
+  await submit({ forceClosed: true })
+}
+
+async function submit(options?: { forceClosed?: boolean }) {
   submitting.value = true
   success.value = false
   error.value = null
 
   try {
+    const forceClosed = Boolean(options?.forceClosed)
+
     const payload = {
       ...form,
+      status: forceClosed ? 'closed' : form.status,
       planOfAction: form.planOfAction
         .map((item) => ({ ...item, text: item.text.trim() }))
         .filter((item) => item.text.length > 0),
+      requiredParts: form.requiredParts
+        .map((item) => ({ ...item, text: item.text.trim() }))
+        .filter((item) => item.text.length > 0),
+      summaryOfWorkPerformed: form.summaryOfWorkPerformed.trim(),
+      summaryOfFurtherRecommendations: form.summaryOfFurtherRecommendations.trim(),
+      notes: isEditMode.value
+        ? appendUpdateNote(existingNotes.value, newUpdateNote.value)
+        : buildInitialNote(form.notes),
     }
 
     const saved = isEditMode.value
@@ -355,26 +523,6 @@ onMounted(async () => {
   gap: 14px;
 }
 
-.diagnostics-section {
-  display: grid;
-  gap: 14px;
-  padding: 16px;
-  border: 1px solid #dbeafe;
-  border-radius: 16px;
-  background: #f8fbff;
-}
-
-.section-heading h3 {
-  margin: 0;
-  color: #0f172a;
-}
-
-.section-heading p {
-  margin: 4px 0 0;
-  color: #64748b;
-  font-size: 0.95rem;
-}
-
 .plan-section {
   display: grid;
   gap: 12px;
@@ -405,10 +553,15 @@ onMounted(async () => {
   min-width: 0;
 }
 
-.diagnostics-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+.section-heading h3 {
+  margin: 0;
+  color: #0f172a;
+}
+
+.section-heading p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 0.95rem;
 }
 
 label {
@@ -440,6 +593,24 @@ textarea {
 
 textarea {
   resize: vertical;
+}
+
+.immutable-notes {
+  padding: 12px 14px;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #334155;
+  white-space: pre-wrap;
+}
+
+.notes-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.empty-state {
+  color: #64748b;
 }
 
 .actions {
@@ -474,6 +645,22 @@ textarea {
   cursor: pointer;
 }
 
+.danger {
+  border: 1px solid #991b1b;
+  background: #dc2626;
+  color: #ffffff;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.danger:disabled,
+.ghost:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .error {
   color: #b91c1c;
 }
@@ -484,10 +671,6 @@ textarea {
 
 @media (max-width: 720px) {
   .form-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .diagnostics-grid {
     grid-template-columns: 1fr;
   }
 }

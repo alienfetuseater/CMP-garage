@@ -56,6 +56,27 @@
           <div v-else class="empty-state">No plan items have been added to this ticket yet.</div>
         </section>
 
+        <section class="plan-block">
+          <div class="section-heading">
+            <h3>Required Parts</h3>
+            <p>
+              {{ completedRequiredParts }} of {{ totalRequiredParts }} parts complete ({{
+                requiredPartsProgress
+              }}%)
+            </p>
+          </div>
+
+          <div v-if="totalRequiredParts > 0" class="plan-items">
+            <label v-for="part in requiredParts" :key="part.id" class="plan-item">
+              <input type="checkbox" :checked="part.completed" disabled />
+              <span :class="{ done: part.completed }">{{ part.text }}</span>
+            </label>
+          </div>
+          <div v-else class="empty-state">
+            No required parts have been added to this ticket yet.
+          </div>
+        </section>
+
         <section class="diagnostics-section">
           <div class="section-heading diagnostics-heading">
             <div>
@@ -120,7 +141,11 @@
             <h3>Notes</h3>
           </div>
 
-          <div v-if="ticket.notes" class="notes-card">{{ ticket.notes }}</div>
+          <div v-if="noteEntries.length" class="notes-stack">
+            <div v-for="(entry, index) in noteEntries" :key="index" class="notes-card">
+              {{ entry }}
+            </div>
+          </div>
           <div v-else class="empty-state">No notes provided for this ticket.</div>
         </section>
       </section>
@@ -138,8 +163,9 @@ import { useTicketStore } from '@/stores/tickets'
 import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
 import { apiFetch } from '@/api'
-import type { DiagnosticLevel, PlanActionItem, Ticket } from '@/types/mock'
+import type { DiagnosticLevel, PlanActionItem, RequiredPartItem, Ticket } from '@/types/mock'
 import { formatLocalDateTime } from '@/utils/datetime'
+import { splitNoteHistory } from '@/utils/notes'
 
 const uiStore = useUiStore()
 const ticketStore = useTicketStore()
@@ -242,6 +268,18 @@ const planProgress = computed(() => {
   if (!totalPlanCount.value) return 0
   return Math.round((completedPlanCount.value / totalPlanCount.value) * 100)
 })
+
+const requiredParts = computed<RequiredPartItem[]>(() => ticket.value?.requiredParts ?? [])
+const totalRequiredParts = computed(() => requiredParts.value.length)
+const completedRequiredParts = computed(
+  () => requiredParts.value.filter((item) => item.completed).length,
+)
+const requiredPartsProgress = computed(() => {
+  if (!totalRequiredParts.value) return 0
+  return Math.round((completedRequiredParts.value / totalRequiredParts.value) * 100)
+})
+
+const noteEntries = computed(() => splitNoteHistory(ticket.value?.notes))
 
 async function load() {
   loading.value = true
@@ -491,6 +529,11 @@ onMounted(load)
 
 .notes-block {
   margin-top: 24px;
+}
+
+.notes-stack {
+  display: grid;
+  gap: 10px;
 }
 
 .plan-block {

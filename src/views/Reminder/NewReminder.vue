@@ -77,6 +77,7 @@ import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
 import { useTicketStore } from '@/stores/tickets'
 import type { Reminder } from '@/types/mock'
+import { formatLocalDateTime } from '@/utils/datetime'
 
 type RelatedType = Reminder['relatedTo']['type']
 type ReminderApiRecord = Reminder & { _id?: string }
@@ -149,11 +150,12 @@ async function submit() {
   error.value = null
 
   try {
+    const trimmedNote = form.notes.trim()
     const payload = {
       title: form.title.trim(),
       dueDate: new Date(form.dueDate).toISOString(),
       completed: form.completed,
-      notes: form.notes.trim(),
+      notes: trimmedNote ? `[${formatLocalDateTime(new Date())}] ${trimmedNote}` : '',
       relatedTo: {
         type: form.relatedType,
         id: form.relatedId,
