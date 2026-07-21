@@ -75,6 +75,8 @@ export interface Ticket {
   createdAt: string
   scheduledDate: string
   notes: string
+  initialAssessment?: string
+  recommendedService?: string
   summaryOfWorkPerformed?: string
   summaryOfFurtherRecommendations?: string
   planOfAction?: PlanActionItem[]

@@ -16,6 +16,17 @@
           <div class="header-actions">
             <div class="ticket-badge">{{ ticket.status }}</div>
             <button type="button" class="secondary" @click="editWork">Update Work</button>
+            <button
+              type="button"
+              class="secondary"
+              @click="emailUpdatedProgress"
+              :disabled="emailingProgress"
+            >
+              Email Updated Progress
+            </button>
+            <span v-if="emailingProgress">Emailing...</span>
+            <span v-if="emailProgressSuccess" class="success">{{ emailProgressSuccess }}</span>
+            <span v-if="emailProgressError" class="error">{{ emailProgressError }}</span>
           </div>
         </header>
 
@@ -77,6 +88,37 @@
           </div>
         </section>
 
+        <section class="notes-block">
+          <div class="section-heading">
+            <h3>Initial Assessment</h3>
+          </div>
+
+          <p v-if="initialAssessmentText" class="notes-text">{{ initialAssessmentText }}</p>
+          <div v-else class="empty-state">No initial assessment provided for this ticket.</div>
+        </section>
+
+        <section class="notes-block">
+          <div class="section-heading">
+            <h3>Recommended Service</h3>
+          </div>
+
+          <p v-if="recommendedServiceText" class="notes-text">{{ recommendedServiceText }}</p>
+          <div v-else class="empty-state">No recommended service provided for this ticket.</div>
+        </section>
+
+        <section class="notes-block">
+          <div class="section-heading">
+            <h3>Notes</h3>
+          </div>
+
+          <div v-if="noteEntries.length" class="notes-stack">
+            <div v-for="(entry, index) in noteEntries" :key="index" class="notes-card">
+              {{ entry }}
+            </div>
+          </div>
+          <div v-else class="empty-state">No notes provided for this ticket.</div>
+        </section>
+
         <section class="diagnostics-section">
           <div class="section-heading diagnostics-heading">
             <div>
@@ -135,19 +177,6 @@
             </div>
           </div>
         </section>
-
-        <section class="notes-block">
-          <div class="section-heading">
-            <h3>Notes</h3>
-          </div>
-
-          <div v-if="noteEntries.length" class="notes-stack">
-            <div v-for="(entry, index) in noteEntries" :key="index" class="notes-card">
-              {{ entry }}
-            </div>
-          </div>
-          <div v-else class="empty-state">No notes provided for this ticket.</div>
-        </section>
       </section>
 
       <div v-else class="status-card">No ticket found.</div>
@@ -183,6 +212,9 @@ const savingDiagnostics = ref(false)
 const diagnosticsSuccess = ref(false)
 const diagnosticsError = ref<string | null>(null)
 const showDiagnostics = ref(false)
+const emailingProgress = ref(false)
+const emailProgressSuccess = ref<string | null>(null)
+const emailProgressError = ref<string | null>(null)
 
 const diagnosticSections = [
   {
@@ -279,6 +311,8 @@ const requiredPartsProgress = computed(() => {
   return Math.round((completedRequiredParts.value / totalRequiredParts.value) * 100)
 })
 
+const initialAssessmentText = computed(() => ticket.value?.initialAssessment?.trim() ?? '')
+const recommendedServiceText = computed(() => ticket.value?.recommendedService?.trim() ?? '')
 const noteEntries = computed(() => splitNoteHistory(ticket.value?.notes))
 
 async function load() {
@@ -366,6 +400,29 @@ async function saveDiagnostics() {
     diagnosticsError.value = err instanceof Error ? err.message : String(err)
   } finally {
     savingDiagnostics.value = false
+  }
+}
+
+async function emailUpdatedProgress() {
+  if (!ticket.value) return
+
+  emailingProgress.value = true
+  emailProgressSuccess.value = null
+  emailProgressError.value = null
+
+  try {
+    const response = await apiFetch<{ message: string; recipient: string }>(
+      `/emailTicketProgress/${encodeURIComponent(ticket.value.id)}`,
+      {
+        method: 'POST',
+      },
+    )
+
+    emailProgressSuccess.value = response.message
+  } catch (err) {
+    emailProgressError.value = err instanceof Error ? err.message : String(err)
+  } finally {
+    emailingProgress.value = false
   }
 }
 
@@ -529,6 +586,16 @@ onMounted(load)
 
 .notes-block {
   margin-top: 24px;
+}
+
+.notes-text {
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #334155;
+  white-space: pre-wrap;
 }
 
 .notes-stack {

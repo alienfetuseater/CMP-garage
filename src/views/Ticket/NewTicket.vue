@@ -125,6 +125,32 @@
             </label>
           </section>
 
+          <section v-if="isEditMode" class="plan-section">
+            <div class="section-heading">
+              <h3>Initial Assessment</h3>
+              <p>Capture the first assessment notes for this service ticket.</p>
+            </div>
+
+            <textarea
+              v-model="form.initialAssessment"
+              rows="4"
+              placeholder="Enter initial assessment notes"
+            />
+          </section>
+
+          <section v-if="isEditMode" class="plan-section">
+            <div class="section-heading">
+              <h3>Recommended Service</h3>
+              <p>Document recommended service notes based on findings.</p>
+            </div>
+
+            <textarea
+              v-model="form.recommendedService"
+              rows="4"
+              placeholder="Enter recommended service notes"
+            />
+          </section>
+
           <section class="plan-section">
             <div class="section-heading">
               <h3>Plan of Action</h3>
@@ -274,6 +300,8 @@ const form = reactive({
   priority: 'medium',
   scheduledDate: '',
   notes: '',
+  initialAssessment: '',
+  recommendedService: '',
   summaryOfWorkPerformed: '',
   summaryOfFurtherRecommendations: '',
   planOfAction: [] as PlanActionItem[],
@@ -313,6 +341,8 @@ function hydrateFromTicket(ticket: Ticket) {
   existingNotes.value = ticket.notes ?? ''
   newUpdateNote.value = ''
   form.notes = ''
+  form.initialAssessment = ticket.initialAssessment ?? ''
+  form.recommendedService = ticket.recommendedService ?? ''
   form.summaryOfWorkPerformed = ticket.summaryOfWorkPerformed ?? ''
   form.summaryOfFurtherRecommendations = ticket.summaryOfFurtherRecommendations ?? ''
   form.planOfAction = (ticket.planOfAction ?? []).map((item) =>
@@ -406,6 +436,8 @@ async function submit(options?: { forceClosed?: boolean }) {
       requiredParts: form.requiredParts
         .map((item) => ({ ...item, text: item.text.trim() }))
         .filter((item) => item.text.length > 0),
+      initialAssessment: form.initialAssessment.trim(),
+      recommendedService: form.recommendedService.trim(),
       summaryOfWorkPerformed: form.summaryOfWorkPerformed.trim(),
       summaryOfFurtherRecommendations: form.summaryOfFurtherRecommendations.trim(),
       notes: isEditMode.value

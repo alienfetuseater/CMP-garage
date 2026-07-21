@@ -6,8 +6,8 @@
       <section class="profile-card">
         <header class="profile-header">
           <div>
-            <p class="eyebrow">Customer creation</p>
-            <h2>Register New Customer</h2>
+            <p class="eyebrow">{{ pageEyebrow }}</p>
+            <h2>{{ pageTitle }}</h2>
           </div>
         </header>
 
@@ -35,7 +35,7 @@
           </div>
 
           <div class="actions">
-            <button type="submit" class="primary" :disabled="loading">Create Customer</button>
+            <button type="submit" class="primary" :disabled="loading">{{ submitLabel }}</button>
             <span v-if="loading">Saving...</span>
             <span v-if="success" class="success">Saved</span>
             <span v-if="error" class="error">{{ error }}</span>
@@ -47,8 +47,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { apiFetch } from '@/api'
 import { useCustomerStore } from '@/stores/customers'
 import type { Customer } from '@/types/mock'
@@ -62,8 +62,36 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const success = ref(false)
 
+const route = useRoute()
 const router = useRouter()
 const customerStore = useCustomerStore()
+
+const editCustomerId = computed(() => String(route.query.id || ''))
+const isEditMode = computed(() => Boolean(editCustomerId.value))
+
+const pageEyebrow = computed(() => (isEditMode.value ? 'Customer update' : 'Customer creation'))
+const pageTitle = computed(() =>
+  isEditMode.value ? 'Update Customer Profile' : 'Register New Customer',
+)
+const submitLabel = computed(() => (isEditMode.value ? 'Update Customer' : 'Create Customer'))
+
+async function hydrateForEdit() {
+  if (!isEditMode.value) return
+
+  await customerStore.fetchCustomers(true)
+  const existing = customerStore.customerById(editCustomerId.value)
+
+  if (!existing) {
+    throw new Error('Customer not found')
+  }
+
+  form.value = {
+    name: existing.name ?? '',
+    phone: existing.phone ?? '',
+    email: existing.email ?? '',
+    address: existing.address ?? '',
+  }
+}
 
 async function submit() {
   loading.value = true
@@ -72,11 +100,20 @@ async function submit() {
   const payload = { ...form.value }
 
   try {
-    const saved = await apiFetch<CustomerApiRecord>('/newCustomer', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
+    const saved = isEditMode.value
+      ? await apiFetch<CustomerApiRecord>(
+          `/updateCustomer/${encodeURIComponent(editCustomerId.value)}`,
+          {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          },
+        )
+      : await apiFetch<CustomerApiRecord>('/newCustomer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
 
     customerStore.addCustomer(saved)
 
@@ -87,7 +124,9 @@ async function submit() {
 
     router.push({ name: 'CustomerProfile', query: { id: newId } })
     success.value = true
-    form.value = { name: '', phone: '', email: '', address: '' }
+    if (!isEditMode.value) {
+      form.value = { name: '', phone: '', email: '', address: '' }
+    }
   } catch (err) {
     error.value = err instanceof Error ? err.message : String(err)
   } finally {
@@ -98,6 +137,14 @@ async function submit() {
 function goBack() {
   router.back()
 }
+
+onMounted(async () => {
+  try {
+    await hydrateForEdit()
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : String(err)
+  }
+})
 </script>
 
 <style scoped>

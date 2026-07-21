@@ -13,7 +13,14 @@
             <h2>{{ customer.name }}</h2>
           </div>
 
-          <button class="primary action-btn" @click="addNewVessel">Add New Vessel</button>
+          <div class="header-actions">
+            <button type="button" class="primary action-btn" @click="updateCustomerProfile">
+              Update Customer Profile
+            </button>
+            <button type="button" class="primary action-btn" @click="addNewVessel">
+              Add New Vessel
+            </button>
+          </div>
         </header>
 
         <ul class="details">
@@ -117,6 +124,11 @@ function addNewVessel() {
   router.push({ name: 'RegisterVessel', query: { ownerId: customer.value.id } })
 }
 
+function updateCustomerProfile() {
+  if (!customer.value) return
+  router.push({ name: 'CustomerRegistration', query: { id: customer.value.id } })
+}
+
 function openVessel(v: Vessel) {
   router.push({ name: 'VesselProfile', query: { id: v.id } })
 }
@@ -171,6 +183,13 @@ onMounted(load)
   align-items: flex-start;
   gap: 16px;
   margin-bottom: 20px;
+}
+
+.header-actions {
+  display: inline-flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .eyebrow {
