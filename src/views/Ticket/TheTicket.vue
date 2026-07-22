@@ -15,15 +15,31 @@
 
           <div class="header-actions">
             <div class="ticket-badge">{{ ticket.status }}</div>
-            <button type="button" class="secondary" @click="editWork">Update Work</button>
+            <button type="button" class="secondary" :disabled="isTicketClosed" @click="editWork">
+              Update Work
+            </button>
+            <button v-if="!isTicketClosed" type="button" class="secondary" @click="closeOutTicket">
+              Close Out Ticket
+            </button>
+            <button
+              v-else
+              type="button"
+              class="secondary"
+              :disabled="updatingTicketStatus"
+              @click="reopenTicket"
+            >
+              Reopen Ticket
+            </button>
             <button
               type="button"
               class="secondary"
               @click="emailUpdatedProgress"
               :disabled="emailingProgress"
             >
-              Email Updated Progress
+              {{ isTicketClosed ? 'Email Final Invoice to Client' : 'Email Updated Progress' }}
             </button>
+            <span v-if="updatingTicketStatus">Updating status...</span>
+            <span v-if="ticketStatusError" class="error">{{ ticketStatusError }}</span>
             <span v-if="emailingProgress">Emailing...</span>
             <span v-if="emailProgressSuccess" class="success">{{ emailProgressSuccess }}</span>
             <span v-if="emailProgressError" class="error">{{ emailProgressError }}</span>
@@ -49,6 +65,24 @@
           <li><strong>Created</strong> {{ formatLocalDateTime(ticket.createdAt) }}</li>
           <li><strong>Scheduled</strong> {{ formatLocalDateTime(ticket.scheduledDate) }}</li>
         </ul>
+
+        <section class="notes-block">
+          <div class="section-heading">
+            <h3>Initial Assessment</h3>
+          </div>
+
+          <p v-if="initialAssessmentText" class="notes-text">{{ initialAssessmentText }}</p>
+          <div v-else class="empty-state">No initial assessment provided for this ticket.</div>
+        </section>
+
+        <section class="notes-block">
+          <div class="section-heading">
+            <h3>Recommended Service</h3>
+          </div>
+
+          <p v-if="recommendedServiceText" class="notes-text">{{ recommendedServiceText }}</p>
+          <div v-else class="empty-state">No recommended service provided for this ticket.</div>
+        </section>
 
         <section class="plan-block">
           <div class="section-heading">
@@ -90,24 +124,6 @@
 
         <section class="notes-block">
           <div class="section-heading">
-            <h3>Initial Assessment</h3>
-          </div>
-
-          <p v-if="initialAssessmentText" class="notes-text">{{ initialAssessmentText }}</p>
-          <div v-else class="empty-state">No initial assessment provided for this ticket.</div>
-        </section>
-
-        <section class="notes-block">
-          <div class="section-heading">
-            <h3>Recommended Service</h3>
-          </div>
-
-          <p v-if="recommendedServiceText" class="notes-text">{{ recommendedServiceText }}</p>
-          <div v-else class="empty-state">No recommended service provided for this ticket.</div>
-        </section>
-
-        <section class="notes-block">
-          <div class="section-heading">
             <h3>Notes</h3>
           </div>
 
@@ -117,6 +133,19 @@
             </div>
           </div>
           <div v-else class="empty-state">No notes provided for this ticket.</div>
+        </section>
+
+        <section class="notes-block">
+          <div class="section-heading">
+            <h3>Summary of Work Completed</h3>
+          </div>
+
+          <p v-if="summaryOfWorkCompletedText" class="notes-text">
+            {{ summaryOfWorkCompletedText }}
+          </p>
+          <div v-else class="empty-state">
+            No summary of work completed provided for this ticket.
+          </div>
         </section>
 
         <section class="diagnostics-section">
@@ -215,6 +244,8 @@ const showDiagnostics = ref(false)
 const emailingProgress = ref(false)
 const emailProgressSuccess = ref<string | null>(null)
 const emailProgressError = ref<string | null>(null)
+const updatingTicketStatus = ref(false)
+const ticketStatusError = ref<string | null>(null)
 
 const diagnosticSections = [
   {
@@ -313,7 +344,16 @@ const requiredPartsProgress = computed(() => {
 
 const initialAssessmentText = computed(() => ticket.value?.initialAssessment?.trim() ?? '')
 const recommendedServiceText = computed(() => ticket.value?.recommendedService?.trim() ?? '')
+const summaryOfWorkCompletedText = computed(
+  () => ticket.value?.summaryOfWorkPerformed?.trim() ?? '',
+)
 const noteEntries = computed(() => splitNoteHistory(ticket.value?.notes))
+const isTicketClosed = computed(() => {
+  const status = String(ticket.value?.status || '')
+    .trim()
+    .toLowerCase()
+  return status === 'closed'
+})
 
 async function load() {
   loading.value = true
@@ -441,9 +481,44 @@ function openVessel() {
 }
 
 function editWork() {
+  if (isTicketClosed.value) return
   const tid = ticket.value?.id
   if (tid) {
     router.push({ name: 'NewTicket', query: { id: tid } })
+  }
+}
+
+function closeOutTicket() {
+  const tid = ticket.value?.id
+  if (tid) {
+    router.push({ name: 'NewTicket', query: { id: tid, closeOut: '1' } })
+  }
+}
+
+async function reopenTicket() {
+  if (!ticket.value?.id) return
+
+  updatingTicketStatus.value = true
+  ticketStatusError.value = null
+
+  try {
+    const saved = await apiFetch<Ticket>(`/updateTicket/${encodeURIComponent(ticket.value.id)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'open' }),
+    })
+
+    const normalized = {
+      ...saved,
+      id: String(saved.id ?? (saved as Ticket & { _id?: string })._id ?? ticket.value.id),
+    }
+
+    ticket.value = normalized
+    ticketStore.addTicket(normalized)
+  } catch (err) {
+    ticketStatusError.value = err instanceof Error ? err.message : String(err)
+  } finally {
+    updatingTicketStatus.value = false
   }
 }
 
@@ -462,6 +537,7 @@ onMounted(load)
 
 .ticket-shell {
   width: min(100%, 880px);
+  margin-block: auto;
 }
 
 .profile-card,
@@ -484,7 +560,7 @@ onMounted(load)
   gap: 6px;
   border: none;
   background: transparent;
-  color: #2563eb;
+  color: var(--color-ocean-dark);
   cursor: pointer;
   margin-bottom: 16px;
   padding: 0;
@@ -711,13 +787,20 @@ onMounted(load)
 }
 
 .secondary {
-  border: 1px solid #bfdbfe;
-  background: #eff6ff;
-  color: #1d4ed8;
+  border: 1px solid var(--color-ocean-deep);
+  background: var(--color-ocean-muted);
+  color: var(--color-ocean-dark);
   border-radius: 10px;
   padding: 10px 12px;
   font-weight: 700;
   cursor: pointer;
+}
+
+.secondary:disabled {
+  border-color: #d1d5db;
+  background: #e5e7eb;
+  color: #64748b;
+  cursor: not-allowed;
 }
 
 .diagnostics-grid {

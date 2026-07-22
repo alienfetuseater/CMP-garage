@@ -5,8 +5,9 @@ import { useUiStore } from '@/stores/ui'
 
 type ReminderApiRecord = Reminder & {
   _id?: string
+  dueDate?: string
   relatedTo?: {
-    type: 'customer' | 'vessel' | 'ticket'
+    type: 'customer' | 'vessel' | 'ticket' | 'other'
     id?: string
     _id?: string
   }

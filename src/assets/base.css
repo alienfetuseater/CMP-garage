@@ -3,18 +3,24 @@
 :root {
   --font-primary: 'Inter', system-ui, sans-serif;
   --font-heading: 'Cormorant Garamond', Georgia, serif;
-  --color-text: #4b4a52;
-  --color-background: #f7f6f2;
-  --color-navbar: #0c1f2c;
-  --color-navbar-text: #f9fafb;
-  --color-link-hover: rgba(255, 255, 255, 0.12);
-  --color-button-bg: rgba(255, 255, 255, 0.08);
-  --color-button-text: #f9fafb;
-  --color-accent: #b98a44;
+  --color-text: #20384f;
+  --color-background: #f3f8fc;
+  --color-navbar: #10243a;
+  --color-navbar-text: #f4fbff;
+  --color-link-hover: rgba(78, 137, 204, 0.18);
+  --color-button-bg: rgba(78, 137, 204, 0.12);
+  --color-button-text: #f4fbff;
+  --color-accent: #4e89cc;
   --color-surface: #ffffff;
-  --color-border: rgba(0, 0, 0, 0.08);
+  --color-border: rgba(16, 36, 58, 0.12);
   --color-card: #ffffff;
-  --color-card-strong: #1f1a18;
+  --color-card-strong: #10243a;
+  --color-ocean-deep: #08121d;
+  --color-ocean-dark: #10243a;
+  --color-ocean-mid: #2e5f9d;
+  --color-ocean-bright: #4e89cc;
+  --color-ocean-soft: #8eb9e5;
+  --color-ocean-mist: #d7e8f6;
 }
 
 body {
@@ -31,18 +37,24 @@ body {
 }
 
 body.theme-luxury {
-  --color-text: #f1e7d1;
-  --color-background: #1c1712;
-  --color-navbar: #1a1510;
-  --color-navbar-text: #f8eed9;
-  --color-link-hover: rgba(255, 255, 255, 0.14);
-  --color-button-bg: rgba(255, 255, 255, 0.08);
-  --color-button-text: #f8eed9;
-  --color-accent: #c9ae6a;
-  --color-surface: rgba(25, 20, 15, 0.96);
-  --color-border: rgba(201, 174, 106, 0.3);
-  --color-card: rgba(28, 23, 18, 0.96);
-  --color-card-strong: #f6eedc;
+  --color-text: #d7e8f6;
+  --color-background: #07121d;
+  --color-navbar: #10243a;
+  --color-navbar-text: #eff8ff;
+  --color-link-hover: rgba(142, 185, 229, 0.16);
+  --color-button-bg: rgba(142, 185, 229, 0.1);
+  --color-button-text: #eff8ff;
+  --color-accent: #8eb9e5;
+  --color-surface: rgba(9, 18, 28, 0.96);
+  --color-border: rgba(142, 185, 229, 0.24);
+  --color-card: rgba(10, 20, 31, 0.96);
+  --color-card-strong: #f4fbff;
+  --color-ocean-deep: #050d15;
+  --color-ocean-dark: #10243a;
+  --color-ocean-mid: #2e5f9d;
+  --color-ocean-bright: #4e89cc;
+  --color-ocean-soft: #8eb9e5;
+  --color-ocean-mist: #d7e8f6;
 }
 
 body,
@@ -66,4 +78,25 @@ input,
 select,
 textarea {
   font: inherit;
+}
+
+button {
+  color: var(--color-button-text);
+  background: linear-gradient(180deg, var(--color-ocean-mid), var(--color-ocean-dark));
+  border: 1px solid rgba(142, 185, 229, 0.24);
+  transition:
+    background-color 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.18s ease,
+    color 0.2s ease;
+}
+
+button:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--color-ocean-bright), var(--color-ocean-mid));
+  border-color: rgba(142, 185, 229, 0.4);
+}
+
+button:disabled {
+  opacity: 0.65;
 }

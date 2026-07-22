@@ -8,21 +8,12 @@
           <div>
             <p class="eyebrow">Vessel creation</p>
             <h2>Register Vessel</h2>
+            <p class="customer-subtitle" v-if="customerSubtitle">{{ customerSubtitle }}</p>
           </div>
         </header>
 
         <form class="registration-form" @submit.prevent="submit">
           <div class="form-grid">
-            <label>
-              Owner
-              <select v-model="form.customerId" required>
-                <option value="" disabled>Select owner</option>
-                <option v-for="c in customers" :key="c.id" :value="c.id">
-                  {{ c.name }}
-                </option>
-              </select>
-            </label>
-
             <label>
               Vessel Name
               <input v-model="form.vesselName" required />
@@ -30,7 +21,18 @@
 
             <label>
               Make
-              <input v-model="form.vesselMake" />
+              <select v-model="form.vesselMakeSelection">
+                <option value="" disabled>Select make</option>
+                <option v-for="make in popularBoatMakes" :key="make" :value="make">
+                  {{ make }}
+                </option>
+                <option value="other">Other</option>
+              </select>
+            </label>
+
+            <label v-if="form.vesselMakeSelection === 'other'">
+              Other Make
+              <input v-model="form.vesselMakeOther" required placeholder="Enter vessel make" />
             </label>
 
             <label>
@@ -68,7 +70,22 @@
 
             <label>
               Engine Make
-              <input v-model="form.engineMake" />
+              <select v-model="form.engineMakeSelection">
+                <option value="" disabled>Select engine make</option>
+                <option v-for="make in popularEngineMakes" :key="make" :value="make">
+                  {{ make }}
+                </option>
+                <option value="other">Other</option>
+              </select>
+            </label>
+
+            <label v-if="form.engineMakeSelection === 'other'">
+              Other Engine Make
+              <input
+                v-model="form.engineMakeOther"
+                required
+                placeholder="Enter engine manufacturer"
+              />
             </label>
 
             <label>
@@ -77,8 +94,13 @@
             </label>
 
             <label>
+              Engine Horsepower
+              <input v-model.number="form.engineHorsepower" type="number" min="0" step="1" />
+            </label>
+
+            <label>
               Engine Hours
-              <input v-model.number="form.engineHours" type="number" />
+              <input v-model.number="form.engineHours" type="number" min="0" step="1" />
             </label>
           </div>
 
@@ -107,7 +129,9 @@
           <p v-else class="hint">Add the number of engines above to enter serial numbers.</p>
 
           <div class="actions">
-            <button type="submit" class="primary" :disabled="loading">Create Vessel</button>
+            <button type="submit" class="primary" :disabled="loading">
+              {{ editId ? 'Update Vessel' : 'Create Vessel' }}
+            </button>
             <span v-if="loading">Saving...</span>
             <span v-if="success" class="success">Saved</span>
             <span v-if="error" class="error">{{ error }}</span>
@@ -119,7 +143,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { apiFetch } from '@/api'
 import { useUiStore } from '@/stores/ui'
@@ -130,15 +154,18 @@ import type { Customer, Vessel } from '@/types/mock'
 type Form = {
   customerId: string
   vesselName: string
-  vesselMake: string
+  vesselMakeSelection: string
+  vesselMakeOther: string
   vesselYear: number | null
   hullIdNumber: string
   numberOfEngines: number | null
   engineSerialNumbers: string[]
   generator: 'yes' | 'no'
   boatLocation: 'trailor' | 'slip' | 'dry dock' | ''
-  engineMake: string
+  engineMakeSelection: string
+  engineMakeOther: string
   engineModel: string
+  engineHorsepower: number | null
   engineHours: number | null
 }
 
@@ -151,19 +178,71 @@ const customers = ref<Customer[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 const success = ref(false)
+const customerSubtitle = computed(() => {
+  const customer = customers.value.find((entry) => entry.id === form.value.customerId)
+  return customer ? `Customer: ${customer.name}` : ''
+})
+
+const popularBoatMakes = [
+  'Boston Whaler',
+  'Sea Ray',
+  'Bayliner',
+  'Yamaha Boats',
+  'MasterCraft',
+  'Malibu',
+  'Chaparral',
+  'Grady-White',
+  'Pursuit',
+  'Yellowfin',
+  'Regal',
+  'Cobalt',
+  'Lund',
+  'Ranger Boats',
+  'Tracker',
+  'Bennington',
+  'Harris',
+  'Sun Tracker',
+  'Skeeter',
+  'Nautique',
+  'Carolina Skiff',
+] as const
+
+const popularEngineMakes = [
+  'Yamaha',
+  'Mercury',
+  'Suzuki',
+  'Honda Marine',
+  'Evinrude',
+  'Tohatsu',
+  'Volvo Penta',
+  'Ilmor',
+  'PCM',
+  'Indmar',
+  'Caterpillar Marine',
+  'Cummins Marine',
+  'MAN',
+  'Scania Marine',
+  'MTU',
+  'Yanmar',
+  'Kawasaki Jet Ski',
+  'Rotax',
+] as const
 
 const form = ref<Form>({
   customerId: '',
   vesselName: '',
-  vesselMake: '',
+  vesselMakeSelection: '',
+  vesselMakeOther: '',
   vesselYear: null,
   hullIdNumber: '',
   numberOfEngines: null,
   engineSerialNumbers: [],
   generator: 'no',
   boatLocation: '',
-  engineMake: '',
+  engineMakeSelection: '',
+  engineMakeOther: '',
   engineModel: '',
+  engineHorsepower: null,
   engineHours: null,
 })
 
@@ -173,6 +252,38 @@ function goBack() {
 
 const editId = ref('')
 const previousOwnerId = ref('')
+
+const resolveMakeSelection = (make: string) => {
+  const trimmed = String(make || '').trim()
+  if (!trimmed) {
+    return { selection: '', other: '' }
+  }
+
+  const matchingPopularMake = popularBoatMakes.find(
+    (option) => option.toLowerCase() === trimmed.toLowerCase(),
+  )
+  if (matchingPopularMake) {
+    return { selection: matchingPopularMake, other: '' }
+  }
+
+  return { selection: 'other', other: trimmed }
+}
+
+const resolveEngineMakeSelection = (make: string) => {
+  const trimmed = String(make || '').trim()
+  if (!trimmed) {
+    return { selection: '', other: '' }
+  }
+
+  const matchingPopularMake = popularEngineMakes.find(
+    (option) => option.toLowerCase() === trimmed.toLowerCase(),
+  )
+  if (matchingPopularMake) {
+    return { selection: matchingPopularMake, other: '' }
+  }
+
+  return { selection: 'other', other: trimmed }
+}
 
 watch(
   () => form.value.numberOfEngines,
@@ -215,15 +326,20 @@ onMounted(async () => {
       previousOwnerId.value = existing.customerId
       form.value.customerId = existing.customerId
       form.value.vesselName = existing.vesselName
-      form.value.vesselMake = existing.vesselMake
+      const makeSelection = resolveMakeSelection(existing.vesselMake)
+      form.value.vesselMakeSelection = makeSelection.selection
+      form.value.vesselMakeOther = makeSelection.other
       form.value.vesselYear = existing.vesselYear
       form.value.hullIdNumber = existing.hullIdNumber
       form.value.numberOfEngines = existing.numberOfEngines
       form.value.engineSerialNumbers = existing.engineSerialNumbers.slice()
       form.value.generator = existing.generator ? 'yes' : 'no'
       form.value.boatLocation = existing.boatLocation
-      form.value.engineMake = existing.engineMake
+      const engineMakeSelection = resolveEngineMakeSelection(existing.engineMake)
+      form.value.engineMakeSelection = engineMakeSelection.selection
+      form.value.engineMakeOther = engineMakeSelection.other
       form.value.engineModel = existing.engineModel
+      form.value.engineHorsepower = existing.engineHorsepower ?? null
       form.value.engineHours = existing.engineHours
     } catch {
       // ignore failure to load existing vessel
@@ -241,8 +357,28 @@ async function submit() {
 
   try {
     if (!form.value.customerId) throw new Error('Owner is required')
+    const selectedMake = String(form.value.vesselMakeSelection || '').trim()
+    const customMake = String(form.value.vesselMakeOther || '').trim()
+    const finalVesselMake = selectedMake === 'other' ? customMake : selectedMake
+    const selectedEngineMake = String(form.value.engineMakeSelection || '').trim()
+    const customEngineMake = String(form.value.engineMakeOther || '').trim()
+    const finalEngineMake = selectedEngineMake === 'other' ? customEngineMake : selectedEngineMake
+
+    if (selectedMake === 'other' && !customMake) {
+      throw new Error('Please enter a make when selecting Other')
+    }
+
+    if (selectedEngineMake === 'other' && !customEngineMake) {
+      throw new Error('Please enter an engine make when selecting Other')
+    }
+
     if (!validateSerialNumbers()) {
       throw new Error('Please provide a serial number or mark N/A for every engine')
+    }
+
+    const horsepower = form.value.engineHorsepower
+    if (horsepower !== null && !Number.isInteger(horsepower)) {
+      throw new Error('Engine horsepower must be an integer')
     }
 
     const customer = customers.value.find((c) => c.id === form.value.customerId)
@@ -253,15 +389,16 @@ async function submit() {
       customerName: customer?.name ?? '',
       customerPhone: customer?.phone ?? '',
       vesselName: form.value.vesselName,
-      vesselMake: form.value.vesselMake,
+      vesselMake: finalVesselMake,
       vesselYear: form.value.vesselYear ?? 0,
       hullIdNumber: form.value.hullIdNumber,
       numberOfEngines: form.value.numberOfEngines ?? 0,
       engineSerialNumbers: form.value.engineSerialNumbers.slice(),
       generator: form.value.generator === 'yes',
       boatLocation: form.value.boatLocation,
-      engineMake: form.value.engineMake,
+      engineMake: finalEngineMake,
       engineModel: form.value.engineModel,
+      engineHorsepower: form.value.engineHorsepower ?? 0,
       engineHours: form.value.engineHours ?? 0,
     }
 
@@ -309,6 +446,7 @@ async function submit() {
 
 .vessel-registration-shell {
   width: min(100%, 920px);
+  position: relative;
 }
 
 .profile-card {
@@ -325,9 +463,11 @@ async function submit() {
   gap: 6px;
   border: none;
   background: transparent;
-  color: #2563eb;
+  color: var(--color-ocean-dark);
   cursor: pointer;
-  margin-bottom: 16px;
+  position: absolute;
+  top: 6px;
+  right: calc(100% + 16px);
   padding: 0;
   font-weight: 600;
 }
@@ -349,6 +489,12 @@ async function submit() {
   font-size: 2rem;
   line-height: 1.1;
   color: #0f172a;
+}
+
+.customer-subtitle {
+  margin: 6px 0 0;
+  color: #475569;
+  font-weight: 600;
 }
 
 .registration-form {
@@ -429,8 +575,8 @@ select {
 }
 
 .primary {
-  border: 1px solid #1d4ed8;
-  background: #2563eb;
+  border: 1px solid var(--color-ocean-deep);
+  background: var(--color-ocean-dark);
   color: #ffffff;
   border-radius: 12px;
   padding: 12px 16px;
@@ -449,6 +595,13 @@ select {
 
 .success {
   color: #059669;
+}
+
+@media (max-width: 1100px) {
+  .back {
+    position: static;
+    margin-bottom: 16px;
+  }
 }
 
 @media (max-width: 720px) {

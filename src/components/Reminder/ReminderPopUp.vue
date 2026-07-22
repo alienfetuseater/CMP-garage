@@ -57,7 +57,7 @@ function openreminder(reminder: ReminderDisplayItem & { _id?: string }) {
 .reminder-popup-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.5);
+  background: rgba(8, 18, 29, 0.55);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -66,12 +66,14 @@ function openreminder(reminder: ReminderDisplayItem & { _id?: string }) {
 
 .reminder-popup {
   width: min(90vw, 520px);
+  min-height: min(80vh, 360px);
   max-height: 80vh;
   overflow-y: auto;
-  background: #ffffff;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(215, 232, 246, 0.82));
   border-radius: 14px;
   padding: 20px;
-  box-shadow: 0 22px 40px rgba(15, 23, 42, 0.18);
+  box-shadow: 0 22px 40px rgba(8, 18, 29, 0.22);
+  border: 1px solid rgba(142, 185, 229, 0.26);
 }
 
 .reminder-header {
@@ -88,7 +90,7 @@ function openreminder(reminder: ReminderDisplayItem & { _id?: string }) {
 
 .reminder-subtitle {
   margin: 4px 0 0;
-  color: #6b7280;
+  color: var(--color-ocean-mid);
 }
 
 .close-btn {
@@ -107,7 +109,7 @@ function openreminder(reminder: ReminderDisplayItem & { _id?: string }) {
 
 .reminder-item {
   padding: 12px 0;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid rgba(142, 185, 229, 0.2);
   cursor: default;
 }
 
@@ -118,7 +120,7 @@ function openreminder(reminder: ReminderDisplayItem & { _id?: string }) {
 .reminder-item strong {
   display: inline-block;
   width: 125px;
-  color: #111827;
+  color: var(--color-ocean-dark);
 }
 
 .reminder-title {

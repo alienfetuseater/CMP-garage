@@ -151,7 +151,7 @@
             />
           </section>
 
-          <section class="plan-section">
+          <section v-if="isEditMode" class="plan-section">
             <div class="section-heading">
               <h3>Plan of Action</h3>
               <p>Add tasks and check them off to track work progress.</p>
@@ -168,7 +168,7 @@
             <button type="button" class="ghost" @click="addPlanItem">Add Plan Item</button>
           </section>
 
-          <section class="plan-section">
+          <section v-if="isEditMode" class="plan-section">
             <div class="section-heading">
               <h3>Required Parts</h3>
               <p>Add required parts and check them off as they are acquired or installed.</p>
@@ -189,10 +189,10 @@
             </button>
           </section>
 
-          <section v-if="isEditMode && showCloseOutSections" class="plan-section">
+          <section v-if="isEditMode" class="plan-section">
             <div class="section-heading">
-              <h3>Summary of Work Performed</h3>
-              <p>Describe the work completed before final close-out.</p>
+              <h3>Summary of Work Completed</h3>
+              <p>Describe the work completed on this ticket.</p>
             </div>
 
             <textarea
@@ -218,15 +218,6 @@
           <div class="actions">
             <button type="submit" class="primary" :disabled="submitting">
               {{ isEditMode ? 'Update Ticket' : 'Create Ticket' }}
-            </button>
-            <button
-              v-if="isEditMode"
-              type="button"
-              class="ghost"
-              :disabled="submitting"
-              @click="startCloseOut"
-            >
-              Close Out Ticket
             </button>
             <button
               v-if="isEditMode && showCloseOutSections"
@@ -321,11 +312,15 @@ function hydrateFromQuery() {
   const customerId = String(route.query.customerId || '')
   const customerName = String(route.query.customerName || '')
   const vesselName = String(route.query.vesselName || '')
+  const closeOut = String(route.query.closeOut || '')
 
   if (vesselId) form.vesselId = vesselId
   if (customerId) form.customerId = customerId
   if (customerName) form.customerName = customerName
   if (vesselName) form.vesselName = vesselName
+  if (closeOut === '1' || closeOut.toLowerCase() === 'true') {
+    showCloseOutSections.value = true
+  }
 }
 
 function hydrateFromTicket(ticket: Ticket) {
@@ -403,11 +398,6 @@ function buildInitialNote(noteText: string): string {
   const trimmed = noteText.trim()
   if (!trimmed) return ''
   return `[${formatLocalDateTime(new Date())}] ${trimmed}`
-}
-
-function startCloseOut() {
-  showCloseOutSections.value = true
-  error.value = null
 }
 
 async function finalizeCloseOut() {
@@ -502,6 +492,8 @@ onMounted(async () => {
 
 .ticket-shell {
   width: min(100%, 920px);
+  position: relative;
+  margin-block: 0;
 }
 
 .profile-card {
@@ -518,9 +510,12 @@ onMounted(async () => {
   gap: 6px;
   border: none;
   background: transparent;
-  color: #2563eb;
+  color: var(--color-ocean-dark);
   cursor: pointer;
-  margin-bottom: 16px;
+  position: absolute;
+  top: 6px;
+  right: calc(100% + 16px);
+  margin-bottom: 0;
   padding: 0;
   font-weight: 600;
 }
@@ -653,8 +648,8 @@ textarea {
 }
 
 .primary {
-  border: 1px solid #1d4ed8;
-  background: #2563eb;
+  border: 1px solid var(--color-ocean-deep);
+  background: var(--color-ocean-dark);
   color: #ffffff;
   border-radius: 12px;
   padding: 12px 16px;
@@ -699,6 +694,13 @@ textarea {
 
 .success {
   color: #059669;
+}
+
+@media (max-width: 1100px) {
+  .back {
+    position: static;
+    margin-bottom: 12px;
+  }
 }
 
 @media (max-width: 720px) {

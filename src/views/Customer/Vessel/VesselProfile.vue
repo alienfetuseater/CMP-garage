@@ -46,6 +46,7 @@
           <li><strong>Make</strong> {{ vessel.vesselMake }}</li>
           <li><strong>Year</strong> {{ vessel.vesselYear }}</li>
           <li><strong>Engine</strong> {{ vessel.engineMake }} {{ vessel.engineModel }}</li>
+          <li><strong>Horsepower</strong> {{ vessel.engineHorsepower }}</li>
           <li><strong>Hours</strong> {{ vessel.engineHours }}</li>
         </ul>
 
@@ -191,7 +192,10 @@ const ownerCustomer = computed(() => {
   return customerStore.customerById(id)
 })
 
-const ownerPhone = computed(() => ownerCustomer.value?.phone ?? vessel.value?.customerPhone ?? '')
+const ownerPhoneRaw = computed(
+  () => ownerCustomer.value?.phone ?? vessel.value?.customerPhone ?? '',
+)
+const ownerPhone = computed(() => formatPhone(ownerPhoneRaw.value))
 
 const ownerAddress = computed(() => ownerCustomer.value?.address ?? 'No address available')
 
@@ -230,6 +234,19 @@ const maintenanceHistory = computed(() =>
 const upgradeHistory = computed(() =>
   ticketsForVessel.value.filter((ticket) => ticket.service_category === 'upgrade'),
 )
+
+function formatPhone(value?: string) {
+  if (!value) return ''
+
+  const digits = value.replace(/\D/g, '')
+  if (digits.length < 10) return value
+
+  const base = digits.slice(-10)
+  const area = base.slice(0, 3)
+  const prefix = base.slice(3, 6)
+  const line = base.slice(6, 10)
+  return `(${area}) ${prefix} - ${line}`
+}
 
 async function load() {
   try {
@@ -309,6 +326,7 @@ onMounted(load)
 
 .vessel-profile-shell {
   width: min(100%, 920px);
+  position: relative;
 }
 
 .profile-card,
@@ -331,9 +349,12 @@ onMounted(load)
   gap: 6px;
   border: none;
   background: transparent;
-  color: #2563eb;
+  color: var(--color-ocean-dark);
   cursor: pointer;
-  margin-bottom: 16px;
+  position: absolute;
+  top: 6px;
+  right: calc(100% + 16px);
+  margin-bottom: 0;
   padding: 0;
   font-weight: 600;
 }
@@ -541,5 +562,12 @@ onMounted(load)
 
 .error {
   color: #b91c1c;
+}
+
+@media (max-width: 1100px) {
+  .back {
+    position: static;
+    margin-bottom: 12px;
+  }
 }
 </style>

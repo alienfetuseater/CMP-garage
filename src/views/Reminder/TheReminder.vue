@@ -17,7 +17,7 @@
             <div class="reminder-badge">
               {{ reminder.completed ? 'Completed' : 'Open' }}
             </div>
-            <button type="button" class="secondary" @click="startUpdate">Update Reminder</button>
+            <button type="button" class="secondary" @click="editReminder">Edit Reminder</button>
           </div>
         </header>
 
@@ -56,44 +56,6 @@
           <li><strong>Related Type</strong> {{ reminder.relatedTo?.type }}</li>
         </ul>
 
-        <section v-if="showUpdateForm" class="update-block">
-          <div class="section-heading">
-            <h3>Update Reminder</h3>
-            <p>Set the latest status and add an update note.</p>
-          </div>
-
-          <div class="update-grid">
-            <label>
-              Status
-              <select v-model="updateStatus">
-                <option value="open">Open</option>
-                <option value="completed">Completed</option>
-              </select>
-            </label>
-
-            <label class="full-width">
-              Update Note
-              <textarea
-                v-model="updateNote"
-                rows="4"
-                placeholder="Add a note about this reminder update"
-              />
-            </label>
-          </div>
-
-          <div class="actions">
-            <button type="button" class="primary" :disabled="savingUpdate" @click="saveUpdate">
-              Save Update
-            </button>
-            <button type="button" class="ghost" :disabled="savingUpdate" @click="cancelUpdate">
-              Cancel
-            </button>
-            <span v-if="savingUpdate">Saving...</span>
-            <span v-if="updateSuccess" class="success">Updated</span>
-            <span v-if="updateError" class="error">{{ updateError }}</span>
-          </div>
-        </section>
-
         <section class="notes-block">
           <div class="section-heading">
             <h3>Notes</h3>
@@ -122,7 +84,6 @@ import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
 import type { Reminder } from '@/types/mock'
 import { formatLocalDateTime } from '@/utils/datetime'
-import { apiFetch } from '@/api'
 import { splitNoteHistory } from '@/utils/notes'
 
 const uiStore = useUiStore()
@@ -138,12 +99,6 @@ const vesselName = ref<string | null>(null)
 const vesselId = ref<string | null>(null)
 const ownerId = ref<string | null>(null)
 const ownerName = ref<string | null>(null)
-const showUpdateForm = ref(false)
-const updateStatus = ref<'open' | 'completed'>('open')
-const updateNote = ref('')
-const savingUpdate = ref(false)
-const updateSuccess = ref(false)
-const updateError = ref<string | null>(null)
 const noteEntries = computed(() => splitNoteHistory(reminder.value?.notes))
 
 async function load() {
@@ -193,86 +148,9 @@ function goBack() {
   router.back()
 }
 
-function startUpdate() {
+function editReminder() {
   if (!reminder.value) return
-  showUpdateForm.value = true
-  updateStatus.value = reminder.value.completed ? 'completed' : 'open'
-  updateNote.value = ''
-  updateSuccess.value = false
-  updateError.value = null
-}
-
-function cancelUpdate() {
-  showUpdateForm.value = false
-  updateNote.value = ''
-  updateError.value = null
-}
-
-function buildUpdatedNotes(currentNotes: string, statusChanged: boolean, noteText: string) {
-  const now = formatLocalDateTime(new Date())
-  const entries: string[] = []
-
-  if (statusChanged) {
-    entries.push(
-      `[${now}] Status changed to ${updateStatus.value === 'completed' ? 'Completed' : 'Open'}`,
-    )
-  }
-
-  if (noteText) {
-    entries.push(`[${now}] ${noteText}`)
-  }
-
-  if (entries.length === 0) return currentNotes
-  return currentNotes ? `${currentNotes}\n\n${entries.join('\n')}` : entries.join('\n')
-}
-
-async function saveUpdate() {
-  if (!reminder.value) return
-
-  savingUpdate.value = true
-  updateSuccess.value = false
-  updateError.value = null
-
-  try {
-    const nextCompleted = updateStatus.value === 'completed'
-    const statusChanged = nextCompleted !== reminder.value.completed
-    const trimmedNote = updateNote.value.trim()
-
-    if (!statusChanged && !trimmedNote) {
-      throw new Error('No changes to save. Update status or add an update note.')
-    }
-
-    const payload = {
-      completed: nextCompleted,
-      notes: buildUpdatedNotes(reminder.value.notes ?? '', statusChanged, trimmedNote),
-    }
-
-    const rid = String(reminder.value.id || '')
-    const saved = await apiFetch<Reminder>(`/updateReminder/${encodeURIComponent(rid)}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-
-    reminder.value = {
-      ...saved,
-      id: String(
-        (saved as Reminder & { _id?: string }).id ??
-          (saved as Reminder & { _id?: string })._id ??
-          reminder.value.id,
-      ),
-      notes: String(saved.notes ?? ''),
-    }
-    reminderStore.addReminder(reminder.value)
-
-    updateSuccess.value = true
-    showUpdateForm.value = false
-    updateNote.value = ''
-  } catch (err) {
-    updateError.value = err instanceof Error ? err.message : String(err)
-  } finally {
-    savingUpdate.value = false
-  }
+  router.push({ name: 'NewReminder', query: { reminderId: reminder.value.id, mode: 'edit' } })
 }
 
 function openVessel() {
@@ -300,6 +178,7 @@ onMounted(load)
 
 .reminder-shell {
   width: min(100%, 880px);
+  margin-block: 0;
 }
 
 .profile-card,
@@ -322,7 +201,7 @@ onMounted(load)
   gap: 6px;
   border: none;
   background: transparent;
-  color: #2563eb;
+  color: var(--color-ocean-dark);
   cursor: pointer;
   margin-bottom: 16px;
   padding: 0;
@@ -478,8 +357,8 @@ textarea {
 }
 
 .primary {
-  border: 1px solid #1d4ed8;
-  background: #2563eb;
+  border: 1px solid var(--color-ocean-deep);
+  background: var(--color-ocean-dark);
   color: #ffffff;
   border-radius: 12px;
   padding: 10px 14px;

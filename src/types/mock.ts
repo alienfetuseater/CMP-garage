@@ -24,18 +24,19 @@ export interface Vessel {
   boatLocation: 'trailor' | 'slip' | 'dry dock' | ''
   engineMake: string
   engineModel: string
+  engineHorsepower: number
   engineHours: number
 }
 
 export interface ReminderRelated {
-  type: 'customer' | 'vessel' | 'ticket'
+  type: 'customer' | 'vessel' | 'ticket' | 'other'
   id: string
 }
 
 export interface Reminder {
   id: string
   title: string
-  dueDate: string
+  dueDate?: string
   completed: boolean
   notes: string
   relatedTo: ReminderRelated

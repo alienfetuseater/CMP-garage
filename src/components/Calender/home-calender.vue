@@ -2,7 +2,14 @@
   <div class="calendar">
     <header class="cal-header">
       <button class="nav-btn" @click="prevMonth">‹</button>
-      <h2>{{ monthName }} {{ year }}</h2>
+      <div class="cal-header-center">
+        <select v-model.number="month" class="month-select" aria-label="Select month">
+          <option v-for="(name, idx) in monthNames" :key="name" :value="idx">{{ name }}</option>
+        </select>
+        <select v-model.number="year" class="year-select" aria-label="Select year">
+          <option v-for="option in yearOptions" :key="option" :value="option">{{ option }}</option>
+        </select>
+      </div>
       <button class="nav-btn" @click="nextMonth">›</button>
     </header>
 
@@ -22,6 +29,7 @@
           selected: cell.inMonth && cell.dateKey === selectedDate,
         }"
         @click="selectDate(cell)"
+        @dblclick.prevent="handleDayDoubleClick(cell)"
       >
         <div class="day-number" v-if="cell.inMonth">{{ cell.day }}</div>
         <div v-if="cell.dateKey && hasItems(cell.dateKey)" class="day-markers">
@@ -38,13 +46,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import type { Reminder, Ticket } from '@/types/mock'
 import { toLocalDateKey } from '@/utils/datetime'
 
 const props = defineProps<{ reminders: Reminder[]; tickets: Ticket[] }>()
 const emit = defineEmits<{
   (e: 'select-date', payload: { date: string; reminders: Reminder[]; tickets: Ticket[] }): void
+  (e: 'double-click-date', payload: { date: string }): void
 }>()
 
 const today = new Date()
@@ -67,6 +76,24 @@ const monthNames = [
   'December',
 ]
 
+const yearOptions = computed(() => {
+  const current = today.getFullYear()
+  const start = current - 10
+  const end = current + 10
+  const options: number[] = []
+
+  for (let y = start; y <= end; y++) {
+    options.push(y)
+  }
+
+  if (!options.includes(year.value)) {
+    options.push(year.value)
+    options.sort((a, b) => a - b)
+  }
+
+  return options
+})
+
 function dateKey(y: number, m: number, d: number) {
   return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
 }
@@ -77,10 +104,26 @@ function toDayKey(value: string) {
 
 const selectedDate = ref<string | null>(null)
 
+function emitSelectedDate(date: string) {
+  emit('select-date', {
+    date,
+    reminders: remindersByDate.value[date] || [],
+    tickets: ticketsByDate.value[date] || [],
+  })
+}
+
 const remindersByDate = computed(() => {
   return props.reminders.reduce(
     (map, reminder) => {
+      if (!reminder.dueDate) {
+        return map
+      }
+
       const dueDate = toDayKey(reminder.dueDate)
+      if (!dueDate) {
+        return map
+      }
+
       const existing = map[dueDate] ?? []
       map[dueDate] = [...existing, reminder]
       return map
@@ -133,8 +176,6 @@ const cells = computed(() => {
   return arr
 })
 
-const monthName = computed(() => monthNames[month.value])
-
 function prevMonth() {
   if (month.value === 0) {
     month.value = 11
@@ -156,27 +197,80 @@ function nextMonth() {
 function selectDate(cell: { inMonth: boolean; dateKey: string | null; day: number | null }) {
   if (!cell.inMonth || !cell.dateKey) return
   selectedDate.value = cell.dateKey
-  emit('select-date', {
-    date: cell.dateKey,
-    reminders: remindersByDate.value[cell.dateKey] || [],
-    tickets: ticketsByDate.value[cell.dateKey] || [],
-  })
+  emitSelectedDate(cell.dateKey)
 }
+
+function handleDayDoubleClick(cell: {
+  inMonth: boolean
+  dateKey: string | null
+  day: number | null
+}) {
+  if (!cell.inMonth || !cell.dateKey) return
+  emit('double-click-date', { date: cell.dateKey })
+}
+
+onMounted(() => {
+  const todayDateKey = dateKey(today.getFullYear(), today.getMonth(), today.getDate())
+  selectedDate.value = todayDateKey
+  emitSelectedDate(todayDateKey)
+})
+
+watch([remindersByDate, ticketsByDate], () => {
+  if (!selectedDate.value) return
+  emitSelectedDate(selectedDate.value)
+})
 </script>
 
 <style scoped>
 .calendar {
-  width: 100%;
+  --calendar-max-h: clamp(320px, calc(100dvh - 220px), 900px);
+  width: min(100%, calc(var(--calendar-max-h) * 4 / 3));
   max-width: 100%;
+  max-height: var(--calendar-max-h);
+  aspect-ratio: 4 / 3;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 18px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
   padding: 12px;
   background: white;
   box-sizing: border-box;
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  overflow: hidden;
+  margin-inline: auto;
 }
 .cal-header {
-  text-align: center;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 8px;
+}
+
+.cal-header-center {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.month-select,
+.year-select {
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 6px 10px;
+  background: #ffffff;
+  color: #0f172a;
+  font: inherit;
+}
+
+.nav-btn {
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #0f172a;
+  padding: 4px 10px;
+  cursor: pointer;
 }
 .week-days {
   display: grid;
@@ -193,18 +287,34 @@ function selectDate(cell: { inMonth: boolean; dateKey: string | null; day: numbe
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 6px;
+  min-height: 0;
+  grid-auto-rows: minmax(0, 1fr);
 }
 .day-cell {
-  min-height: 40px;
+  min-height: 0;
   display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 6px;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-start;
+  padding: 6px 6px 4px;
+  position: relative;
+  border: 1px solid #dbe3ee;
   border-radius: 6px;
+  background: #ffffff;
   color: #374151;
+  user-select: none;
+}
+.day-number {
+  line-height: 1;
+}
+.day-number,
+.day-markers,
+.day-marker {
+  user-select: none;
 }
 .day-cell.other-month {
   background: #f3f4f6;
+  border-color: #e5e7eb;
   color: #9ca3af;
   cursor: default;
 }
@@ -212,18 +322,23 @@ function selectDate(cell: { inMonth: boolean; dateKey: string | null; day: numbe
   color: #9ca3af;
 }
 .day-cell.today {
-  background: #2563eb;
-  color: white;
+  background: linear-gradient(180deg, var(--color-ocean-mid), var(--color-ocean-dark));
+  color: #ffffff;
   font-weight: 600;
+  border-color: rgba(142, 185, 229, 0.45);
+  box-shadow: inset 0 0 0 1px rgba(215, 232, 246, 0.12);
 }
 .day-cell.selected {
-  background: #e0f2fe;
-  border: 1px solid #60a5fa;
+  background: linear-gradient(180deg, rgba(142, 185, 229, 0.22), rgba(215, 232, 246, 0.48));
+  border: 1px solid rgba(78, 137, 204, 0.65);
 }
 .day-markers {
   display: flex;
+  flex-direction: column;
   gap: 4px;
-  margin-top: 4px;
+  position: absolute;
+  top: 6px;
+  left: 6px;
 }
 .day-marker {
   min-width: 18px;
@@ -238,17 +353,17 @@ function selectDate(cell: { inMonth: boolean; dateKey: string | null; day: numbe
   justify-content: center;
 }
 .reminder-marker {
-  background: #f59e0b;
+  background: linear-gradient(180deg, var(--color-ocean-bright), var(--color-ocean-mid));
 }
 .ticket-marker {
-  background: #2563eb;
+  background: linear-gradient(180deg, var(--color-ocean-mid), var(--color-ocean-dark));
 }
 .reminder-panel {
   margin-top: 16px;
   padding: 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #f8fafc;
+  background: linear-gradient(180deg, rgba(215, 232, 246, 0.22), rgba(255, 255, 255, 0.92));
 }
 .reminder-panel-header {
   display: flex;
@@ -265,23 +380,23 @@ function selectDate(cell: { inMonth: boolean; dateKey: string | null; day: numbe
   display: flex;
   justify-content: space-between;
   padding: 8px 0;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid rgba(142, 185, 229, 0.2);
 }
 .reminder-item:last-child {
   border-bottom: none;
 }
 .reminder-status {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--color-ocean-mid);
 }
 .close-btn {
   border: none;
   background: transparent;
   cursor: pointer;
-  color: #374151;
+  color: var(--color-ocean-dark);
   font-weight: 700;
 }
 .no-reminders {
-  color: #6b7280;
+  color: #5f7f9f;
 }
 </style>

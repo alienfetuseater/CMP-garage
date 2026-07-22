@@ -24,7 +24,7 @@
         </header>
 
         <ul class="details">
-          <li><strong>Phone</strong> {{ customer.phone }}</li>
+          <li><strong>Phone</strong> {{ formattedCustomerPhone }}</li>
           <li><strong>Email</strong> {{ customer.email }}</li>
           <li><strong>Address</strong> {{ customer.address }}</li>
           <li><strong>Profile created</strong> {{ formatLocalDateTime(customer.createdAt) }}</li>
@@ -48,7 +48,9 @@
               <strong>{{ v.vesselName }}</strong>
               <span class="vessel-meta">{{ v.vesselMake }} · {{ v.vesselYear }}</span>
               <div class="small">
-                Engine: {{ v.engineMake }} {{ v.engineModel }} · Hours: {{ v.engineHours }}
+                Engine: {{ v.engineMake }} {{ v.engineModel }} · {{ v.engineHorsepower }} HP ·
+                Hours:
+                {{ v.engineHours }}
               </div>
             </li>
           </ul>
@@ -80,6 +82,26 @@ const vessels = ref<Vessel[]>([])
 
 const loading = computed(() => uiStore.loading)
 const error = computed(() => uiStore.error)
+const formattedCustomerPhone = computed(() => formatPhone(customer.value?.phone))
+
+const normalizeId = (value: unknown) => String(value ?? '').trim()
+const normalizeText = (value: unknown) =>
+  String(value ?? '')
+    .trim()
+    .toLowerCase()
+
+function formatPhone(value?: string) {
+  if (!value) return 'No phone'
+
+  const digits = value.replace(/\D/g, '')
+  if (digits.length < 10) return value
+
+  const base = digits.slice(-10)
+  const area = base.slice(0, 3)
+  const prefix = base.slice(3, 6)
+  const line = base.slice(6, 10)
+  return `(${area}) ${prefix} - ${line}`
+}
 
 async function load() {
   try {
@@ -91,24 +113,49 @@ async function load() {
     customer.value = customerStore.customerById(id)
     const matchedCustomer = customer.value
 
+    const customerId = normalizeId(id)
+    const customerVesselIds = new Set(
+      (matchedCustomer?.vesselIds ?? []).map((vesselId) => normalizeId(vesselId)).filter(Boolean),
+    )
+
+    const idMatchedVessels = vesselStore.vessels.filter((v) => {
+      const vesselCustomerId = normalizeId(v.customerId)
+      const vesselOwnerId = normalizeId(v.owner)
+      const vesselId = normalizeId(v.id)
+
+      return (
+        vesselCustomerId === customerId ||
+        vesselOwnerId === customerId ||
+        (vesselId && customerVesselIds.has(vesselId))
+      )
+    })
+
+    if (idMatchedVessels.length > 0) {
+      vessels.value = idMatchedVessels
+      return
+    }
+
+    // Fallback only for legacy records with missing IDs: require both name and phone to match.
+    if (!matchedCustomer) {
+      vessels.value = []
+      return
+    }
+
+    const customerName = normalizeText(matchedCustomer.name)
+    const customerPhone = normalizeText(matchedCustomer.phone)
+
     vessels.value = vesselStore.vessels.filter((v) => {
-      if (String(v.customerId) === String(id) || String(v.owner) === String(id)) return true
-      if (!matchedCustomer) return false
+      const vesselCustomerName = normalizeText(v.customerName)
+      const vesselCustomerPhone = normalizeText(v.customerPhone)
 
-      const vesselCustomerName = String(v.customerName || '')
-        .trim()
-        .toLowerCase()
-      const vesselCustomerPhone = String(v.customerPhone || '')
-        .trim()
-        .toLowerCase()
-      const customerName = String(matchedCustomer.name || '')
-        .trim()
-        .toLowerCase()
-      const customerPhone = String(matchedCustomer.phone || '')
-        .trim()
-        .toLowerCase()
-
-      return vesselCustomerName === customerName || vesselCustomerPhone === customerPhone
+      return Boolean(
+        customerName &&
+        customerPhone &&
+        vesselCustomerName &&
+        vesselCustomerPhone &&
+        vesselCustomerName === customerName &&
+        vesselCustomerPhone === customerPhone,
+      )
     })
   } catch (err) {
     uiStore.error = err instanceof Error ? err.message : String(err)
@@ -148,6 +195,8 @@ onMounted(load)
 
 .customer-profile-shell {
   width: min(100%, 880px);
+  position: relative;
+  margin-block: 0;
 }
 
 .profile-card,
@@ -170,9 +219,12 @@ onMounted(load)
   gap: 6px;
   border: none;
   background: transparent;
-  color: #2563eb;
+  color: var(--color-ocean-dark);
   cursor: pointer;
-  margin-bottom: 16px;
+  position: absolute;
+  top: 6px;
+  right: calc(100% + 16px);
+  margin-bottom: 0;
   padding: 0;
   font-weight: 600;
 }
@@ -315,5 +367,12 @@ onMounted(load)
 
 .error {
   color: #b91c1c;
+}
+
+@media (max-width: 1100px) {
+  .back {
+    position: static;
+    margin-bottom: 12px;
+  }
 }
 </style>
