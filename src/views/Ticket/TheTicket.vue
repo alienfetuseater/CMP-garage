@@ -59,7 +59,6 @@
         </div>
 
         <ul class="details">
-          <!-- <li><strong>ID</strong> {{ ticket.id }}</li> -->
           <li><strong>Status</strong> {{ ticket.status }}</li>
           <li><strong>Priority</strong> {{ ticket.priority }}</li>
           <li><strong>Created</strong> {{ formatLocalDateTime(ticket.createdAt) }}</li>

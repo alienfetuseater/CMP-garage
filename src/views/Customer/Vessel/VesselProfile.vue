@@ -20,6 +20,14 @@
             <button type="button" class="primary action-btn secondary-btn" @click="createTicket">
               New Ticket
             </button>
+            <button
+              type="button"
+              class="primary action-btn secondary-btn"
+              :disabled="generatingVesselDossier"
+              @click="generateVesselDossier"
+            >
+              Generate Vessel Dossier
+            </button>
           </div>
         </header>
 
@@ -149,6 +157,81 @@
             </div>
           </div>
         </section>
+
+        <div
+          v-if="showVesselDossierPreview"
+          class="preview-backdrop"
+          @click.self="closeVesselDossierPreview"
+        >
+          <section
+            class="preview-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="vessel-dossier-preview-title"
+          >
+            <header class="preview-header">
+              <div>
+                <p class="eyebrow">Vessel dossier preview</p>
+                <h3 id="vessel-dossier-preview-title">{{ vessel.vesselName }}</h3>
+              </div>
+              <button type="button" class="close-preview" @click="closeVesselDossierPreview">
+                ✕
+              </button>
+            </header>
+
+            <div class="preview-frame-wrap">
+              <div v-if="previewActionBusy && !dossierPreviewUrl" class="preview-loading">
+                Loading preview...
+              </div>
+              <iframe
+                v-if="dossierPreviewUrl"
+                ref="previewFrameRef"
+                class="preview-frame"
+                :src="dossierPreviewUrl"
+                title="Vessel dossier preview"
+              ></iframe>
+            </div>
+
+            <div class="preview-actions">
+              <button
+                type="button"
+                class="preview-action-button"
+                :disabled="previewActionBusy"
+                @click="printPreview"
+              >
+                Print
+              </button>
+              <button
+                type="button"
+                class="preview-action-button"
+                :disabled="previewActionBusy"
+                @click="savePreview"
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                class="preview-action-button"
+                :disabled="previewActionBusy"
+                @click="emailPreview"
+              >
+                Email
+              </button>
+              <button
+                type="button"
+                class="preview-action-button preview-cancel-button"
+                :disabled="previewActionBusy"
+                @click="closeVesselDossierPreview"
+                aria-label="Cancel preview"
+              >
+                ✕
+              </button>
+              <span v-if="previewActionBusy">Working...</span>
+              <span v-if="previewActionSuccess" class="success">{{ previewActionSuccess }}</span>
+              <span v-if="previewActionError" class="error">{{ previewActionError }}</span>
+            </div>
+          </section>
+        </div>
       </section>
 
       <div v-else class="status-card">No vessel found.</div>
@@ -157,12 +240,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUiStore } from '@/stores/ui'
 import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
 import { useTicketStore } from '@/stores/tickets'
+import { API_BASE, apiFetch } from '@/api'
 import type { Vessel, Ticket } from '@/types/mock'
 import { formatLocalDateTime } from '@/utils/datetime'
 
@@ -175,6 +259,13 @@ const router = useRouter()
 
 const vessel = ref<Vessel | null>(null)
 const ticketsForVessel = ref<Ticket[]>([])
+const generatingVesselDossier = ref(false)
+const showVesselDossierPreview = ref(false)
+const dossierPreviewUrl = ref<string | null>(null)
+const previewFrameRef = ref<HTMLIFrameElement | null>(null)
+const previewActionBusy = ref(false)
+const previewActionSuccess = ref<string | null>(null)
+const previewActionError = ref<string | null>(null)
 
 const loading = computed(() => uiStore.loading)
 const error = computed(() => uiStore.error)
@@ -256,6 +347,17 @@ async function load() {
     await uiStore.fetchAllData()
     vessel.value = vesselStore.vesselById(id)
 
+    if (!vessel.value) {
+      const fetchedVessel = await apiFetch<Vessel>(`/getBoatProfile?id=${encodeURIComponent(id)}`)
+      const normalizedVessel = {
+        ...fetchedVessel,
+        id: String(fetchedVessel.id ?? (fetchedVessel as Vessel & { _id?: string })._id ?? id),
+      }
+
+      vesselStore.addVessel(normalizedVessel)
+      vessel.value = normalizedVessel
+    }
+
     ticketsForVessel.value = ticketStore.tickets.filter((ticket) => ticket.vesselId === id)
   } catch (err) {
     uiStore.error = err instanceof Error ? err.message : String(err)
@@ -311,7 +413,113 @@ function createTicket() {
   })
 }
 
+function generateVesselDossier() {
+  if (!vessel.value) return
+
+  generatingVesselDossier.value = true
+  previewActionSuccess.value = null
+  previewActionError.value = null
+
+  void openVesselDossierPreview(vessel.value.id).finally(() => {
+    generatingVesselDossier.value = false
+  })
+}
+
+async function openVesselDossierPreview(vesselId: string) {
+  previewActionBusy.value = true
+  previewActionSuccess.value = null
+  previewActionError.value = null
+  showVesselDossierPreview.value = true
+
+  try {
+    const response = await fetch(`${API_BASE}/previewVesselDossier/${encodeURIComponent(vesselId)}`)
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => response.statusText)
+      throw new Error(`${response.status} ${response.statusText}: ${errorText}`)
+    }
+
+    const blob = await response.blob()
+    if (dossierPreviewUrl.value) {
+      URL.revokeObjectURL(dossierPreviewUrl.value)
+    }
+
+    dossierPreviewUrl.value = URL.createObjectURL(blob)
+  } catch (err) {
+    previewActionError.value = err instanceof Error ? err.message : String(err)
+  } finally {
+    previewActionBusy.value = false
+  }
+}
+
+function closeVesselDossierPreview() {
+  showVesselDossierPreview.value = false
+  previewActionSuccess.value = null
+  previewActionError.value = null
+
+  if (dossierPreviewUrl.value) {
+    URL.revokeObjectURL(dossierPreviewUrl.value)
+    dossierPreviewUrl.value = null
+  }
+}
+
+function printPreview() {
+  previewActionSuccess.value = null
+  previewActionError.value = null
+  previewFrameRef.value?.contentWindow?.print()
+}
+
+function savePreview() {
+  if (!dossierPreviewUrl.value) return
+
+  previewActionSuccess.value = 'Download started'
+  previewActionError.value = null
+
+  const safeName =
+    (vessel.value?.vesselName || 'vessel')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9-_]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'vessel'
+
+  const link = document.createElement('a')
+  link.href = dossierPreviewUrl.value
+  link.download = `vessel-dossier-${safeName}.pdf`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+}
+
+async function emailPreview() {
+  if (!vessel.value) return
+
+  previewActionBusy.value = true
+  previewActionSuccess.value = null
+  previewActionError.value = null
+
+  try {
+    const response = await apiFetch<{ message: string; recipients: string[] }>(
+      `/emailVesselDossier/${encodeURIComponent(vessel.value.id)}`,
+      {
+        method: 'POST',
+      },
+    )
+
+    previewActionSuccess.value = response.message
+  } catch (err) {
+    previewActionError.value = err instanceof Error ? err.message : String(err)
+  } finally {
+    previewActionBusy.value = false
+  }
+}
+
 onMounted(load)
+
+onBeforeUnmount(() => {
+  if (dossierPreviewUrl.value) {
+    URL.revokeObjectURL(dossierPreviewUrl.value)
+  }
+})
 </script>
 
 <style scoped>
@@ -383,20 +591,171 @@ onMounted(load)
 }
 
 .action-btn {
+  padding: 0.7rem 1rem;
+  border-radius: 999px;
+  font-weight: 700;
   white-space: nowrap;
 }
 
 .header-actions {
-  display: flex;
-  flex-direction: column;
+  display: inline-flex;
   gap: 10px;
-  align-items: flex-end;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
 }
 
 .secondary-btn {
   background: #eff6ff;
   color: #1d4ed8;
   border: 1px solid #bfdbfe;
+}
+
+.secondary-btn:hover:not(:disabled) {
+  background: #dbeafe;
+}
+
+.preview-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  z-index: 60;
+}
+
+.preview-modal {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.preview-header > * {
+  pointer-events: auto;
+}
+
+.close-preview {
+  border: none;
+  background: #e2e8f0;
+  color: #0f172a;
+  border-radius: 999px;
+  width: 36px;
+  height: 36px;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.preview-frame-wrap {
+  position: absolute;
+  inset: 0;
+  border: none;
+  border-radius: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+.preview-frame,
+.preview-loading {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.preview-loading {
+  display: grid;
+  place-items: center;
+  color: #475569;
+  font-weight: 600;
+}
+
+.preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  justify-content: flex-start;
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  max-width: min(100%, calc(100vw - 32px));
+  padding: 12px;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.24);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.preview-actions > * {
+  pointer-events: auto;
+}
+
+.preview-action-button {
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-radius: 999px;
+  min-width: 88px;
+  min-height: 40px;
+  padding: 0.7rem 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.preview-action-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.34);
+}
+
+.preview-action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.preview-cancel-button {
+  min-width: 44px;
+  padding-inline: 0;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.preview-actions .success,
+.preview-actions .error,
+.preview-actions > span {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.secondary-btn:hover:not(:disabled) {
+  background: #dbeafe;
 }
 
 .owner-strip {
@@ -568,6 +927,27 @@ onMounted(load)
   .back {
     position: static;
     margin-bottom: 12px;
+  }
+
+  .profile-header {
+    flex-direction: column;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .preview-header {
+    top: 12px;
+    left: 12px;
+    right: 12px;
+  }
+
+  .preview-actions {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
   }
 }
 </style>

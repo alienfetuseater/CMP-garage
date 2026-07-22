@@ -31,7 +31,7 @@
               />
             </label>
 
-            <label>
+            <!-- <label>
               Customer ID
               <input
                 v-model="form.customerId"
@@ -49,7 +49,7 @@
                 :disabled="isEditMode"
                 :class="{ immutable: isEditMode }"
               />
-            </label>
+            </label> -->
 
             <label>
               Service Category

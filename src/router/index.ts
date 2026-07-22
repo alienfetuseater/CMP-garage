@@ -20,6 +20,11 @@ const router = createRouter({
       component: () => import('../views/Customer/Vessel/VesselProfile.vue'),
     },
     {
+      path: '/GenerateVesselHistory',
+      name: 'GenerateVesselHistory',
+      component: () => import('../components/Vessel/GenerateVesselHistory.vue'),
+    },
+    {
       path: '/CustomerDirectory',
       name: 'CustomerDirectory',
       component: () => import('../views/Customer/CustomerDirectory.vue'),
