@@ -30,6 +30,10 @@
         }"
         @click="selectDate(cell)"
         @dblclick.prevent="handleDayDoubleClick(cell)"
+        @pointerdown="handlePointerDown($event, cell)"
+        @pointerup="clearLongPress()"
+        @pointercancel="clearLongPress()"
+        @pointerleave="clearLongPress()"
       >
         <div class="day-number" v-if="cell.inMonth">{{ cell.day }}</div>
         <div v-if="cell.dateKey && hasItems(cell.dateKey)" class="day-markers">
@@ -103,6 +107,15 @@ function toDayKey(value: string) {
 }
 
 const selectedDate = ref<string | null>(null)
+const longPressTimer = ref<number | null>(null)
+const suppressNextClick = ref(false)
+
+type CalendarCell = {
+  day: number | null
+  inMonth: boolean
+  isToday?: boolean
+  dateKey: string | null
+}
 
 function emitSelectedDate(date: string) {
   emit('select-date', {
@@ -155,12 +168,7 @@ const startDay = computed(() => firstOfMonth.value.getDay())
 const totalCells = computed(() => Math.ceil((startDay.value + daysInMonth.value) / 7) * 7)
 
 const cells = computed(() => {
-  const arr: Array<{
-    day: number | null
-    inMonth: boolean
-    isToday: boolean
-    dateKey: string | null
-  }> = []
+  const arr: CalendarCell[] = []
   for (let i = 0; i < totalCells.value; i++) {
     const dayNum = i - startDay.value + 1
     const inMonth = dayNum >= 1 && dayNum <= daysInMonth.value
@@ -194,19 +202,42 @@ function nextMonth() {
   }
 }
 
-function selectDate(cell: { inMonth: boolean; dateKey: string | null; day: number | null }) {
+function selectDate(cell: CalendarCell) {
+  if (suppressNextClick.value) {
+    suppressNextClick.value = false
+    return
+  }
   if (!cell.inMonth || !cell.dateKey) return
   selectedDate.value = cell.dateKey
   emitSelectedDate(cell.dateKey)
 }
 
-function handleDayDoubleClick(cell: {
-  inMonth: boolean
-  dateKey: string | null
-  day: number | null
-}) {
+function handleDayDoubleClick(cell: CalendarCell) {
   if (!cell.inMonth || !cell.dateKey) return
   emit('double-click-date', { date: cell.dateKey })
+}
+
+function clearLongPress() {
+  if (longPressTimer.value !== null) {
+    window.clearTimeout(longPressTimer.value)
+    longPressTimer.value = null
+  }
+}
+
+function handlePointerDown(event: PointerEvent, cell: CalendarCell) {
+  clearLongPress()
+
+  if (event.pointerType !== 'touch' || !cell.inMonth || !cell.dateKey) {
+    return
+  }
+
+  longPressTimer.value = window.setTimeout(() => {
+    selectedDate.value = cell.dateKey
+    emitSelectedDate(cell.dateKey)
+    emit('double-click-date', { date: cell.dateKey })
+    suppressNextClick.value = true
+    longPressTimer.value = null
+  }, 450)
 }
 
 onMounted(() => {
@@ -398,5 +429,55 @@ watch([remindersByDate, ticketsByDate], () => {
 }
 .no-reminders {
   color: #5f7f9f;
+}
+
+@media (max-width: 768px) {
+  .calendar {
+    width: 100vw;
+    max-width: 100vw;
+    max-height: none;
+    border-radius: 0;
+    padding: 10px;
+  }
+
+  .cal-header {
+    gap: 6px;
+  }
+
+  .cal-header-center {
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .month-select,
+  .year-select {
+    min-width: 0;
+    padding: 6px 8px;
+  }
+
+  .days-grid {
+    gap: 4px;
+  }
+
+  .day-cell {
+    padding: 5px 5px 4px;
+  }
+}
+
+@media (max-width: 520px) {
+  .week-day {
+    font-size: 11px;
+  }
+
+  .day-number {
+    font-size: 0.92rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .cal-header-center {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
 }
 </style>

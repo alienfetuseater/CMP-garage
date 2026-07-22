@@ -78,6 +78,110 @@
           </div>
         </div>
 
+        <div ref="mobileMenuWrapRef" class="mobile-menu-wrap" @click.stop>
+          <button
+            class="mobile-menu-btn"
+            type="button"
+            aria-label="Open navigation menu"
+            :aria-expanded="showMobileMenu"
+            @click="toggleMobileMenu"
+          >
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M4 7h16" />
+              <path d="M4 12h16" />
+              <path d="M4 17h16" />
+            </svg>
+          </button>
+
+          <div v-if="showMobileMenu" class="mobile-menu-dropdown">
+            <div class="mobile-menu-head">
+              <strong>{{ mobileMenuTitle }}</strong>
+              <button
+                v-if="mobileMenuView !== 'menu'"
+                type="button"
+                class="mobile-menu-back"
+                @click="mobileMenuView = 'menu'"
+              >
+                Back
+              </button>
+            </div>
+
+            <div v-if="mobileMenuView === 'menu'" class="mobile-menu-list">
+              <button
+                type="button"
+                class="mobile-menu-item"
+                @click="goToRoute('CustomerRegistration')"
+              >
+                New Customer
+              </button>
+              <button
+                type="button"
+                class="mobile-menu-item"
+                @click="goToRoute('CustomerDirectory')"
+              >
+                Directory
+              </button>
+              <button
+                type="button"
+                class="mobile-menu-item"
+                @click="openMobileMenuPanel('reminders')"
+              >
+                Reminders
+                <span class="mobile-menu-count">{{ badgeCountLabel }}</span>
+              </button>
+              <button
+                type="button"
+                class="mobile-menu-item"
+                @click="openMobileMenuPanel('tickets')"
+              >
+                Tickets
+                <span class="mobile-menu-count">{{ ticketBadgeCountLabel }}</span>
+              </button>
+            </div>
+
+            <div v-else-if="mobileMenuView === 'reminders'" class="mobile-menu-panel">
+              <div v-if="openRemindersList.length === 0" class="notifications-empty">
+                No open reminders.
+              </div>
+
+              <template v-else>
+                <button
+                  v-for="reminder in openRemindersList"
+                  :key="reminder.id"
+                  type="button"
+                  class="notification-item"
+                  @click="openReminderFromMobileMenu(reminder.id)"
+                >
+                  <span class="notification-title">{{ reminder.title }}</span>
+                  <span class="notification-meta">{{ formatLocalDateTime(reminder.dueDate) }}</span>
+                </button>
+              </template>
+            </div>
+
+            <div v-else class="mobile-menu-panel">
+              <div v-if="openTicketsList.length === 0" class="notifications-empty">
+                No open tickets.
+              </div>
+
+              <template v-else>
+                <button
+                  v-for="ticket in openTicketsList"
+                  :key="ticket.id"
+                  type="button"
+                  class="notification-item"
+                  @click="openTicketFromMobileMenu(ticket.id)"
+                >
+                  <span class="notification-title">{{ ticket.service_title }}</span>
+                  <span class="notification-meta"
+                    >{{ ticket.status }} · {{ ticket.priority }} ·
+                    {{ formatLocalDateTime(ticket.scheduledDate) }}</span
+                  >
+                </button>
+              </template>
+            </div>
+          </div>
+        </div>
+
         <div class="action-icons">
           <RouterLink
             to="/CustomerRegistration"
@@ -243,8 +347,11 @@ const searchQuery = ref('')
 const showResults = ref(false)
 const showNotifications = ref(false)
 const showTicketsPopup = ref(false)
+const showMobileMenu = ref(false)
+const mobileMenuView = ref<'menu' | 'reminders' | 'tickets'>('menu')
 const reminderWrapRef = ref<HTMLElement | null>(null)
 const ticketWrapRef = ref<HTMLElement | null>(null)
+const mobileMenuWrapRef = ref<HTMLElement | null>(null)
 
 const normalize = (value: string) => value.trim().toLowerCase()
 
@@ -356,6 +463,12 @@ const ticketBadgeCountLabel = computed(() =>
   openTicketCount.value > 99 ? '99+' : String(openTicketCount.value),
 )
 
+const mobileMenuTitle = computed(() => {
+  if (mobileMenuView.value === 'reminders') return 'Open Reminders'
+  if (mobileMenuView.value === 'tickets') return 'Open Tickets'
+  return 'Menu'
+})
+
 function closeSearch() {
   searchQuery.value = ''
   showResults.value = false
@@ -368,15 +481,30 @@ function onSearchBlur() {
 }
 
 function toggleReminderPopup() {
+  showMobileMenu.value = false
   const nextState = !showNotifications.value
   showTicketsPopup.value = false
   showNotifications.value = nextState
 }
 
 function toggleTicketPopup() {
+  showMobileMenu.value = false
   const nextState = !showTicketsPopup.value
   showNotifications.value = false
   showTicketsPopup.value = nextState
+}
+
+function toggleMobileMenu() {
+  const nextState = !showMobileMenu.value
+  closeAllPopups()
+  mobileMenuView.value = 'menu'
+  showMobileMenu.value = nextState
+}
+
+function openMobileMenuPanel(panel: 'reminders' | 'tickets') {
+  closeAllPopups()
+  showMobileMenu.value = true
+  mobileMenuView.value = panel
 }
 
 function closeReminderPopup() {
@@ -392,14 +520,23 @@ function closeAllPopups() {
   showTicketsPopup.value = false
 }
 
+function closeMobileMenu() {
+  showMobileMenu.value = false
+  mobileMenuView.value = 'menu'
+}
+
 function onDocumentClick(event: MouseEvent) {
   const targetNode = event.target as Node | null
   if (!targetNode) return
 
   const inReminderWrap = reminderWrapRef.value?.contains(targetNode) ?? false
   const inTicketWrap = ticketWrapRef.value?.contains(targetNode) ?? false
+  const inMobileMenuWrap = mobileMenuWrapRef.value?.contains(targetNode) ?? false
   if (!inReminderWrap && !inTicketWrap) {
     closeAllPopups()
+  }
+  if (!inMobileMenuWrap) {
+    closeMobileMenu()
   }
 }
 
@@ -435,6 +572,21 @@ function openTicketFromBell(id: string) {
   showTicketsPopup.value = false
   router.push({ name: 'Ticket', query: { id } })
 }
+
+function openReminderFromMobileMenu(id: string) {
+  closeMobileMenu()
+  router.push({ name: 'Reminder', query: { id } })
+}
+
+function openTicketFromMobileMenu(id: string) {
+  closeMobileMenu()
+  router.push({ name: 'Ticket', query: { id } })
+}
+
+function goToRoute(name: 'CustomerRegistration' | 'CustomerDirectory') {
+  closeMobileMenu()
+  router.push({ name })
+}
 </script>
 
 <style scoped>
@@ -445,13 +597,13 @@ function openTicketFromBell(id: string) {
   width: 100%;
   background-color: var(--color-navbar);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
-  border-radius: 7px;
+  border-radius: 0 0 10px 10px;
 }
 
 .nav-shell {
   width: 100%;
-  max-width: none;
-  margin: 0;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
   padding: 0.4rem 1.15rem 0.3rem 0.85rem;
   display: grid;
   grid-template-columns: auto minmax(320px, 520px);
@@ -461,7 +613,7 @@ function openTicketFromBell(id: string) {
 
 .nav-tools {
   width: 100%;
-  max-width: 500px;
+  max-width: 100%;
   justify-self: end;
   display: flex;
   align-items: center;
@@ -478,8 +630,10 @@ function openTicketFromBell(id: string) {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 16px;
-  margin-right: 2.75rem;
+  margin-right: 0;
 }
 
 nav {
@@ -591,8 +745,13 @@ a.router-link-active,
 }
 
 .search-wrap,
-.notifications-wrap {
+.notifications-wrap,
+.mobile-menu-wrap {
   position: relative;
+}
+
+.mobile-menu-wrap {
+  display: none;
 }
 
 .search-input {
@@ -787,13 +946,92 @@ a.router-link-active,
   margin-top: 0.3rem;
 }
 
+.mobile-menu-btn,
+.mobile-menu-back {
+  color: var(--color-navbar-text);
+}
+
+.mobile-menu-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 0.45rem);
+  right: 0;
+  width: min(100vw - 1.5rem, 320px);
+  max-height: 70vh;
+  overflow: auto;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 20px 36px rgba(15, 23, 42, 0.18);
+  z-index: 35;
+  padding: 0.55rem;
+}
+
+.mobile-menu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.25rem 0.25rem 0.55rem;
+  border-bottom: 1px solid #edf2f7;
+  color: #0f172a;
+}
+
+.mobile-menu-list,
+.mobile-menu-panel {
+  display: grid;
+  gap: 0.35rem;
+  padding-top: 0.45rem;
+}
+
+.mobile-menu-item {
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  padding: 0.8rem 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  text-align: left;
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.mobile-menu-item:hover {
+  background: #eff6ff;
+}
+
+.mobile-menu-count {
+  display: inline-flex;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  align-items: center;
+  justify-content: center;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
 @media (max-width: 1100px) {
   .nav-shell {
     grid-template-columns: 1fr;
+    padding-inline: 1rem;
   }
 
   .nav-tools {
-    grid-template-columns: 1fr auto;
+    justify-self: stretch;
   }
 
   ul {
@@ -810,6 +1048,91 @@ a.router-link-active,
     width: min(100vw - 2rem, 640px);
     left: 0;
     right: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .top-nav {
+    border-radius: 0;
+  }
+
+  .nav-shell {
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 0.75rem;
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  .nav-tools {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .search-wrap {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .mobile-menu-wrap {
+    display: block;
+  }
+
+  .action-icons {
+    display: none;
+  }
+
+  .home-link {
+    padding: 0;
+  }
+
+  .nav-logo {
+    width: 52px;
+    height: 52px;
+  }
+
+  .search-input {
+    padding: 0.7rem 0.9rem;
+  }
+
+  .search-results,
+  .notifications-popup,
+  .mobile-menu-dropdown {
+    left: 0;
+    right: 0;
+    width: 100%;
+  }
+
+  .mobile-menu-dropdown {
+    position: fixed;
+    top: 4.75rem;
+    left: 0.75rem;
+    right: 0.75rem;
+    width: auto;
+    max-height: calc(100vh - 6rem);
+  }
+}
+
+@media (max-width: 480px) {
+  .nav-shell {
+    padding-inline: 0.6rem;
+  }
+
+  .mobile-menu-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .mobile-menu-dropdown {
+    top: 4.35rem;
+    left: 0.5rem;
+    right: 0.5rem;
+  }
+
+  .search-input {
+    padding-inline: 0.75rem;
   }
 }
 </style>

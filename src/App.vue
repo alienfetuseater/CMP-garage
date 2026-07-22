@@ -25,7 +25,10 @@ onMounted(() => {
 
 <style scoped>
 .page-content {
-  padding: 1rem;
+  width: 100%;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: clamp(0.75rem, 2vw, 1.25rem);
 }
 
 :global(.route-fade-enter-active),
@@ -45,5 +48,11 @@ onMounted(() => {
 :global(.route-fade-leave-from) {
   opacity: 1;
   transform: translateY(0);
+}
+
+@media (max-width: 640px) {
+  .page-content {
+    padding: 0.75rem;
+  }
 }
 </style>

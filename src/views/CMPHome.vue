@@ -206,7 +206,7 @@ function closeTicketPopup() {
 .home-page {
   --page-chrome-height: 72px;
   min-height: calc(100vh - 24px);
-  padding: 24px 16px 40px;
+  padding: clamp(16px, 2.5vw, 24px) clamp(12px, 2vw, 16px) 40px;
   background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
   display: flex;
   flex-direction: column;
@@ -220,7 +220,7 @@ function closeTicketPopup() {
   margin-top: 12px;
   flex: 1;
   display: grid;
-  grid-template-columns: minmax(250px, 340px) minmax(0, 1fr) minmax(250px, 340px);
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 360px);
   gap: 18px;
   align-items: start;
 }
@@ -228,12 +228,11 @@ function closeTicketPopup() {
 .calendar-pane {
   display: flex;
   justify-content: center;
-  align-items: center;
-  grid-column: 2;
+  align-items: stretch;
+  min-width: 0;
 }
 
 .day-feed-panel {
-  grid-column: 3;
   align-self: start;
   padding: 14px;
   border: 1px solid var(--color-border);
@@ -331,21 +330,50 @@ function closeTicketPopup() {
   color: #64748b;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1100px) {
   .home-layout {
-    flex: 0 0 auto;
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .home-page {
+    min-height: auto;
+    padding-bottom: 28px;
+  }
+
+  .home-layout {
     grid-template-columns: 1fr;
     gap: 14px;
   }
 
-  .calendar-pane,
+  .calendar-pane {
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+  }
+
   .day-feed-panel {
-    grid-column: auto;
+    padding: 12px;
   }
 
   .day-feed-head {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .day-feed-item {
+    padding: 10px;
+  }
+}
+
+@media (max-width: 520px) {
+  .prompt-actions {
+    flex-direction: column-reverse;
+  }
+
+  .prompt-actions button {
+    width: 100%;
   }
 }
 
