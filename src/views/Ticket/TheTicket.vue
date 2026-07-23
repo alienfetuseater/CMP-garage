@@ -71,7 +71,18 @@
           </div>
 
           <p v-if="initialAssessmentText" class="notes-text">{{ initialAssessmentText }}</p>
-          <div v-else class="empty-state">No initial assessment provided for this ticket.</div>
+          <div v-if="initialAssessmentPhotos.length" class="photo-grid">
+            <figure v-for="photo in initialAssessmentPhotos" :key="photo.id" class="photo-card">
+              <img :src="photo.dataUrl" :alt="photo.name" class="photo-preview" />
+              <figcaption class="photo-meta">
+                <span>{{ photo.name?.trim() || 'Ticket Photo' }}</span>
+                <span>{{ formatLocalDateTime(photo.uploadedAt) }}</span>
+              </figcaption>
+            </figure>
+          </div>
+          <div v-if="!initialAssessmentText && !initialAssessmentPhotos.length" class="empty-state">
+            No initial assessment provided for this ticket.
+          </div>
         </section>
 
         <section class="notes-block">
@@ -114,6 +125,7 @@
             <label v-for="part in requiredParts" :key="part.id" class="plan-item">
               <input type="checkbox" :checked="part.completed" disabled />
               <span :class="{ done: part.completed }">{{ part.text }}</span>
+              <span class="part-cost">{{ formatCurrency(part.cost ?? 0) }}</span>
             </label>
           </div>
           <div v-else class="empty-state">
@@ -142,8 +154,39 @@
           <p v-if="summaryOfWorkCompletedText" class="notes-text">
             {{ summaryOfWorkCompletedText }}
           </p>
-          <div v-else class="empty-state">
+          <div v-if="summaryOfWorkCompletedPhotos.length" class="photo-grid">
+            <figure
+              v-for="photo in summaryOfWorkCompletedPhotos"
+              :key="photo.id"
+              class="photo-card"
+            >
+              <img :src="photo.dataUrl" :alt="photo.name" class="photo-preview" />
+              <figcaption class="photo-meta">
+                <span>{{ photo.name?.trim() || 'Ticket Photo' }}</span>
+                <span>{{ formatLocalDateTime(photo.uploadedAt) }}</span>
+              </figcaption>
+            </figure>
+          </div>
+          <div
+            v-if="!summaryOfWorkCompletedText && !summaryOfWorkCompletedPhotos.length"
+            class="empty-state"
+          >
             No summary of work completed provided for this ticket.
+          </div>
+        </section>
+
+        <section class="notes-block invoice-block">
+          <div class="section-heading">
+            <h3>Invoice Cost</h3>
+            <p>Total of selected required parts plus labor cost.</p>
+          </div>
+
+          <div class="invoice-summary">
+            <p><strong>Selected Parts Total</strong> {{ formatCurrency(selectedPartsTotal) }}</p>
+            <p><strong>Labor Cost</strong> {{ formatCurrency(normalizedLaborCost) }}</p>
+            <p class="invoice-grand-total">
+              <strong>Invoice Total</strong> {{ formatCurrency(invoiceTotal) }}
+            </p>
           </div>
         </section>
 
@@ -220,7 +263,13 @@ import { useTicketStore } from '@/stores/tickets'
 import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
 import { apiFetch } from '@/api'
-import type { DiagnosticLevel, PlanActionItem, RequiredPartItem, Ticket } from '@/types/mock'
+import type {
+  DiagnosticLevel,
+  PlanActionItem,
+  RequiredPartItem,
+  Ticket,
+  TicketPhotoAttachment,
+} from '@/types/mock'
 import { formatLocalDateTime } from '@/utils/datetime'
 import { splitNoteHistory } from '@/utils/notes'
 
@@ -346,7 +395,27 @@ const recommendedServiceText = computed(() => ticket.value?.recommendedService?.
 const summaryOfWorkCompletedText = computed(
   () => ticket.value?.summaryOfWorkPerformed?.trim() ?? '',
 )
+const initialAssessmentPhotos = computed<TicketPhotoAttachment[]>(
+  () => ticket.value?.initialAssessmentPhotos ?? [],
+)
+const summaryOfWorkCompletedPhotos = computed<TicketPhotoAttachment[]>(
+  () => ticket.value?.summaryOfWorkPerformedPhotos ?? [],
+)
 const noteEntries = computed(() => splitNoteHistory(ticket.value?.notes))
+const normalizedLaborCost = computed(() => {
+  const value = Number(ticket.value?.laborCost ?? 0)
+  if (!Number.isFinite(value) || value < 0) return 0
+  return value
+})
+const selectedPartsTotal = computed(() => {
+  return requiredParts.value.reduce((total, item) => {
+    if (!item.completed) return total
+    const cost = Number(item.cost ?? 0)
+    if (!Number.isFinite(cost) || cost <= 0) return total
+    return total + cost
+  }, 0)
+})
+const invoiceTotal = computed(() => selectedPartsTotal.value + normalizedLaborCost.value)
 const isTicketClosed = computed(() => {
   const status = String(ticket.value?.status || '')
     .trim()
@@ -408,10 +477,7 @@ function hydrateDiagnostics() {
     diagnostics[field] = currentDiagnostics[field] ?? 'N/A'
   })
 
-  showDiagnostics.value = Object.values(currentDiagnostics).some(
-    (value) =>
-      value !== undefined && value !== null && String(value).trim() !== '' && value !== 'N/A',
-  )
+  showDiagnostics.value = false
 }
 
 async function saveDiagnostics() {
@@ -463,6 +529,13 @@ async function emailUpdatedProgress() {
   } finally {
     emailingProgress.value = false
   }
+}
+
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(value || 0)
 }
 
 function goBack() {
@@ -678,6 +751,42 @@ onMounted(load)
   gap: 10px;
 }
 
+.photo-grid {
+  --ticket-photo-tile-width: 260px;
+  --ticket-photo-tile-height: 195px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, var(--ticket-photo-tile-width));
+  gap: 12px;
+  justify-content: flex-start;
+  margin-top: 12px;
+}
+
+.photo-card {
+  margin: 0;
+  padding: 10px;
+  width: var(--ticket-photo-tile-width);
+  border: 1px solid #dbeafe;
+  border-radius: 16px;
+  background: #f8fbff;
+}
+
+.photo-preview {
+  display: block;
+  width: var(--ticket-photo-tile-width);
+  height: var(--ticket-photo-tile-height);
+  object-fit: cover;
+  border-radius: 12px;
+  background: #e2e8f0;
+}
+
+.photo-meta {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
 .plan-block {
   margin-top: 24px;
   display: grid;
@@ -700,6 +809,32 @@ onMounted(load)
 .plan-item .done {
   text-decoration: line-through;
   color: #64748b;
+}
+
+.part-cost {
+  margin-left: auto;
+  color: #334155;
+  font-weight: 700;
+}
+
+.invoice-block .section-heading p {
+  margin: 4px 0 0;
+}
+
+.invoice-summary {
+  display: grid;
+  gap: 6px;
+  color: #334155;
+}
+
+.invoice-summary p {
+  margin: 0;
+}
+
+.invoice-grand-total {
+  margin-top: 4px;
+  color: #0f172a;
+  font-size: 1.04rem;
 }
 
 .diagnostics-section {
@@ -786,13 +921,19 @@ onMounted(load)
 }
 
 .secondary {
-  border: 1px solid var(--color-ocean-deep);
-  background: var(--color-ocean-muted);
-  color: var(--color-ocean-dark);
-  border-radius: 10px;
-  padding: 10px 12px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-radius: 999px;
+  min-height: 42px;
+  padding: 0.7rem 1rem;
   font-weight: 700;
   cursor: pointer;
+  white-space: nowrap;
+}
+
+.secondary:hover:not(:disabled) {
+  background: #dbeafe;
 }
 
 .secondary:disabled {
@@ -847,6 +988,20 @@ onMounted(load)
 }
 
 @media (max-width: 720px) {
+  .photo-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .photo-card,
+  .photo-preview {
+    width: 100%;
+  }
+
+  .photo-preview {
+    height: auto;
+    aspect-ratio: 4 / 3;
+  }
+
   .diagnostics-heading {
     flex-direction: column;
   }

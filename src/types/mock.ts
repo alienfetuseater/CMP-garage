@@ -61,6 +61,14 @@ export interface RequiredPartItem {
   id: string
   text: string
   completed: boolean
+  cost?: number
+}
+
+export interface TicketPhotoAttachment {
+  id: string
+  name: string
+  uploadedAt: string
+  dataUrl: string
 }
 
 export interface Ticket {
@@ -77,8 +85,11 @@ export interface Ticket {
   scheduledDate: string
   notes: string
   initialAssessment?: string
+  initialAssessmentPhotos?: TicketPhotoAttachment[]
   recommendedService?: string
   summaryOfWorkPerformed?: string
+  summaryOfWorkPerformedPhotos?: TicketPhotoAttachment[]
+  laborCost?: number
   summaryOfFurtherRecommendations?: string
   planOfAction?: PlanActionItem[]
   requiredParts?: RequiredPartItem[]

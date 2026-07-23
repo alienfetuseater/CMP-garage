@@ -7,6 +7,7 @@
             <RouterLink to="/" class="home-link" title="Home">
               <img class="nav-logo" src="/CMPicon.png" alt="CMP Garage" />
             </RouterLink>
+            <span class="brand-banner">Coastal Marine Pro</span>
           </li>
         </ul>
       </nav>
@@ -606,7 +607,7 @@ function goToRoute(name: 'CustomerRegistration' | 'CustomerDirectory') {
   margin: 0 auto;
   padding: 0.4rem 1.15rem 0.3rem 0.85rem;
   display: grid;
-  grid-template-columns: auto minmax(320px, 520px);
+  grid-template-columns: auto minmax(340px, 560px);
   align-items: center;
   gap: 0.85rem;
 }
@@ -621,9 +622,9 @@ function goToRoute(name: 'CustomerRegistration' | 'CustomerDirectory') {
 }
 
 .search-wrap {
-  flex: 1 1 320px;
-  min-width: 240px;
-  max-width: 380px;
+  flex: 1 1 340px;
+  min-width: 280px;
+  max-width: 500px;
 }
 
 .action-icons {
@@ -639,14 +640,14 @@ function goToRoute(name: 'CustomerRegistration' | 'CustomerDirectory') {
 nav {
   width: fit-content;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
 }
 
 ul {
   list-style: none;
   display: flex;
   justify-content: flex-start;
-  align-items: flex-end;
+  align-items: center;
   margin: 0;
   padding: 0;
   gap: 0.35rem;
@@ -656,15 +657,16 @@ li {
   flex: 0 1 auto;
   text-align: center;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
+  gap: 0.55rem;
 }
 
 .home-link {
   display: inline-flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: flex-start;
   margin-left: 0;
-  padding: 0.05rem 0 0.35rem;
+  padding: 0;
 }
 
 .nav-logo {
@@ -677,6 +679,21 @@ li {
 
 .nav-logo:hover {
   transform: scale(1.06);
+}
+
+.brand-banner {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.46rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid rgba(142, 185, 229, 0.38);
+  background: linear-gradient(180deg, rgba(78, 137, 204, 0.3), rgba(16, 36, 58, 0.9));
+  color: #f4fbff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .nav-icon-link {
@@ -736,6 +753,16 @@ a.router-link-active,
 :deep(a.router-link-active) {
   background-color: var(--color-link-hover);
   color: var(--color-surface);
+}
+
+.home-link,
+:deep(.home-link) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0;
+  position: relative;
+  top: 4px;
 }
 
 .home-link.router-link-active,
@@ -1086,11 +1113,16 @@ a.router-link-active,
 
   .home-link {
     padding: 0;
+    top: 0;
   }
 
   .nav-logo {
     width: 52px;
     height: 52px;
+  }
+
+  .brand-banner {
+    display: none;
   }
 
   .search-input {
