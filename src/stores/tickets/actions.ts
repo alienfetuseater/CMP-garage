@@ -2,6 +2,7 @@ import { apiFetch } from '@/api'
 import type { Ticket } from '@/types/mock'
 import type { TicketsState } from './state'
 import { useUiStore } from '@/stores/ui'
+import { normalizeConversationMessages } from '@/utils/conversations'
 
 type TicketApiRecord = Ticket & {
   _id?: string
@@ -11,6 +12,10 @@ const normalizeTicket = (record: TicketApiRecord): Ticket => {
   return {
     ...record,
     id: String(record.id ?? record._id ?? ''),
+    archivedByUserIds: Array.isArray(record.archivedByUserIds)
+      ? record.archivedByUserIds.map((entry) => String(entry ?? '').trim()).filter(Boolean)
+      : [],
+    messages: normalizeConversationMessages(record.messages),
   }
 }
 

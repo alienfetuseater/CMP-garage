@@ -4,6 +4,7 @@ import { RouterView, useRoute, useRouter } from 'vue-router'
 import NavBar from './components/NavBar/nav-bar.vue'
 import { useUiStore } from '@/stores/ui'
 import { useAuthStore } from '@/stores/auth'
+import { connectRealtimeMessaging, disconnectRealtimeMessaging } from '@/realtime/messaging'
 
 const uiStore = useUiStore()
 const authStore = useAuthStore()
@@ -11,25 +12,33 @@ const route = useRoute()
 const router = useRouter()
 
 const isAuthScreen = computed(() => route.name === 'Login' || route.name === 'Register')
+const hasSession = computed(() => Boolean(authStore.token))
 
 const loadAppData = async (force = false) => {
-  if (!authStore.isAuthenticated) return
+  if (!hasSession.value) return
   await uiStore.fetchAllData(force).catch(() => {})
 }
 
 onMounted(async () => {
   await authStore.initializeAuth()
-  if (!authStore.isAuthenticated && !isAuthScreen.value) {
+  if (!hasSession.value && !isAuthScreen.value) {
     await router.replace({ name: 'Login', query: { redirect: route.fullPath } })
     return
+  }
+  if (authStore.token) {
+    connectRealtimeMessaging(authStore.token)
   }
   await loadAppData()
 })
 
 watch(
-  () => authStore.isAuthenticated,
-  async (isAuthenticated, wasAuthenticated) => {
-    if (!isAuthenticated) {
+  () => authStore.token,
+  async (token, previousToken) => {
+    const hasToken = Boolean(token)
+    const hadToken = Boolean(previousToken)
+
+    if (!hasToken) {
+      disconnectRealtimeMessaging()
       uiStore.resetState()
       if (!isAuthScreen.value) {
         await router.replace({ name: 'Login', query: { redirect: route.fullPath } })
@@ -37,7 +46,9 @@ watch(
       return
     }
 
-    if (!wasAuthenticated) {
+    connectRealtimeMessaging(token)
+
+    if (!hadToken) {
       await loadAppData(true)
     }
   },
@@ -45,7 +56,7 @@ watch(
 </script>
 
 <template>
-  <NavBar v-if="authStore.isAuthenticated && !isAuthScreen" />
+  <NavBar v-if="hasSession && !isAuthScreen" />
 
   <main class="page-content">
     <RouterView v-slot="{ Component, route }">

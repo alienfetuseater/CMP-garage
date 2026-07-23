@@ -13,11 +13,11 @@
             <h2>{{ customer.name }}</h2>
           </div>
 
-          <div class="header-actions">
-            <button type="button" class="primary action-btn" @click="updateCustomerProfile">
+          <div class="header-actions profile-action-group">
+            <button type="button" class="primary profile-action-btn" @click="updateCustomerProfile">
               Update Customer Profile
             </button>
-            <button type="button" class="primary action-btn" @click="addNewVessel">
+            <button type="button" class="primary profile-action-btn" @click="addNewVessel">
               Add New Vessel
             </button>
           </div>
@@ -31,9 +31,9 @@
         </ul>
 
         <div class="vessel-list">
-          <div class="section-heading">
+          <div class="section-heading profile-section-heading">
             <h3>Vessels</h3>
-            <span class="count">{{ vessels.length }}</span>
+            <span class="count profile-count-badge">{{ vessels.length }}</span>
           </div>
 
           <div v-if="vessels.length === 0" class="empty-state">No vessels registered.</div>
@@ -245,13 +245,6 @@ onMounted(load)
   margin-bottom: 20px;
 }
 
-.header-actions {
-  display: inline-flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
 .eyebrow {
   margin: 0 0 6px;
   text-transform: uppercase;
@@ -265,10 +258,6 @@ onMounted(load)
   font-size: 2rem;
   line-height: 1.1;
   color: #0f172a;
-}
-
-.action-btn {
-  white-space: nowrap;
 }
 
 .details {
@@ -296,31 +285,6 @@ onMounted(load)
 
 .vessel-list {
   margin-top: 24px;
-}
-
-.section-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.section-heading h3 {
-  margin: 0;
-  color: #0f172a;
-}
-
-.count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 2rem;
-  height: 2rem;
-  padding: 0 10px;
-  border-radius: 999px;
-  background: #dbeafe;
-  color: #1d4ed8;
-  font-weight: 700;
 }
 
 .empty-state {

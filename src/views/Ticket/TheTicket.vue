@@ -13,18 +13,31 @@
             <h2>{{ ticket.service_title }}</h2>
           </div>
 
-          <div class="header-actions">
-            <div class="ticket-badge">{{ ticket.status }}</div>
-            <button type="button" class="secondary" :disabled="isTicketClosed" @click="editWork">
-              Update Work
+          <div class="header-actions profile-action-group">
+            <div class="ticket-badge profile-status-badge">{{ ticket.status }}</div>
+            <button type="button" class="primary profile-action-btn" @click="openConversation">
+              messages
             </button>
-            <button v-if="!isTicketClosed" type="button" class="secondary" @click="closeOutTicket">
+            <button
+              type="button"
+              class="primary profile-action-btn"
+              :disabled="isTicketClosed"
+              @click="editWork"
+            >
+              Update
+            </button>
+            <button
+              v-if="!isTicketClosed"
+              type="button"
+              class="primary profile-action-btn"
+              @click="closeOutTicket"
+            >
               Close Out Ticket
             </button>
             <button
               v-else
               type="button"
-              class="secondary"
+              class="primary profile-action-btn"
               :disabled="updatingTicketStatus"
               @click="reopenTicket"
             >
@@ -32,11 +45,11 @@
             </button>
             <button
               type="button"
-              class="secondary"
+              class="primary profile-action-btn"
               @click="emailUpdatedProgress"
               :disabled="emailingProgress"
             >
-              {{ isTicketClosed ? 'Email Final Invoice to Client' : 'Email Updated Progress' }}
+              {{ isTicketClosed ? 'Email Final Invoice to Client' : 'Email Updates' }}
             </button>
             <span v-if="updatingTicketStatus">Updating status...</span>
             <span v-if="ticketStatusError" class="error">{{ ticketStatusError }}</span>
@@ -66,7 +79,7 @@
         </ul>
 
         <section class="notes-block">
-          <div class="section-heading">
+          <div class="section-heading profile-section-heading">
             <h3>Initial Assessment</h3>
           </div>
 
@@ -86,7 +99,7 @@
         </section>
 
         <section class="notes-block">
-          <div class="section-heading">
+          <div class="section-heading profile-section-heading">
             <h3>Recommended Service</h3>
           </div>
 
@@ -95,7 +108,7 @@
         </section>
 
         <section class="plan-block">
-          <div class="section-heading">
+          <div class="section-heading profile-section-heading">
             <h3>Plan of Action</h3>
             <p>
               {{ completedPlanCount }} of {{ totalPlanCount }} items complete ({{ planProgress }}%)
@@ -112,7 +125,7 @@
         </section>
 
         <section class="plan-block">
-          <div class="section-heading">
+          <div class="section-heading profile-section-heading">
             <h3>Required Parts</h3>
             <p>
               {{ completedRequiredParts }} of {{ totalRequiredParts }} parts complete ({{
@@ -134,7 +147,7 @@
         </section>
 
         <section class="notes-block">
-          <div class="section-heading">
+          <div class="section-heading profile-section-heading">
             <h3>Notes</h3>
           </div>
 
@@ -147,7 +160,7 @@
         </section>
 
         <section class="notes-block">
-          <div class="section-heading">
+          <div class="section-heading profile-section-heading">
             <h3>Summary of Work Completed</h3>
           </div>
 
@@ -176,7 +189,7 @@
         </section>
 
         <section class="notes-block invoice-block">
-          <div class="section-heading">
+          <div class="section-heading profile-section-heading">
             <h3>Invoice Cost</h3>
             <p>Total of selected required parts plus labor cost.</p>
           </div>
@@ -191,7 +204,7 @@
         </section>
 
         <section class="diagnostics-section">
-          <div class="section-heading diagnostics-heading">
+          <div class="section-heading profile-section-heading diagnostics-heading">
             <div>
               <h3>Diagnostics</h3>
               <p>Fill out the inspection details here after the ticket has been created.</p>
@@ -535,6 +548,11 @@ function goBack() {
   router.back()
 }
 
+function openConversation() {
+  const id = ticket.value?.id
+  if (id) router.push({ name: 'Conversation', query: { type: 'ticket', id } })
+}
+
 function openCustomer() {
   const cid = ticket.value?.customerId
   if (cid) router.push({ name: 'CustomerProfile', query: { id: cid } })
@@ -640,12 +658,6 @@ onMounted(load)
   margin-bottom: 18px;
 }
 
-.header-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-}
-
 .eyebrow {
   margin: 0 0 6px;
   text-transform: uppercase;
@@ -659,19 +671,6 @@ onMounted(load)
   font-size: 2rem;
   line-height: 1.1;
   color: #0f172a;
-}
-
-.ticket-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 14px;
-  border-radius: 999px;
-  background: #dbeafe;
-  color: #1d4ed8;
-  font-weight: 700;
-  text-transform: capitalize;
-  white-space: nowrap;
 }
 
 .owner-strip {
@@ -911,29 +910,6 @@ onMounted(load)
 .diagnostic-group-header h4 {
   margin: 0;
   color: #0f172a;
-}
-
-.secondary {
-  border: 1px solid #bfdbfe;
-  background: #eff6ff;
-  color: #1d4ed8;
-  border-radius: 999px;
-  min-height: 42px;
-  padding: 0.7rem 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.secondary:hover:not(:disabled) {
-  background: #dbeafe;
-}
-
-.secondary:disabled {
-  border-color: #d1d5db;
-  background: #e5e7eb;
-  color: #64748b;
-  cursor: not-allowed;
 }
 
 .diagnostics-grid {

@@ -2,6 +2,7 @@ import { apiFetch } from '@/api'
 import type { Reminder } from '@/types/mock'
 import type { RemindersState } from './state'
 import { useUiStore } from '@/stores/ui'
+import { normalizeConversationMessages } from '@/utils/conversations'
 
 type ReminderApiRecord = Reminder & {
   _id?: string
@@ -21,6 +22,10 @@ const normalizeReminder = (record: ReminderApiRecord): Reminder => {
     ...record,
     id: normalizedId,
     notes: String(record.notes ?? ''),
+    archivedByUserIds: Array.isArray(record.archivedByUserIds)
+      ? record.archivedByUserIds.map((entry) => String(entry ?? '').trim()).filter(Boolean)
+      : [],
+    messages: normalizeConversationMessages(record.messages),
     relatedTo: {
       type: record.relatedTo?.type ?? 'customer',
       id: relatedId,

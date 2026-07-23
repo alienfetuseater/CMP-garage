@@ -125,6 +125,17 @@
               <button
                 type="button"
                 class="mobile-menu-item"
+                @click="openMobileMenuPanel('messages')"
+              >
+                Team Messages
+                <span class="mobile-menu-count">{{ messageBadgeCountLabel }}</span>
+              </button>
+              <button type="button" class="mobile-menu-item" @click="openArchivedConversations">
+                Archived Conversations
+              </button>
+              <button
+                type="button"
+                class="mobile-menu-item"
                 @click="openMobileMenuPanel('reminders')"
               >
                 Reminders
@@ -139,6 +150,50 @@
                 <span class="mobile-menu-count">{{ ticketBadgeCountLabel }}</span>
               </button>
               <button type="button" class="mobile-menu-item" @click="handleLogout">Logout</button>
+            </div>
+
+            <div v-else-if="mobileMenuView === 'messages'" class="mobile-menu-panel">
+              <button
+                type="button"
+                class="notification-item archived-link"
+                @click="openMessagesPage"
+              >
+                Open All Team Messages
+              </button>
+
+              <div v-if="messageConversations.length === 0" class="notifications-empty">
+                No active internal conversations.
+              </div>
+
+              <template v-if="messageConversations.length > 0">
+                <button
+                  v-for="conversation in messageConversations"
+                  :key="conversation.conversationId"
+                  type="button"
+                  class="notification-item"
+                  @click="openConversationFromMobileMenu(conversation)"
+                >
+                  <span class="notification-title">
+                    {{ conversation.title }}
+                    <span v-if="conversation.unreadCount > 0" class="conversation-unread-badge">
+                      {{ conversation.unreadCount }}
+                    </span>
+                  </span>
+                  <span class="notification-meta">
+                    {{ conversation.subtitle }} ·
+                    {{ conversation.partnerNames.join(', ') || 'Conversation' }} ·
+                    {{ formatLocalDateTime(conversation.lastMessageAt) }}
+                  </span>
+                </button>
+              </template>
+
+              <button
+                type="button"
+                class="notification-item archived-link"
+                @click="openArchivedConversations"
+              >
+                Open Archived Conversations
+              </button>
             </div>
 
             <div v-else-if="mobileMenuView === 'reminders'" class="mobile-menu-panel">
@@ -226,6 +281,88 @@
               <path d="M8 7.5h7.5M8 11h7.5" />
             </svg>
           </RouterLink>
+
+          <div ref="messageWrapRef" class="notifications-wrap">
+            <button
+              class="notify-btn"
+              type="button"
+              aria-label="Open team messages"
+              title="Team Messages"
+              @click="toggleMessagePopup"
+            >
+              <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path
+                  d="M4.5 6.5A2.5 2.5 0 0 1 7 4h10a2.5 2.5 0 0 1 2.5 2.5v6A2.5 2.5 0 0 1 17 15H10l-4.5 4v-4H7A2.5 2.5 0 0 1 4.5 12.5Z"
+                />
+              </svg>
+              <span v-if="unreadMessageCount > 0" class="notify-count">{{
+                messageBadgeCountLabel
+              }}</span>
+            </button>
+
+            <div v-if="showMessagesPopup" class="notifications-popup">
+              <div class="notifications-head">
+                <strong class="notifications-title">Team Messages</strong>
+                <div class="notifications-actions">
+                  <span class="notifications-total">{{ unreadConversationCount }}</span>
+                  <button
+                    type="button"
+                    class="popup-close-btn"
+                    aria-label="Close messages popup"
+                    @click="closeMessagePopup"
+                  >
+                    X
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                class="notification-item archived-link"
+                @mousedown.prevent
+                @click="openMessagesPage"
+              >
+                Open All Team Messages
+              </button>
+
+              <div v-if="messageConversations.length === 0" class="notifications-empty">
+                No active internal conversations.
+              </div>
+
+              <template v-if="messageConversations.length > 0">
+                <button
+                  v-for="conversation in messageConversations"
+                  :key="conversation.conversationId"
+                  type="button"
+                  class="notification-item"
+                  :class="{ 'notification-item-unread': conversation.hasUnread }"
+                  @mousedown.prevent
+                  @click="openConversationFromBell(conversation)"
+                >
+                  <span class="notification-title">
+                    {{ conversation.title }}
+                    <span v-if="conversation.unreadCount > 0" class="conversation-unread-badge">
+                      {{ conversation.unreadCount }}
+                    </span>
+                  </span>
+                  <span class="notification-meta">
+                    {{ conversation.subtitle }} ·
+                    {{ conversation.partnerNames.join(', ') || 'Conversation' }} ·
+                    {{ formatLocalDateTime(conversation.lastMessageAt) }}
+                  </span>
+                </button>
+              </template>
+
+              <button
+                type="button"
+                class="notification-item archived-link"
+                @mousedown.prevent
+                @click="openArchivedConversations"
+              >
+                Open Archived Conversations
+              </button>
+            </div>
+          </div>
 
           <div ref="reminderWrapRef" class="notifications-wrap">
             <button
@@ -354,7 +491,9 @@ import { useVesselStore } from '@/stores/vessels'
 import { useTicketStore } from '@/stores/tickets'
 import { useReminderStore } from '@/stores/reminders'
 import { useAuthStore } from '@/stores/auth'
+import type { ConversationSummary } from '@/types/mock'
 import { formatLocalDateTime } from '@/utils/datetime'
+import { buildConversationSummary } from '@/utils/conversations'
 
 const router = useRouter()
 const customerStore = useCustomerStore()
@@ -365,10 +504,12 @@ const authStore = useAuthStore()
 
 const searchQuery = ref('')
 const showResults = ref(false)
+const showMessagesPopup = ref(false)
 const showNotifications = ref(false)
 const showTicketsPopup = ref(false)
 const showMobileMenu = ref(false)
-const mobileMenuView = ref<'menu' | 'reminders' | 'tickets'>('menu')
+const mobileMenuView = ref<'menu' | 'messages' | 'reminders' | 'tickets'>('menu')
+const messageWrapRef = ref<HTMLElement | null>(null)
 const reminderWrapRef = ref<HTMLElement | null>(null)
 const ticketWrapRef = ref<HTMLElement | null>(null)
 const mobileMenuWrapRef = ref<HTMLElement | null>(null)
@@ -467,6 +608,38 @@ const openTicketsList = computed(() =>
     .slice(0, 8),
 )
 
+const allMessageConversations = computed<ConversationSummary[]>(() => {
+  const currentUserId = String(authStore.user?.id || '')
+
+  return [
+    ...ticketStore.tickets
+      .map((ticket) => buildConversationSummary('ticket', ticket, currentUserId))
+      .filter((entry): entry is ConversationSummary => Boolean(entry)),
+    ...reminderStore.reminders
+      .map((reminder) => buildConversationSummary('reminder', reminder, currentUserId))
+      .filter((entry): entry is ConversationSummary => Boolean(entry)),
+  ].sort(
+    (left, right) =>
+      Number(right.hasUnread) - Number(left.hasUnread) ||
+      new Date(right.lastMessageAt || 0).getTime() - new Date(left.lastMessageAt || 0).getTime(),
+  )
+})
+
+const messageConversations = computed<ConversationSummary[]>(() =>
+  allMessageConversations.value.slice(0, 8),
+)
+
+const unreadMessageCount = computed(() =>
+  allMessageConversations.value.reduce(
+    (total, conversation) => total + conversation.unreadCount,
+    0,
+  ),
+)
+
+const unreadConversationCount = computed(
+  () => allMessageConversations.value.filter((conversation) => conversation.hasUnread).length,
+)
+
 const openReminderCount = computed(
   () => reminderStore.reminders.filter((reminder) => !reminder.completed).length,
 )
@@ -483,7 +656,12 @@ const ticketBadgeCountLabel = computed(() =>
   openTicketCount.value > 99 ? '99+' : String(openTicketCount.value),
 )
 
+const messageBadgeCountLabel = computed(() =>
+  unreadMessageCount.value > 99 ? '99+' : String(unreadMessageCount.value),
+)
+
 const mobileMenuTitle = computed(() => {
+  if (mobileMenuView.value === 'messages') return 'Team Messages'
   if (mobileMenuView.value === 'reminders') return 'Open Reminders'
   if (mobileMenuView.value === 'tickets') return 'Open Tickets'
   return 'Menu'
@@ -503,13 +681,23 @@ function onSearchBlur() {
 function toggleReminderPopup() {
   showMobileMenu.value = false
   const nextState = !showNotifications.value
+  showMessagesPopup.value = false
   showTicketsPopup.value = false
   showNotifications.value = nextState
+}
+
+function toggleMessagePopup() {
+  showMobileMenu.value = false
+  const nextState = !showMessagesPopup.value
+  showNotifications.value = false
+  showTicketsPopup.value = false
+  showMessagesPopup.value = nextState
 }
 
 function toggleTicketPopup() {
   showMobileMenu.value = false
   const nextState = !showTicketsPopup.value
+  showMessagesPopup.value = false
   showNotifications.value = false
   showTicketsPopup.value = nextState
 }
@@ -521,10 +709,14 @@ function toggleMobileMenu() {
   showMobileMenu.value = nextState
 }
 
-function openMobileMenuPanel(panel: 'reminders' | 'tickets') {
+function openMobileMenuPanel(panel: 'messages' | 'reminders' | 'tickets') {
   closeAllPopups()
   showMobileMenu.value = true
   mobileMenuView.value = panel
+}
+
+function closeMessagePopup() {
+  showMessagesPopup.value = false
 }
 
 function closeReminderPopup() {
@@ -536,6 +728,7 @@ function closeTicketPopup() {
 }
 
 function closeAllPopups() {
+  showMessagesPopup.value = false
   showNotifications.value = false
   showTicketsPopup.value = false
 }
@@ -549,10 +742,11 @@ function onDocumentClick(event: MouseEvent) {
   const targetNode = event.target as Node | null
   if (!targetNode) return
 
+  const inMessageWrap = messageWrapRef.value?.contains(targetNode) ?? false
   const inReminderWrap = reminderWrapRef.value?.contains(targetNode) ?? false
   const inTicketWrap = ticketWrapRef.value?.contains(targetNode) ?? false
   const inMobileMenuWrap = mobileMenuWrapRef.value?.contains(targetNode) ?? false
-  if (!inReminderWrap && !inTicketWrap) {
+  if (!inMessageWrap && !inReminderWrap && !inTicketWrap) {
     closeAllPopups()
   }
   if (!inMobileMenuWrap) {
@@ -583,6 +777,20 @@ function openTicket(id: string) {
   router.push({ name: 'Ticket', query: { id } })
 }
 
+function openConversationFromBell(conversation: ConversationSummary) {
+  showMessagesPopup.value = false
+  router.push({
+    name: 'Conversation',
+    query: { type: conversation.type, id: conversation.entityId },
+  })
+}
+
+function openArchivedConversations() {
+  closeAllPopups()
+  closeMobileMenu()
+  router.push({ name: 'ArchivedMessages' })
+}
+
 function openReminderFromBell(id: string) {
   showNotifications.value = false
   router.push({ name: 'Reminder', query: { id } })
@@ -596,6 +804,20 @@ function openTicketFromBell(id: string) {
 function openReminderFromMobileMenu(id: string) {
   closeMobileMenu()
   router.push({ name: 'Reminder', query: { id } })
+}
+
+function openConversationFromMobileMenu(conversation: ConversationSummary) {
+  closeMobileMenu()
+  router.push({
+    name: 'Conversation',
+    query: { type: conversation.type, id: conversation.entityId },
+  })
+}
+
+function openMessagesPage() {
+  closeAllPopups()
+  closeMobileMenu()
+  router.push({ name: 'Messages' })
 }
 
 function openTicketFromMobileMenu(id: string) {
@@ -761,6 +983,25 @@ li {
 
 .ticket-icon {
   stroke-width: 1.75;
+}
+
+.notification-item-unread {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+
+.conversation-unread-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  margin-left: 8px;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 a,

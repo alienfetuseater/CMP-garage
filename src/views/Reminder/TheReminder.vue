@@ -14,9 +14,12 @@
           </div>
 
           <div class="header-actions">
-            <div class="reminder-badge">
+            <div class="reminder-badge profile-status-badge">
               {{ reminder.completed ? 'Completed' : 'Open' }}
             </div>
+            <button type="button" class="secondary" @click="openConversation">
+              Open Conversation
+            </button>
             <button type="button" class="secondary" @click="editReminder">Edit Reminder</button>
           </div>
         </header>
@@ -57,7 +60,7 @@
         </ul>
 
         <section class="notes-block">
-          <div class="section-heading">
+          <div class="section-heading profile-section-heading">
             <h3>Notes</h3>
           </div>
 
@@ -153,6 +156,11 @@ function editReminder() {
   router.push({ name: 'NewReminder', query: { reminderId: reminder.value.id, mode: 'edit' } })
 }
 
+function openConversation() {
+  const id = reminder.value?.id
+  if (id) router.push({ name: 'Conversation', query: { type: 'reminder', id } })
+}
+
 function openVessel() {
   const vid = vesselId.value
   if (vid) router.push({ name: 'VesselProfile', query: { id: vid } })
@@ -235,18 +243,6 @@ onMounted(load)
   font-size: 2rem;
   line-height: 1.1;
   color: #0f172a;
-}
-
-.reminder-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 14px;
-  border-radius: 999px;
-  background: #dbeafe;
-  color: #1d4ed8;
-  font-weight: 700;
-  white-space: nowrap;
 }
 
 .owner-strip {

@@ -90,6 +90,24 @@ const router = createRouter({
       component: () => import('../views/Reminder/NewReminder.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/Messages',
+      name: 'Messages',
+      component: () => import('../views/Messages/MessagesListView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/Conversation',
+      name: 'Conversation',
+      component: () => import('../views/Messages/ConversationView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/ArchivedMessages',
+      name: 'ArchivedMessages',
+      component: () => import('../views/Messages/ArchivedConversationsView.vue'),
+      meta: { requiresAuth: true },
+    },
   ],
 })
 

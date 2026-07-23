@@ -13,20 +13,20 @@
             <h2>{{ vessel.vesselName }}</h2>
           </div>
 
-          <div class="header-actions">
-            <button type="button" class="primary action-btn" @click="editVessel">
+          <div class="header-actions profile-action-group">
+            <button type="button" class="primary profile-action-btn" @click="editVessel">
               Edit Vessel
             </button>
-            <button type="button" class="primary action-btn secondary-btn" @click="createTicket">
+            <button type="button" class="primary profile-action-btn" @click="createTicket">
               New Ticket
             </button>
             <button
               type="button"
-              class="primary action-btn secondary-btn"
+              class="primary profile-action-btn"
               :disabled="generatingVesselDossier"
               @click="generateVesselDossier"
             >
-              Generate Vessel Dossier
+              Generate Dossier
             </button>
           </div>
         </header>
@@ -71,14 +71,14 @@
         </section>
 
         <section class="related">
-          <div class="section-heading">
+          <div class="section-heading profile-section-heading">
             <h3>Service History</h3>
           </div>
 
           <div class="history-block">
             <div class="history-header">
               <h4>Diagnostic History</h4>
-              <span class="count">{{ diagnosticHistory.length }}</span>
+              <span class="count profile-count-badge">{{ diagnosticHistory.length }}</span>
             </div>
 
             <div v-if="diagnosticHistory.length">
@@ -97,7 +97,7 @@
           <div class="history-block">
             <div class="history-header">
               <h4>Repair History</h4>
-              <span class="count">{{ repairHistory.length }}</span>
+              <span class="count profile-count-badge">{{ repairHistory.length }}</span>
             </div>
 
             <div v-if="loadingTickets">Loading...</div>
@@ -122,7 +122,7 @@
           <div class="history-block">
             <div class="history-header">
               <h4>Maintenance History</h4>
-              <span class="count">{{ maintenanceHistory.length }}</span>
+              <span class="count profile-count-badge">{{ maintenanceHistory.length }}</span>
             </div>
 
             <div v-if="loadingTickets">Loading...</div>
@@ -147,7 +147,7 @@
           <div class="history-block">
             <div class="history-header">
               <h4>Upgrades History</h4>
-              <span class="count">{{ upgradeHistory.length }}</span>
+              <span class="count profile-count-badge">{{ upgradeHistory.length }}</span>
             </div>
 
             <div v-if="loadingTickets">Loading...</div>
@@ -444,7 +444,13 @@ async function openVesselDossierPreview(vesselId: string) {
   showVesselDossierPreview.value = true
 
   try {
-    const response = await fetch(`${API_BASE}/previewVesselDossier/${encodeURIComponent(vesselId)}`)
+    const token = localStorage.getItem('cmp_auth_token')
+    const response = await fetch(
+      `${API_BASE}/previewVesselDossier/${encodeURIComponent(vesselId)}`,
+      {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      },
+    )
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => response.statusText)
@@ -600,31 +606,6 @@ onBeforeUnmount(() => {
   font-size: 2rem;
   line-height: 1.1;
   color: #0f172a;
-}
-
-.action-btn {
-  padding: 0.7rem 1rem;
-  border-radius: 999px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.header-actions {
-  display: inline-flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  align-items: center;
-}
-
-.secondary-btn {
-  background: #eff6ff;
-  color: #1d4ed8;
-  border: 1px solid #bfdbfe;
-}
-
-.secondary-btn:hover:not(:disabled) {
-  background: #dbeafe;
 }
 
 .vessel-photo-card {
@@ -876,11 +857,6 @@ onBeforeUnmount(() => {
   margin-top: 24px;
 }
 
-.section-heading h3 {
-  margin: 0 0 14px;
-  color: #0f172a;
-}
-
 .history-block + .history-block {
   margin-top: 18px;
 }
@@ -895,19 +871,6 @@ onBeforeUnmount(() => {
 .history-header h4 {
   margin: 0;
   color: #0f172a;
-}
-
-.count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 2rem;
-  height: 2rem;
-  padding: 0 10px;
-  border-radius: 999px;
-  background: #dbeafe;
-  color: #1d4ed8;
-  font-weight: 700;
 }
 
 .history-list {

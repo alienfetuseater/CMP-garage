@@ -40,7 +40,22 @@ export interface Reminder {
   dueDate?: string
   completed: boolean
   notes: string
+  messages?: ConversationMessage[]
+  archivedByUserIds?: string[]
   relatedTo: ReminderRelated
+}
+
+export type ConversationType = 'ticket' | 'reminder'
+
+export interface ConversationMessage {
+  id: string
+  senderId: string
+  senderName: string
+  recipientId: string
+  recipientName: string
+  text: string
+  timestamp: string
+  readByUserIds: string[]
 }
 
 export type TicketStatus = 'open' | 'in progress' | 'completed' | 'closed' | 'cancelled' | 'on hold'
@@ -94,8 +109,43 @@ export interface Ticket {
   summaryOfFurtherRecommendations?: string
   planOfAction?: PlanActionItem[]
   requiredParts?: RequiredPartItem[]
-  messages?: Message[]
+  messages?: ConversationMessage[]
+  archivedByUserIds?: string[]
   diagnostics?: TicketDiagnostics
+}
+
+export interface ConversationSummary {
+  conversationId: string
+  type: ConversationType
+  entityId: string
+  title: string
+  subtitle: string
+  sourceRouteName: 'Ticket' | 'Reminder'
+  partnerNames: string[]
+  lastMessageAt: string
+  lastMessagePreview: string
+  messageCount: number
+  unreadCount: number
+  hasUnread: boolean
+}
+
+export interface ConversationRecord {
+  conversationId: string
+  type: ConversationType
+  entityId: string
+  title: string
+  subtitle: string
+  sourceRouteName: 'Ticket' | 'Reminder'
+  archivedByUserIds: string[]
+  messages: ConversationMessage[]
+}
+
+export interface UserSummary {
+  id: string
+  name: string
+  email: string
+  role: string
+  createdAt?: string
 }
 
 export interface ReminderDisplayItem {
@@ -108,15 +158,9 @@ export interface ReminderDisplayItem {
   type: 'reminder' | 'ticket'
 }
 
-export interface Message {
-  sender: string
-  text: string
-  timestamp: string
-}
-
 export interface Conversation {
   id: string
-  messages: Message[]
+  messages: ConversationMessage[]
 }
 
 export type VesselMap = Record<string, Vessel>
