@@ -45,6 +45,14 @@
               class="vessel-item clickable"
               @click="openVessel(v)"
             >
+              <div class="vessel-thumb-wrap" v-if="v.boatPhotoDataUrl">
+                <img
+                  class="vessel-thumb"
+                  :src="v.boatPhotoDataUrl"
+                  :alt="`${v.vesselName} photo`"
+                />
+              </div>
+              <div v-else class="vessel-thumb-placeholder">No photo</div>
               <strong>{{ v.vesselName }}</strong>
               <span class="vessel-meta">{{ v.vesselMake }} · {{ v.vesselYear }}</span>
               <div class="small">
@@ -344,6 +352,32 @@ onMounted(load)
     transform 0.15s ease,
     box-shadow 0.15s ease,
     border-color 0.15s ease;
+}
+
+.vessel-thumb-wrap,
+.vessel-thumb-placeholder {
+  width: 100%;
+  max-width: 300px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+}
+
+.vessel-thumb {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
+
+.vessel-thumb-placeholder {
+  aspect-ratio: 16 / 10;
+  display: grid;
+  place-items: center;
+  background: #e2e8f0;
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.9rem;
 }
 
 .vessel-item:hover {

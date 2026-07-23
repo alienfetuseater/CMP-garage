@@ -634,18 +634,13 @@ async function loadForEdit() {
 
   const id = editTicketId.value
   await uiStore.fetchAllData()
-  await ticketStore.fetchTickets(true)
-  let existing = ticketStore.ticketById(id)
 
-  if (!existing) {
-    const refreshed = await apiFetch<Ticket[]>('/getAllTickets')
-    const normalized = refreshed.map((record) => ({
-      ...record,
-      id: String(record.id ?? (record as Ticket & { _id?: string })._id ?? ''),
-    }))
-    existing = normalized.find((record) => record.id === id) ?? null
-    if (existing) ticketStore.addTicket(existing)
+  const fullTicket = await apiFetch<Ticket>(`/getTicketProfile?id=${encodeURIComponent(id)}`)
+  const existing = {
+    ...fullTicket,
+    id: String(fullTicket.id ?? (fullTicket as Ticket & { _id?: string })._id ?? id),
   }
+  ticketStore.addTicket(existing)
 
   if (!existing) throw new Error('Ticket not found')
   hydrateFromTicket(existing)

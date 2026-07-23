@@ -128,6 +128,37 @@
           </fieldset>
           <p v-else class="hint">Add the number of engines above to enter serial numbers.</p>
 
+          <section class="photo-section">
+            <h3 class="photo-title">Vessel Photo</h3>
+
+            <div class="photo-preview-wrap" v-if="form.boatPhotoDataUrl">
+              <img class="photo-preview" :src="form.boatPhotoDataUrl" alt="Vessel preview" />
+            </div>
+
+            <p v-else class="hint">No vessel photo uploaded yet.</p>
+
+            <div class="photo-actions">
+              <input
+                ref="boatPhotoInputRef"
+                type="file"
+                accept="image/*"
+                class="visually-hidden"
+                @change="onBoatPhotoSelected"
+              />
+              <button type="button" class="secondary" @click="openBoatPhotoPicker">
+                {{ form.boatPhotoDataUrl ? 'Change photo' : 'Upload photo' }}
+              </button>
+              <button
+                v-if="form.boatPhotoDataUrl"
+                type="button"
+                class="secondary danger"
+                @click="removeBoatPhoto"
+              >
+                Remove photo
+              </button>
+            </div>
+          </section>
+
           <div class="actions">
             <button type="submit" class="primary" :disabled="loading">
               {{ editId ? 'Update Vessel' : 'Create Vessel' }}
@@ -167,6 +198,7 @@ type Form = {
   engineModel: string
   engineHorsepower: number | null
   engineHours: number | null
+  boatPhotoDataUrl: string
 }
 
 const router = useRouter()
@@ -178,6 +210,7 @@ const customers = ref<Customer[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 const success = ref(false)
+const boatPhotoInputRef = ref<HTMLInputElement | null>(null)
 const customerSubtitle = computed(() => {
   const customer = customers.value.find((entry) => entry.id === form.value.customerId)
   return customer ? `Customer: ${customer.name}` : ''
@@ -244,7 +277,52 @@ const form = ref<Form>({
   engineModel: '',
   engineHorsepower: null,
   engineHours: null,
+  boatPhotoDataUrl: '',
 })
+
+function openBoatPhotoPicker() {
+  boatPhotoInputRef.value?.click()
+}
+
+function removeBoatPhoto() {
+  form.value.boatPhotoDataUrl = ''
+}
+
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const value = String(reader.result || '')
+      resolve(value)
+    }
+    reader.onerror = () => reject(new Error('Unable to read selected image'))
+    reader.readAsDataURL(file)
+  })
+}
+
+async function onBoatPhotoSelected(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  try {
+    if (!file.type.startsWith('image/')) {
+      throw new Error('Please select an image file')
+    }
+
+    const maxBytes = 5 * 1024 * 1024
+    if (file.size > maxBytes) {
+      throw new Error('Image is too large. Use a file up to 5MB')
+    }
+
+    form.value.boatPhotoDataUrl = await readFileAsDataUrl(file)
+    error.value = null
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : String(err)
+  } finally {
+    input.value = ''
+  }
+}
 
 function goBack() {
   router.back()
@@ -341,6 +419,7 @@ onMounted(async () => {
       form.value.engineModel = existing.engineModel
       form.value.engineHorsepower = existing.engineHorsepower ?? null
       form.value.engineHours = existing.engineHours
+      form.value.boatPhotoDataUrl = String(existing.boatPhotoDataUrl || '')
     } catch {
       // ignore failure to load existing vessel
     }
@@ -400,6 +479,7 @@ async function submit() {
       engineModel: form.value.engineModel,
       engineHorsepower: form.value.engineHorsepower ?? 0,
       engineHours: form.value.engineHours ?? 0,
+      boatPhotoDataUrl: form.value.boatPhotoDataUrl,
     }
 
     let saved: Vessel
@@ -529,6 +609,18 @@ select {
   color: #0f172a;
 }
 
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .engine-serials {
   margin: 4px 0 0;
   padding: 16px;
@@ -565,6 +657,58 @@ select {
 .hint {
   margin: 0;
   color: #64748b;
+}
+
+.photo-section {
+  border: 1px solid #dbeafe;
+  border-radius: 16px;
+  background: #f8fbff;
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.photo-title {
+  margin: 0;
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.photo-preview-wrap {
+  width: min(100%, 420px);
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+}
+
+.photo-preview {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
+
+.photo-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.secondary {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.secondary.danger {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
 }
 
 .actions {

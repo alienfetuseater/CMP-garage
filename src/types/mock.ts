@@ -26,6 +26,7 @@ export interface Vessel {
   engineModel: string
   engineHorsepower: number
   engineHours: number
+  boatPhotoDataUrl?: string
 }
 
 export interface ReminderRelated {

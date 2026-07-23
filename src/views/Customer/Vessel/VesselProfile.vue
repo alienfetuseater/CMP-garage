@@ -58,6 +58,18 @@
           <li><strong>Hours</strong> {{ vessel.engineHours }}</li>
         </ul>
 
+        <section class="vessel-photo-card">
+          <h3>Vessel Photo</h3>
+          <div v-if="vessel.boatPhotoDataUrl" class="vessel-photo-wrap">
+            <img
+              class="vessel-photo"
+              :src="vessel.boatPhotoDataUrl"
+              :alt="`${vessel.vesselName} photo`"
+            />
+          </div>
+          <p v-else class="empty-state">No vessel photo uploaded.</p>
+        </section>
+
         <section class="related">
           <div class="section-heading">
             <h3>Service History</h3>
@@ -613,6 +625,34 @@ onBeforeUnmount(() => {
 
 .secondary-btn:hover:not(:disabled) {
   background: #dbeafe;
+}
+
+.vessel-photo-card {
+  margin-top: 14px;
+  border: 1px solid #dbeafe;
+  border-radius: 16px;
+  background: #f8fbff;
+  padding: 14px;
+}
+
+.vessel-photo-card h3 {
+  margin: 0 0 10px;
+  color: #0f172a;
+}
+
+.vessel-photo-wrap {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  width: min(100%, 560px);
+}
+
+.vessel-photo {
+  display: block;
+  width: 100%;
+  max-height: 340px;
+  object-fit: cover;
 }
 
 .preview-backdrop {

@@ -430,22 +430,15 @@ async function load() {
     const id = String(route.query.id || '')
     if (!id) throw new Error('No ticket id provided')
 
-    await uiStore.fetchAllData(true)
-    ticket.value = ticketStore.ticketById(id)
+    await uiStore.fetchAllData()
 
-    if (!ticket.value) {
-      const refreshedTickets = await apiFetch<Ticket[]>('/getAllTickets')
-      const normalizedTickets = refreshedTickets.map((record) => ({
-        ...record,
-        id: String(record.id ?? (record as Ticket & { _id?: string })._id ?? ''),
-      }))
-
-      const matchedTicket = normalizedTickets.find((record) => record.id === id) ?? null
-      if (matchedTicket) {
-        ticketStore.addTicket(matchedTicket)
-        ticket.value = matchedTicket
-      }
+    const fullTicket = await apiFetch<Ticket>(`/getTicketProfile?id=${encodeURIComponent(id)}`)
+    const normalizedTicket = {
+      ...fullTicket,
+      id: String(fullTicket.id ?? (fullTicket as Ticket & { _id?: string })._id ?? id),
     }
+    ticketStore.addTicket(normalizedTicket)
+    ticket.value = normalizedTicket
 
     if (!ticket.value) {
       throw new Error('Ticket not found')
