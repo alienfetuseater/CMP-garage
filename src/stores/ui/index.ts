@@ -8,5 +8,6 @@ export const useUiStore = defineStore('ui', () => {
   return Object.assign(s, {
     fetchAllData: (force?: boolean) => actions.fetchAllData(s, force),
     ensureAllData: () => actions.ensureAllData(s),
+    resetState: () => actions.resetState(s),
   })
 })

@@ -138,6 +138,7 @@
                 Tickets
                 <span class="mobile-menu-count">{{ ticketBadgeCountLabel }}</span>
               </button>
+              <button type="button" class="mobile-menu-item" @click="handleLogout">Logout</button>
             </div>
 
             <div v-else-if="mobileMenuView === 'reminders'" class="mobile-menu-panel">
@@ -184,6 +185,22 @@
         </div>
 
         <div class="action-icons">
+          <button
+            type="button"
+            class="nav-icon-link nav-logout-btn"
+            aria-label="Logout"
+            title="Logout"
+            @click="handleLogout"
+          >
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path
+                d="M14 7V4.5A1.5 1.5 0 0 0 12.5 3h-7A1.5 1.5 0 0 0 4 4.5v15A1.5 1.5 0 0 0 5.5 21h7a1.5 1.5 0 0 0 1.5-1.5V17"
+              />
+              <path d="M10 12h10" />
+              <path d="m16.5 8.5 3.5 3.5-3.5 3.5" />
+            </svg>
+          </button>
+
           <RouterLink
             to="/CustomerRegistration"
             class="nav-icon-link"
@@ -336,6 +353,7 @@ import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
 import { useTicketStore } from '@/stores/tickets'
 import { useReminderStore } from '@/stores/reminders'
+import { useAuthStore } from '@/stores/auth'
 import { formatLocalDateTime } from '@/utils/datetime'
 
 const router = useRouter()
@@ -343,6 +361,7 @@ const customerStore = useCustomerStore()
 const vesselStore = useVesselStore()
 const ticketStore = useTicketStore()
 const reminderStore = useReminderStore()
+const authStore = useAuthStore()
 
 const searchQuery = ref('')
 const showResults = ref(false)
@@ -587,6 +606,14 @@ function openTicketFromMobileMenu(id: string) {
 function goToRoute(name: 'CustomerRegistration' | 'CustomerDirectory') {
   closeMobileMenu()
   router.push({ name })
+}
+
+function handleLogout() {
+  closeSearch()
+  closeAllPopups()
+  closeMobileMenu()
+  authStore.logout()
+  router.push({ name: 'Login' })
 }
 </script>
 
@@ -1035,6 +1062,10 @@ a.router-link-active,
 
 .mobile-menu-item:hover {
   background: #eff6ff;
+}
+
+.nav-logout-btn {
+  cursor: pointer;
 }
 
 .mobile-menu-count {

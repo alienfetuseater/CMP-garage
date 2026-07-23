@@ -1,18 +1,51 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { RouterView } from 'vue-router'
+import { computed, onMounted, watch } from 'vue'
+import { RouterView, useRoute, useRouter } from 'vue-router'
 import NavBar from './components/NavBar/nav-bar.vue'
 import { useUiStore } from '@/stores/ui'
+import { useAuthStore } from '@/stores/auth'
 
 const uiStore = useUiStore()
+const authStore = useAuthStore()
+const route = useRoute()
+const router = useRouter()
 
-onMounted(() => {
-  uiStore.fetchAllData().catch(() => {})
+const isAuthScreen = computed(() => route.name === 'Login' || route.name === 'Register')
+
+const loadAppData = async (force = false) => {
+  if (!authStore.isAuthenticated) return
+  await uiStore.fetchAllData(force).catch(() => {})
+}
+
+onMounted(async () => {
+  await authStore.initializeAuth()
+  if (!authStore.isAuthenticated && !isAuthScreen.value) {
+    await router.replace({ name: 'Login', query: { redirect: route.fullPath } })
+    return
+  }
+  await loadAppData()
 })
+
+watch(
+  () => authStore.isAuthenticated,
+  async (isAuthenticated, wasAuthenticated) => {
+    if (!isAuthenticated) {
+      uiStore.resetState()
+      if (!isAuthScreen.value) {
+        await router.replace({ name: 'Login', query: { redirect: route.fullPath } })
+      }
+      return
+    }
+
+    if (!wasAuthenticated) {
+      await loadAppData(true)
+    }
+  },
+)
 </script>
 
 <template>
-  <NavBar />
+  <NavBar v-if="authStore.isAuthenticated && !isAuthScreen" />
 
   <main class="page-content">
     <RouterView v-slot="{ Component, route }">

@@ -33,3 +33,9 @@ export const fetchAllData = async (state: UiState, force = false) => {
 export const ensureAllData = async (state: UiState) => {
   if (!state.loaded) await fetchAllData(state)
 }
+
+export const resetState = (state: UiState) => {
+  state.loading = false
+  state.loaded = false
+  state.error = null
+}
