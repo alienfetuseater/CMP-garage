@@ -292,6 +292,10 @@ function getVesselPhone(vessel: Vessel) {
   box-shadow: 0 8px 16px rgba(37, 99, 235, 0.12);
 }
 
+.directory-item.clickable:hover {
+  cursor: pointer;
+}
+
 .item-title-row {
   display: flex;
   align-items: baseline;

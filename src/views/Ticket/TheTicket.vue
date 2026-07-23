@@ -19,9 +19,9 @@
               messages
             </button>
             <button
+              v-if="!isTicketClosed"
               type="button"
               class="primary profile-action-btn"
-              :disabled="isTicketClosed"
               @click="editWork"
             >
               Update
@@ -32,7 +32,7 @@
               class="primary profile-action-btn"
               @click="closeOutTicket"
             >
-              Close Out Ticket
+              Close Ticket
             </button>
             <button
               v-else
@@ -46,16 +46,13 @@
             <button
               type="button"
               class="primary profile-action-btn"
-              @click="emailUpdatedProgress"
-              :disabled="emailingProgress"
+              @click="generateTicketUpdatePreview"
+              :disabled="generatingTicketPreview"
             >
-              {{ isTicketClosed ? 'Email Final Invoice to Client' : 'Email Updates' }}
+              {{ isTicketClosed ? 'Final Invoice Preview' : 'Preview Update' }}
             </button>
             <span v-if="updatingTicketStatus">Updating status...</span>
             <span v-if="ticketStatusError" class="error">{{ ticketStatusError }}</span>
-            <span v-if="emailingProgress">Emailing...</span>
-            <span v-if="emailProgressSuccess" class="success">{{ emailProgressSuccess }}</span>
-            <span v-if="emailProgressError" class="error">{{ emailProgressError }}</span>
           </div>
         </header>
 
@@ -261,6 +258,83 @@
             </div>
           </div>
         </section>
+
+        <div
+          v-if="showTicketUpdatePreview"
+          class="preview-backdrop"
+          @click.self="closeTicketUpdatePreview"
+        >
+          <section
+            class="preview-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="ticket-update-preview-title"
+          >
+            <header class="preview-header">
+              <div>
+                <p class="eyebrow">Ticket document preview</p>
+                <h3 id="ticket-update-preview-title">
+                  {{ isTicketClosed ? 'Final Invoice' : 'Progress Update' }}
+                </h3>
+              </div>
+              <button type="button" class="close-preview" @click="closeTicketUpdatePreview">
+                ✕
+              </button>
+            </header>
+
+            <div class="preview-frame-wrap">
+              <div v-if="previewActionBusy && !ticketPreviewUrl" class="preview-loading">
+                Loading preview...
+              </div>
+              <iframe
+                v-if="ticketPreviewUrl"
+                ref="previewFrameRef"
+                class="preview-frame"
+                :src="ticketPreviewUrl"
+                :title="isTicketClosed ? 'Final Invoice Preview' : 'Progress Update Preview'"
+              ></iframe>
+            </div>
+
+            <div class="preview-actions">
+              <button
+                type="button"
+                class="preview-action-button"
+                :disabled="previewActionBusy"
+                @click="printTicketPreview"
+              >
+                Print
+              </button>
+              <button
+                type="button"
+                class="preview-action-button"
+                :disabled="previewActionBusy"
+                @click="saveTicketPreview"
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                class="preview-action-button"
+                :disabled="previewActionBusy"
+                @click="emailTicketUpdate"
+              >
+                Email
+              </button>
+              <button
+                type="button"
+                class="preview-action-button preview-cancel-button"
+                :disabled="previewActionBusy"
+                @click="closeTicketUpdatePreview"
+                aria-label="Cancel preview"
+              >
+                ✕
+              </button>
+              <span v-if="previewActionBusy">Working...</span>
+              <span v-if="previewActionSuccess" class="success">{{ previewActionSuccess }}</span>
+              <span v-if="previewActionError" class="error">{{ previewActionError }}</span>
+            </div>
+          </section>
+        </div>
       </section>
 
       <div v-else class="status-card">No ticket found.</div>
@@ -269,13 +343,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, onMounted } from 'vue'
+import { computed, reactive, ref, onBeforeUnmount, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUiStore } from '@/stores/ui'
 import { useTicketStore } from '@/stores/tickets'
 import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
-import { apiFetch } from '@/api'
+import { API_BASE, apiFetch } from '@/api'
 import type {
   DiagnosticLevel,
   PlanActionItem,
@@ -302,11 +376,15 @@ const savingDiagnostics = ref(false)
 const diagnosticsSuccess = ref(false)
 const diagnosticsError = ref<string | null>(null)
 const showDiagnostics = ref(false)
-const emailingProgress = ref(false)
-const emailProgressSuccess = ref<string | null>(null)
-const emailProgressError = ref<string | null>(null)
 const updatingTicketStatus = ref(false)
 const ticketStatusError = ref<string | null>(null)
+const generatingTicketPreview = ref(false)
+const showTicketUpdatePreview = ref(false)
+const ticketPreviewUrl = ref<string | null>(null)
+const previewFrameRef = ref<HTMLIFrameElement | null>(null)
+const previewActionBusy = ref(false)
+const previewActionSuccess = ref<string | null>(null)
+const previewActionError = ref<string | null>(null)
 
 const diagnosticSections = [
   {
@@ -514,12 +592,96 @@ async function saveDiagnostics() {
   }
 }
 
-async function emailUpdatedProgress() {
+async function openTicketUpdatePreview(ticketId: string) {
+  previewActionBusy.value = true
+  previewActionSuccess.value = null
+  previewActionError.value = null
+  showTicketUpdatePreview.value = true
+
+  try {
+    const token = localStorage.getItem('cmp_auth_token')
+    const response = await fetch(
+      `${API_BASE}/previewTicketProgress/${encodeURIComponent(ticketId)}`,
+      {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      },
+    )
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => response.statusText)
+      throw new Error(`${response.status} ${response.statusText}: ${errorText}`)
+    }
+
+    const blob = await response.blob()
+    if (ticketPreviewUrl.value) {
+      URL.revokeObjectURL(ticketPreviewUrl.value)
+    }
+
+    ticketPreviewUrl.value = URL.createObjectURL(blob)
+  } catch (err) {
+    previewActionError.value = err instanceof Error ? err.message : String(err)
+  } finally {
+    previewActionBusy.value = false
+  }
+}
+
+function generateTicketUpdatePreview() {
   if (!ticket.value) return
 
-  emailingProgress.value = true
-  emailProgressSuccess.value = null
-  emailProgressError.value = null
+  generatingTicketPreview.value = true
+  previewActionSuccess.value = null
+  previewActionError.value = null
+
+  void openTicketUpdatePreview(ticket.value.id).finally(() => {
+    generatingTicketPreview.value = false
+  })
+}
+
+function closeTicketUpdatePreview() {
+  showTicketUpdatePreview.value = false
+  previewActionSuccess.value = null
+  previewActionError.value = null
+
+  if (ticketPreviewUrl.value) {
+    URL.revokeObjectURL(ticketPreviewUrl.value)
+    ticketPreviewUrl.value = null
+  }
+}
+
+function printTicketPreview() {
+  previewActionSuccess.value = null
+  previewActionError.value = null
+  previewFrameRef.value?.contentWindow?.print()
+}
+
+function saveTicketPreview() {
+  if (!ticketPreviewUrl.value) return
+
+  previewActionSuccess.value = 'Download started'
+  previewActionError.value = null
+
+  const baseName =
+    (ticket.value?.service_title || ticket.value?.id || 'ticket')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9-_]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'ticket'
+  const filePrefix = isTicketClosed.value ? 'ticket-final-invoice' : 'ticket-progress'
+
+  const link = document.createElement('a')
+  link.href = ticketPreviewUrl.value
+  link.download = `${filePrefix}-${baseName}.pdf`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+}
+
+async function emailTicketUpdate() {
+  if (!ticket.value) return
+
+  previewActionBusy.value = true
+  previewActionSuccess.value = null
+  previewActionError.value = null
 
   try {
     const response = await apiFetch<{ message: string; recipient: string }>(
@@ -529,11 +691,11 @@ async function emailUpdatedProgress() {
       },
     )
 
-    emailProgressSuccess.value = response.message
+    previewActionSuccess.value = response.message
   } catch (err) {
-    emailProgressError.value = err instanceof Error ? err.message : String(err)
+    previewActionError.value = err instanceof Error ? err.message : String(err)
   } finally {
-    emailingProgress.value = false
+    previewActionBusy.value = false
   }
 }
 
@@ -606,6 +768,12 @@ async function reopenTicket() {
 }
 
 onMounted(load)
+
+onBeforeUnmount(() => {
+  if (ticketPreviewUrl.value) {
+    URL.revokeObjectURL(ticketPreviewUrl.value)
+  }
+})
 </script>
 
 <style scoped>
@@ -923,6 +1091,145 @@ onMounted(load)
   flex-direction: column;
   gap: 8px;
   min-width: 0;
+}
+
+.preview-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  z-index: 60;
+}
+
+.preview-modal {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.preview-header {
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.preview-header > * {
+  pointer-events: auto;
+  min-width: 0;
+}
+
+.close-preview {
+  border: none;
+  background: #e2e8f0;
+  color: #0f172a;
+  border-radius: 999px;
+  width: 36px;
+  height: 36px;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.preview-frame-wrap {
+  position: absolute;
+  inset: 0;
+  border: none;
+  border-radius: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+.preview-frame,
+.preview-loading {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.preview-loading {
+  display: grid;
+  place-items: center;
+  color: #475569;
+  font-weight: 600;
+}
+
+.preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  justify-content: flex-start;
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  max-width: min(100%, calc(100vw - 32px));
+  padding: 12px;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.24);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.preview-actions > * {
+  pointer-events: auto;
+}
+
+.preview-action-button {
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-radius: 999px;
+  min-width: 88px;
+  min-height: 40px;
+  padding: 0.7rem 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.preview-action-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.34);
+}
+
+.preview-action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.preview-cancel-button {
+  min-width: 44px;
+  padding-inline: 0;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.preview-actions .success,
+.preview-actions .error,
+.preview-actions > span {
+  color: #ffffff;
+  font-weight: 600;
 }
 
 .section-heading h3 {

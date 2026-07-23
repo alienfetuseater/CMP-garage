@@ -903,6 +903,10 @@ onBeforeUnmount(() => {
   box-shadow: 0 12px 28px rgba(37, 99, 235, 0.12);
 }
 
+.history-item.clickable:hover {
+  cursor: pointer;
+}
+
 .empty-state {
   padding: 16px;
   border: 1px dashed #cbd5e1;
