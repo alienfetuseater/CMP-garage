@@ -67,12 +67,6 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/TicketPopUp',
-      name: 'TicketPopUp',
-      component: () => import('../components/Ticket/PopUp.vue'),
-      meta: { requiresAuth: true },
-    },
-    {
       path: '/Ticket',
       name: 'Ticket',
       component: () => import('../views/Ticket/TheTicket.vue'),

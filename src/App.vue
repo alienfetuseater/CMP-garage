@@ -56,7 +56,7 @@ watch(
 </script>
 
 <template>
-  <NavBar v-if="hasSession && !isAuthScreen" />
+  <NavBar v-if="!isAuthScreen" />
 
   <main class="page-content">
     <RouterView v-slot="{ Component, route }">

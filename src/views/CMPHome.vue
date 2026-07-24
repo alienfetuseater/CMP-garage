@@ -49,14 +49,6 @@
       </section>
     </section>
 
-    <TicketPopUp v-if="selectedTicket" :ticket="selectedTicket" @close="closeTicketPopup" />
-
-    <ReminderPopup
-      v-if="selectedReminder"
-      :reminder="selectedReminder"
-      @close="closeReminderPopup"
-    />
-
     <div
       v-if="showCreateReminderPrompt"
       class="prompt-backdrop"
@@ -85,8 +77,6 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import HomeCalender from '../components/Calender/home-calender.vue'
-import ReminderPopup from '../components/Reminder/ReminderPopUp.vue'
-import TicketPopUp from '../components/Ticket/PopUp.vue'
 import { useUiStore } from '@/stores/ui'
 import { useTicketStore } from '@/stores/tickets'
 import { useReminderStore } from '@/stores/reminders'
@@ -105,8 +95,6 @@ const reminders = computed(() => reminderStore.reminders)
 const selectedDay = ref<string | null>(null)
 const selectedDayReminders = ref<Reminder[]>([])
 const selectedDayTickets = ref<Ticket[]>([])
-const selectedReminder = ref<ReminderDisplayItem | null>(null)
-const selectedTicket = ref<Ticket | null>(null)
 const showCreateReminderPrompt = ref(false)
 const createReminderDate = ref<string | null>(null)
 type DayFeedItem = ReminderDisplayItem
@@ -125,8 +113,6 @@ function handleDateSelect(payload: { date: string; reminders: Reminder[]; ticket
   selectedDay.value = payload.date
   selectedDayReminders.value = payload.reminders
   selectedDayTickets.value = payload.tickets
-  selectedReminder.value = null
-  selectedTicket.value = null
 }
 
 function handleDateDoubleClick(payload: { date: string }) {
@@ -144,10 +130,6 @@ function confirmCreateReminder() {
     name: 'NewReminder',
     query: createReminderDate.value ? { date: createReminderDate.value } : undefined,
   })
-}
-
-function closeReminderPopup() {
-  selectedReminder.value = null
 }
 
 const selectedDayItems = computed<DayFeedItem[]>(() => {
@@ -176,29 +158,11 @@ const selectedDayItems = computed<DayFeedItem[]>(() => {
 
 function openDayItem(item: DayFeedItem) {
   if (item.type === 'ticket') {
-    const ticket = selectedDayTickets.value.find((entry) => entry.id === item.id)
-    if (ticket) {
-      selectedTicket.value = ticket
-    }
+    router.push({ name: 'Ticket', query: { id: item.id } })
     return
   }
 
-  const reminder = selectedDayReminders.value.find((entry) => entry.id === item.id)
-  if (!reminder) return
-
-  selectedReminder.value = {
-    id: reminder.id,
-    title: reminder.title,
-    date: formatLocalDateTime(reminder.dueDate),
-    completed: reminder.completed,
-    status: reminder.completed ? 'Completed' : 'Open',
-    notes: reminder.notes,
-    type: 'reminder',
-  }
-}
-
-function closeTicketPopup() {
-  selectedTicket.value = null
+  router.push({ name: 'Reminder', query: { id: item.id } })
 }
 </script>
 
