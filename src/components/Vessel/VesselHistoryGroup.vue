@@ -21,7 +21,20 @@
         </div>
         <div class="history-item-bottom">
           <span>{{ item.priority || 'Normal' }}</span>
-          <span>{{ formatDate((item as Ticket & { scheduledDate?: string; serviceDate?: string; createdAt?: string; created_at?: string }).scheduledDate || (item as Ticket & { serviceDate?: string }).serviceDate || item.createdAt) }}</span>
+          <span>{{
+            formatDate(
+              (
+                item as Ticket & {
+                  scheduledDate?: string
+                  serviceDate?: string
+                  createdAt?: string
+                  created_at?: string
+                }
+              ).scheduledDate ||
+                (item as Ticket & { serviceDate?: string }).serviceDate ||
+                item.createdAt,
+            )
+          }}</span>
         </div>
       </button>
     </div>
@@ -53,7 +66,12 @@ function getTitle(item: Ticket) {
     title?: string
   }
 
-  return itemWithExtras.serviceTitle || itemWithExtras.service_title || itemWithExtras.title || 'Service record'
+  return (
+    itemWithExtras.serviceTitle ||
+    itemWithExtras.service_title ||
+    itemWithExtras.title ||
+    'Service record'
+  )
 }
 
 function formatDate(value?: string | null) {

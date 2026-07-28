@@ -13,6 +13,7 @@
           @edit="editVessel"
           @new-ticket="createTicket"
           @generate-dossier="generateVesselDossier"
+          @new-monthly-report="createMonthlyReport"
         />
 
         <VesselOwnerSummary
@@ -29,25 +30,8 @@
             <h3>Service History</h3>
           </div>
 
-          <div class="history-block">
-            <div class="history-header">
-              <h4>Diagnostic History</h4>
-              <span class="count profile-count-badge">{{ diagnosticHistory.length }}</span>
-            </div>
 
-            <div v-if="diagnosticHistory.length">
-              <ul class="history-list">
-                <li v-for="entry in diagnosticHistory" :key="entry.key" class="history-item">
-                  <strong>{{ entry.title }}</strong>
-                  <span>{{ entry.date }}</span>
-                  <span>{{ entry.summary }}</span>
-                  <span>{{ entry.details }}</span>
-                </li>
-              </ul>
-            </div>
-            <div v-else class="empty-state">No diagnostics on record for this vessel.</div>
-          </div>
-
+          
           <VesselHistoryGroup
             title="Repair History"
             :items="repairHistory"
@@ -56,21 +40,75 @@
             @open-item="openTicket"
           />
 
-          <VesselHistoryGroup
-            title="Maintenance History"
-            :items="maintenanceHistory"
-            :loading="loadingTickets"
-            empty-message="No maintenance jobs for this vessel."
-            @open-item="openTicket"
-          />
 
-          <VesselHistoryGroup
-            title="Upgrades History"
-            :items="upgradeHistory"
-            :loading="loadingTickets"
-            empty-message="No upgrades for this vessel."
-            @open-item="openTicket"
-          />
+          <section class="history-block modifications-block">
+            <div class="history-header">
+              <h4>Modifications</h4>
+              <button
+                v-if="!editingModifications"
+                type="button"
+                class="edit-notes-btn"
+                @click="startEditingModifications"
+              >
+                Edit
+              </button>
+            </div>
+
+            <template v-if="editingModifications">
+              <textarea
+                v-model="modificationsEdit"
+                class="modifications-textarea"
+                rows="6"
+                placeholder="Document vessel modifications, upgrades, and custom work here..."
+              />
+              <div class="modifications-actions">
+                <button type="button" class="primary" :disabled="savingModifications" @click="saveModifications">
+                  {{ savingModifications ? "Saving..." : "Save" }}
+                </button>
+                <button type="button" class="secondary-btn" @click="cancelEditingModifications">
+                  Cancel
+                </button>
+                <span v-if="modificationsError" class="error">{{ modificationsError }}</span>
+              </div>
+            </template>
+
+            <template v-else>
+              <div v-if="vessel.modificationNotes?.trim()" class="modifications-notes">
+                {{ vessel.modificationNotes }}
+              </div>
+              <div v-else class="empty-state">No modifications documented for this vessel.</div>
+            </template>
+          </section>
+
+          <section class="history-block monthly-reports-block">
+            <div class="history-header">
+              <h4>Monthly Reports</h4>
+              <span class="count profile-count-badge">{{ monthlyReports.length }}</span>
+            </div>
+
+            <div v-if="loadingReports" class="empty-state">Loading...</div>
+
+            <div v-else-if="monthlyReports.length" class="history-list">
+              <button
+                v-for="mr in monthlyReports"
+                :key="mr.id"
+                type="button"
+                class="history-item"
+                @click="openMonthlyReport(mr.id)"
+              >
+                <div class="history-item-top">
+                  <strong>{{ mr.service_title }}</strong>
+                  <span class="history-status">{{ mr.status }}</span>
+                </div>
+                <div class="history-item-bottom">
+                  <span>{{ mr.priority }}</span>
+                  <span>{{ formatReportMonth(mr.reportMonth) }}</span>
+                </div>
+              </button>
+            </div>
+
+            <div v-else class="empty-state">No monthly reports for this vessel.</div>
+          </section>
         </section>
 
         <DocumentPreviewModal
@@ -104,8 +142,9 @@ import { useUiStore } from '@/stores/ui'
 import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
 import { useTicketStore } from '@/stores/tickets'
+import { useMonthlyReportStore } from '@/stores/monthlyReports'
 import { API_BASE, apiFetch } from '@/services/http/client'
-import type { Vessel, Ticket } from '@/types/mock'
+import type { MonthlyReport, Vessel, Ticket } from '@/types/mock'
 import { formatLocalDateTime } from '@/shared/datetime/format'
 import VesselProfileHeader from '@/components/Vessel/VesselProfileHeader.vue'
 import VesselOwnerSummary from '@/components/Vessel/VesselOwnerSummary.vue'
@@ -117,11 +156,14 @@ const uiStore = useUiStore()
 const customerStore = useCustomerStore()
 const vesselStore = useVesselStore()
 const ticketStore = useTicketStore()
+const reportStore = useMonthlyReportStore()
 const route = useRoute()
 const router = useRouter()
 
 const vessel = ref<Vessel | null>(null)
 const ticketsForVessel = ref<Ticket[]>([])
+const monthlyReports = ref<MonthlyReport[]>([])
+const loadingReports = ref(false)
 const generatingVesselDossier = ref(false)
 const showVesselDossierPreview = ref(false)
 const dossierPreviewUrl = ref<string | null>(null)
@@ -152,41 +194,48 @@ const ownerPhone = computed(() => formatPhone(ownerPhoneRaw.value))
 
 const ownerAddress = computed(() => ownerCustomer.value?.address ?? 'No address available')
 
-const diagnosticHistory = computed(() =>
-  ticketsForVessel.value
-    .filter((ticket) => ticket.service_category === 'inspection' && ticket.diagnostics)
-    .map((ticket) => {
-      const diagnostics = ticket.diagnostics ?? {}
-      const entries = Object.entries(diagnostics).filter(
-        ([, value]) => value !== undefined && value !== null && String(value).trim() !== '',
-      )
-
-      return {
-        key: ticket.id,
-        title: ticket.service_title,
-        date: formatLocalDateTime(ticket.scheduledDate),
-        summary: ticket.status,
-        details:
-          entries.length > 0
-            ? entries
-                .map(([key, value]) => `${key.replace(/_/g, ' ')}: ${String(value).toUpperCase()}`)
-                .join(' · ')
-            : 'No diagnostic readings captured',
-      }
-    }),
-)
 
 const repairHistory = computed(() =>
   ticketsForVessel.value.filter((ticket) => ticket.service_category === 'repair'),
 )
 
-const maintenanceHistory = computed(() =>
-  ticketsForVessel.value.filter((ticket) => ticket.service_category === 'maintenance'),
-)
+const editingModifications = ref(false)
+const modificationsEdit = ref('')
+const savingModifications = ref(false)
+const modificationsError = ref<string | null>(null)
 
-const upgradeHistory = computed(() =>
-  ticketsForVessel.value.filter((ticket) => ticket.service_category === 'upgrade'),
-)
+function startEditingModifications() {
+  modificationsEdit.value = vessel.value?.modificationNotes ?? ''
+  modificationsError.value = null
+  editingModifications.value = true
+}
+
+function cancelEditingModifications() {
+  editingModifications.value = false
+  modificationsError.value = null
+}
+
+async function saveModifications() {
+  if (!vessel.value) return
+  savingModifications.value = true
+  modificationsError.value = null
+  try {
+    const updated = await apiFetch<Vessel>(`/updateBoat/${encodeURIComponent(vessel.value.id)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ modificationNotes: modificationsEdit.value }),
+    })
+    vessel.value = { ...vessel.value, modificationNotes: updated.modificationNotes ?? modificationsEdit.value }
+    vesselStore.addVessel(vessel.value)
+    editingModifications.value = false
+  } catch (err) {
+    modificationsError.value = err instanceof Error ? err.message : String(err)
+  } finally {
+    savingModifications.value = false
+  }
+}
+
+
 
 function formatPhone(value?: string) {
   if (!value) return ''
@@ -221,6 +270,16 @@ async function load() {
     }
 
     ticketsForVessel.value = ticketStore.tickets.filter((ticket) => ticket.vesselId === id)
+
+    loadingReports.value = true
+    try {
+      await reportStore.fetchMonthlyReports()
+      monthlyReports.value = reportStore.reportsForVessel(id)
+    } catch {
+      // Non-fatal: reports section shows empty state
+    } finally {
+      loadingReports.value = false
+    }
   } catch (err) {
     uiStore.error = err instanceof Error ? err.message : String(err)
   }
@@ -254,6 +313,31 @@ function openOwner() {
 
 function openTicket(id: string) {
   if (id) router.push({ name: 'Ticket', query: { id } })
+}
+
+function openMonthlyReport(id: string) {
+  if (id) router.push({ name: 'MonthlyReport', query: { id } })
+}
+
+function createMonthlyReport() {
+  if (!vessel.value) return
+  router.push({
+    name: 'NewMonthlyReport',
+    query: {
+      customerName: vessel.value.customerName,
+      vesselName: vessel.value.vesselName,
+      vesselId: vessel.value.id,
+      customerId: ownerId.value ?? '',
+    },
+  })
+}
+
+function formatReportMonth(value?: string) {
+  if (!value) return '—'
+  const [year, month] = value.split('-')
+  if (!year || !month) return value
+  const date = new Date(Number(year), Number(month) - 1, 1)
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
 }
 
 function editVessel() {
@@ -777,6 +861,115 @@ onBeforeUnmount(() => {
 .ticket-item {
   color: inherit;
   cursor: pointer;
+}
+
+.monthly-reports-block {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+  margin-top: 18px;
+}
+
+.monthly-reports-block .history-list {
+  display: grid;
+  gap: 10px;
+}
+
+.monthly-reports-block .history-item {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  color: #0f172a;
+  text-align: left;
+  cursor: pointer;
+  display: grid;
+  gap: 8px;
+  transition: background 0.15s ease;
+  font: inherit;
+  grid-template-columns: unset;
+  box-shadow: none;
+}
+
+.monthly-reports-block .history-item:hover {
+  background: #eff6ff;
+  transform: none;
+  border-color: #bfdbfe;
+  box-shadow: none;
+}
+
+.history-item-top,
+.history-item-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.history-status {
+  color: #2563eb;
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+
+.modifications-block {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+  margin-top: 18px;
+}
+
+.modifications-notes {
+  white-space: pre-wrap;
+  color: #0f172a;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  padding: 4px 2px;
+}
+
+.modifications-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font: inherit;
+  font-size: 0.95rem;
+  background: #ffffff;
+  color: #0f172a;
+  resize: vertical;
+}
+
+.modifications-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.edit-notes-btn {
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #334155;
+  border-radius: 8px;
+  padding: 4px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.edit-notes-btn:hover {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
 }
 
 .error {

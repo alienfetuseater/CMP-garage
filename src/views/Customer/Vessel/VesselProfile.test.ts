@@ -3,35 +3,28 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import VesselProfile from './VesselProfile.vue'
 
-const {
-  routeState,
-  routerPush,
-  customerStore,
-  vesselStore,
-  uiStore,
-  ticketStore,
-  mockedApiFetch,
-} = vi.hoisted(() => ({
-  routeState: { query: {} as Record<string, string> },
-  routerPush: vi.fn(),
-  customerStore: {
-    customers: [] as Array<{ id: string; name: string; phone: string; address: string }>,
-    customerById: vi.fn(),
-  },
-  vesselStore: {
-    addVessel: vi.fn(),
-    vesselById: vi.fn(),
-  },
-  uiStore: {
-    loading: false,
-    error: null as string | null,
-    fetchAllData: vi.fn().mockResolvedValue(undefined),
-  },
-  ticketStore: {
-    tickets: [] as Array<Record<string, unknown>>,
-  },
-  mockedApiFetch: vi.fn(),
-}))
+const { routeState, routerPush, customerStore, vesselStore, uiStore, ticketStore, mockedApiFetch } =
+  vi.hoisted(() => ({
+    routeState: { query: {} as Record<string, string> },
+    routerPush: vi.fn(),
+    customerStore: {
+      customers: [] as Array<{ id: string; name: string; phone: string; address: string }>,
+      customerById: vi.fn(),
+    },
+    vesselStore: {
+      addVessel: vi.fn(),
+      vesselById: vi.fn(),
+    },
+    uiStore: {
+      loading: false,
+      error: null as string | null,
+      fetchAllData: vi.fn().mockResolvedValue(undefined),
+    },
+    ticketStore: {
+      tickets: [] as Array<Record<string, unknown>>,
+    },
+    mockedApiFetch: vi.fn(),
+  }))
 
 vi.mock('vue-router', () => ({
   useRoute: () => routeState,
@@ -60,6 +53,14 @@ vi.mock('@/stores/vessels', () => ({
 
 vi.mock('@/stores/tickets', () => ({
   useTicketStore: () => ticketStore,
+}))
+
+vi.mock('@/stores/monthlyReports', () => ({
+  useMonthlyReportStore: () => ({
+    reports: [],
+    fetchMonthlyReports: vi.fn().mockResolvedValue([]),
+    reportsForVessel: vi.fn().mockReturnValue([]),
+  }),
 }))
 
 function flushPromises() {

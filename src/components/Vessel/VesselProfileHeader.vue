@@ -20,6 +20,9 @@
       >
         Generate Dossier
       </button>
+      <button type="button" class="primary profile-action-btn" @click="$emit('new-monthly-report')">
+        New Monthly Report
+      </button>
     </div>
   </header>
 </template>
@@ -34,6 +37,7 @@ defineEmits<{
   (event: 'edit'): void
   (event: 'new-ticket'): void
   (event: 'generate-dossier'): void
+  (event: 'new-monthly-report'): void
 }>()
 </script>
 

@@ -73,6 +73,18 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/NewMonthlyReport',
+      name: 'NewMonthlyReport',
+      component: () => import('../views/MonthlyReport/NewMonthlyReport.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/MonthlyReport',
+      name: 'MonthlyReport',
+      component: () => import('../views/MonthlyReport/TheMonthlyReport.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/Reminder',
       name: 'Reminder',
       component: () => import('../views/Reminder/TheReminder.vue'),

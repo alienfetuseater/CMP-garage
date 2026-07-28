@@ -27,6 +27,7 @@ export interface Vessel {
   engineHorsepower: number
   engineHours: number
   boatPhotoDataUrl?: string
+  modificationNotes?: string
 }
 
 export interface ReminderRelated {
@@ -164,3 +165,27 @@ export interface Conversation {
 }
 
 export type VesselMap = Record<string, Vessel>
+
+export interface MonthlyReport {
+  id: string
+  customerId: string
+  vesselId: string
+  customerName?: string
+  vesselName?: string
+  reportMonth: string
+  service_title: string
+  status: TicketStatus
+  priority: TicketPriority
+  createdAt: string
+  notes: string
+  initialAssessment?: string
+  initialAssessmentPhotos?: TicketPhotoAttachment[]
+  recommendedService?: string
+  summaryOfWorkPerformed?: string
+  summaryOfWorkPerformedPhotos?: TicketPhotoAttachment[]
+  laborCost?: number
+  summaryOfFurtherRecommendations?: string
+  planOfAction?: PlanActionItem[]
+  requiredParts?: RequiredPartItem[]
+  diagnostics?: TicketDiagnostics
+}
