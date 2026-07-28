@@ -1,4 +1,5 @@
 import { reactive } from 'vue'
+import { readPersistedAuthToken } from './session'
 
 export type AuthUser = {
   id: string
@@ -18,7 +19,7 @@ export type AuthState = {
 
 export default function state(): AuthState {
   return reactive({
-    token: localStorage.getItem('cmp_auth_token') || '',
+    token: readPersistedAuthToken(localStorage),
     user: null,
     loading: false,
     initialized: false,

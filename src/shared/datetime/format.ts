@@ -1,6 +1,6 @@
 const DATE_ONLY_RE = /^(\d{4})-(\d{2})-(\d{2})$/
 
-type DateInput = string | number | Date | null | undefined
+export type DateInput = string | number | Date | null | undefined
 
 function parseDateInput(value: DateInput): Date | null {
   if (value === null || value === undefined) return null
@@ -54,6 +54,7 @@ export function formatLocalDateTime(value: DateInput, locale?: string): string {
   }).format(date)
 }
 
+// Local date keys should always reflect the local calendar day, not UTC offsets.
 export function toLocalDateKey(value: DateInput): string {
   const date = parseDateInput(value)
   if (!date) {

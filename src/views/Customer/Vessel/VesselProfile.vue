@@ -7,68 +7,22 @@
       <div v-else-if="error" class="status-card error">{{ error }}</div>
 
       <section v-else-if="vessel" class="profile-card">
-        <header class="profile-header">
-          <div>
-            <p class="eyebrow">Vessel profile</p>
-            <h2>{{ vessel.vesselName }}</h2>
-          </div>
+        <VesselProfileHeader
+          :vessel-name="vessel.vesselName"
+          :generating-dossier="generatingVesselDossier"
+          @edit="editVessel"
+          @new-ticket="createTicket"
+          @generate-dossier="generateVesselDossier"
+        />
 
-          <div class="header-actions profile-action-group">
-            <button type="button" class="primary profile-action-btn" @click="editVessel">
-              Edit Vessel
-            </button>
-            <button type="button" class="primary profile-action-btn" @click="createTicket">
-              New Ticket
-            </button>
-            <button
-              type="button"
-              class="primary profile-action-btn"
-              :disabled="generatingVesselDossier"
-              @click="generateVesselDossier"
-            >
-              Generate Dossier
-            </button>
-          </div>
-        </header>
+        <VesselOwnerSummary
+          :owner-name="vessel.customerName"
+          :owner-phone="ownerPhone"
+          :owner-address="ownerAddress"
+          @open-owner="openOwner"
+        />
 
-        <div class="owner-strip">
-          <div class="owner-card clickable" @click="openOwner">
-            <div class="owner-field">
-              <span class="owner-field-label">Name:</span>
-              <span class="owner-field-value">{{ vessel.customerName }}</span>
-            </div>
-
-            <div class="owner-field">
-              <span class="owner-field-label">Phone:</span>
-              <span class="owner-field-value">{{ ownerPhone }}</span>
-            </div>
-
-            <div class="owner-field">
-              <span class="owner-field-label">Address:</span>
-              <span class="owner-field-value">{{ ownerAddress }}</span>
-            </div>
-          </div>
-        </div>
-
-        <ul class="details">
-          <li><strong>Make</strong> {{ vessel.vesselMake }}</li>
-          <li><strong>Year</strong> {{ vessel.vesselYear }}</li>
-          <li><strong>Engine</strong> {{ vessel.engineMake }} {{ vessel.engineModel }}</li>
-          <li><strong>Horsepower</strong> {{ vessel.engineHorsepower }}</li>
-          <li><strong>Hours</strong> {{ vessel.engineHours }}</li>
-        </ul>
-
-        <section class="vessel-photo-card">
-          <h3>Vessel Photo</h3>
-          <div v-if="vessel.boatPhotoDataUrl" class="vessel-photo-wrap">
-            <img
-              class="vessel-photo"
-              :src="vessel.boatPhotoDataUrl"
-              :alt="`${vessel.vesselName} photo`"
-            />
-          </div>
-          <p v-else class="empty-state">No vessel photo uploaded.</p>
-        </section>
+        <VesselKeyFacts :vessel="vessel" :photo-preview-url="vessel.boatPhotoDataUrl || null" />
 
         <section class="related">
           <div class="section-heading profile-section-heading">
@@ -94,156 +48,48 @@
             <div v-else class="empty-state">No diagnostics on record for this vessel.</div>
           </div>
 
-          <div class="history-block">
-            <div class="history-header">
-              <h4>Repair History</h4>
-              <span class="count profile-count-badge">{{ repairHistory.length }}</span>
-            </div>
+          <VesselHistoryGroup
+            title="Repair History"
+            :items="repairHistory"
+            :loading="loadingTickets"
+            empty-message="No repairs for this vessel."
+            @open-item="openTicket"
+          />
 
-            <div v-if="loadingTickets">Loading...</div>
-            <div v-else>
-              <ul v-if="repairHistory.length" class="history-list">
-                <li
-                  v-for="ticket in repairHistory"
-                  :key="ticket.id"
-                  class="history-item clickable"
-                  @click="openTicket(ticket.id)"
-                >
-                  <strong>{{ ticket.service_title }}</strong>
-                  <span>{{ ticket.status }}</span>
-                  <span>{{ ticket.priority }}</span>
-                  <span>{{ formatLocalDateTime(ticket.scheduledDate) }}</span>
-                </li>
-              </ul>
-              <div v-else class="empty-state">No repairs for this vessel.</div>
-            </div>
-          </div>
+          <VesselHistoryGroup
+            title="Maintenance History"
+            :items="maintenanceHistory"
+            :loading="loadingTickets"
+            empty-message="No maintenance jobs for this vessel."
+            @open-item="openTicket"
+          />
 
-          <div class="history-block">
-            <div class="history-header">
-              <h4>Maintenance History</h4>
-              <span class="count profile-count-badge">{{ maintenanceHistory.length }}</span>
-            </div>
-
-            <div v-if="loadingTickets">Loading...</div>
-            <div v-else>
-              <ul v-if="maintenanceHistory.length" class="history-list">
-                <li
-                  v-for="ticket in maintenanceHistory"
-                  :key="ticket.id"
-                  class="history-item clickable"
-                  @click="openTicket(ticket.id)"
-                >
-                  <strong>{{ ticket.service_title }}</strong>
-                  <span>{{ ticket.status }}</span>
-                  <span>{{ ticket.priority }}</span>
-                  <span>{{ formatLocalDateTime(ticket.scheduledDate) }}</span>
-                </li>
-              </ul>
-              <div v-else class="empty-state">No maintenance jobs for this vessel.</div>
-            </div>
-          </div>
-
-          <div class="history-block">
-            <div class="history-header">
-              <h4>Upgrades History</h4>
-              <span class="count profile-count-badge">{{ upgradeHistory.length }}</span>
-            </div>
-
-            <div v-if="loadingTickets">Loading...</div>
-            <div v-else>
-              <ul v-if="upgradeHistory.length" class="history-list">
-                <li
-                  v-for="ticket in upgradeHistory"
-                  :key="ticket.id"
-                  class="history-item clickable"
-                  @click="openTicket(ticket.id)"
-                >
-                  <strong>{{ ticket.service_title }}</strong>
-                  <span>{{ ticket.status }}</span>
-                  <span>{{ ticket.priority }}</span>
-                  <span>{{ formatLocalDateTime(ticket.scheduledDate) }}</span>
-                </li>
-              </ul>
-              <div v-else class="empty-state">No upgrades for this vessel.</div>
-            </div>
-          </div>
+          <VesselHistoryGroup
+            title="Upgrades History"
+            :items="upgradeHistory"
+            :loading="loadingTickets"
+            empty-message="No upgrades for this vessel."
+            @open-item="openTicket"
+          />
         </section>
 
-        <div
-          v-if="showVesselDossierPreview"
-          class="preview-backdrop"
-          @click.self="closeVesselDossierPreview"
-        >
-          <section
-            class="preview-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="vessel-dossier-preview-title"
-          >
-            <header class="preview-header">
-              <div>
-                <p class="eyebrow">Vessel dossier preview</p>
-                <h3 id="vessel-dossier-preview-title">{{ vessel.vesselName }}</h3>
-              </div>
-              <button type="button" class="close-preview" @click="closeVesselDossierPreview">
-                ✕
-              </button>
-            </header>
-
-            <div class="preview-frame-wrap">
-              <div v-if="previewActionBusy && !dossierPreviewUrl" class="preview-loading">
-                Loading preview...
-              </div>
-              <iframe
-                v-if="dossierPreviewUrl"
-                ref="previewFrameRef"
-                class="preview-frame"
-                :src="dossierPreviewUrl"
-                title="Vessel dossier preview"
-              ></iframe>
-            </div>
-
-            <div class="preview-actions">
-              <button
-                type="button"
-                class="preview-action-button"
-                :disabled="previewActionBusy"
-                @click="printPreview"
-              >
-                Print
-              </button>
-              <button
-                type="button"
-                class="preview-action-button"
-                :disabled="previewActionBusy"
-                @click="savePreview"
-              >
-                Save
-              </button>
-              <button
-                type="button"
-                class="preview-action-button"
-                :disabled="previewActionBusy"
-                @click="emailPreview"
-              >
-                Email
-              </button>
-              <button
-                type="button"
-                class="preview-action-button preview-cancel-button"
-                :disabled="previewActionBusy"
-                @click="closeVesselDossierPreview"
-                aria-label="Cancel preview"
-              >
-                ✕
-              </button>
-              <span v-if="previewActionBusy">Working...</span>
-              <span v-if="previewActionSuccess" class="success">{{ previewActionSuccess }}</span>
-              <span v-if="previewActionError" class="error">{{ previewActionError }}</span>
-            </div>
-          </section>
-        </div>
+        <DocumentPreviewModal
+          v-model="showVesselDossierPreview"
+          eyebrow="Vessel dossier preview"
+          :heading="vessel.vesselName"
+          :preview-url="dossierPreviewUrl"
+          :loading="previewActionBusy"
+          :busy="previewActionBusy"
+          :success="previewActionSuccess"
+          :error="previewActionError"
+          iframe-title="Vessel dossier preview"
+          title-id="vessel-dossier-preview-title"
+          :show-save-button="true"
+          :show-email-button="true"
+          @save="savePreview"
+          @email="emailPreview"
+          @update:model-value="handlePreviewVisibilityChange"
+        />
       </section>
 
       <div v-else class="status-card">No vessel found.</div>
@@ -258,9 +104,14 @@ import { useUiStore } from '@/stores/ui'
 import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
 import { useTicketStore } from '@/stores/tickets'
-import { API_BASE, apiFetch } from '@/api'
+import { API_BASE, apiFetch } from '@/services/http/client'
 import type { Vessel, Ticket } from '@/types/mock'
-import { formatLocalDateTime } from '@/utils/datetime'
+import { formatLocalDateTime } from '@/shared/datetime/format'
+import VesselProfileHeader from '@/components/Vessel/VesselProfileHeader.vue'
+import VesselOwnerSummary from '@/components/Vessel/VesselOwnerSummary.vue'
+import VesselKeyFacts from '@/components/Vessel/VesselKeyFacts.vue'
+import VesselHistoryGroup from '@/components/Vessel/VesselHistoryGroup.vue'
+import DocumentPreviewModal from '@/components/Shared/DocumentPreviewModal.vue'
 
 const uiStore = useUiStore()
 const customerStore = useCustomerStore()
@@ -274,7 +125,6 @@ const ticketsForVessel = ref<Ticket[]>([])
 const generatingVesselDossier = ref(false)
 const showVesselDossierPreview = ref(false)
 const dossierPreviewUrl = ref<string | null>(null)
-const previewFrameRef = ref<HTMLIFrameElement | null>(null)
 const previewActionBusy = ref(false)
 const previewActionSuccess = ref<string | null>(null)
 const previewActionError = ref<string | null>(null)
@@ -470,6 +320,15 @@ async function openVesselDossierPreview(vesselId: string) {
   }
 }
 
+function handlePreviewVisibilityChange(isOpen: boolean) {
+  if (!isOpen) {
+    closeVesselDossierPreview()
+    return
+  }
+
+  showVesselDossierPreview.value = true
+}
+
 function closeVesselDossierPreview() {
   showVesselDossierPreview.value = false
   previewActionSuccess.value = null
@@ -479,12 +338,6 @@ function closeVesselDossierPreview() {
     URL.revokeObjectURL(dossierPreviewUrl.value)
     dossierPreviewUrl.value = null
   }
-}
-
-function printPreview() {
-  previewActionSuccess.value = null
-  previewActionError.value = null
-  previewFrameRef.value?.contentWindow?.print()
 }
 
 function savePreview() {

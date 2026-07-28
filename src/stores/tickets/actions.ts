@@ -1,8 +1,15 @@
-import { apiFetch } from '@/api'
+import { apiFetch } from '@/services/http/client'
 import type { Ticket } from '@/types/mock'
 import type { TicketsState } from './state'
 import { useUiStore } from '@/stores/ui'
-import { normalizeConversationMessages } from '@/utils/conversations'
+import { normalizeConversationMessages } from '@/domain/conversations/utils'
+import {
+  findById,
+  replaceCollection,
+  resolveRecordId,
+  toNormalizedStringList,
+  upsertById,
+} from '@/stores/shared/records'
 
 type TicketApiRecord = Ticket & {
   _id?: string
@@ -11,10 +18,9 @@ type TicketApiRecord = Ticket & {
 const normalizeTicket = (record: TicketApiRecord): Ticket => {
   return {
     ...record,
-    id: String(record.id ?? record._id ?? ''),
-    archivedByUserIds: Array.isArray(record.archivedByUserIds)
-      ? record.archivedByUserIds.map((entry) => String(entry ?? '').trim()).filter(Boolean)
-      : [],
+    id: resolveRecordId(record),
+    // Keep read/archive lists normalized so identity checks stay reliable.
+    archivedByUserIds: toNormalizedStringList(record.archivedByUserIds),
     messages: normalizeConversationMessages(record.messages),
   }
 }
@@ -23,18 +29,16 @@ export const fetchTickets = async (state: TicketsState, force = false) => {
   if (!force && state.tickets.length > 0) return state.tickets
   const data = await apiFetch<TicketApiRecord[]>('/getAllTickets')
   const normalized = data.map(normalizeTicket)
-  state.tickets.splice(0, state.tickets.length, ...normalized)
+  replaceCollection(state.tickets, normalized)
   return state.tickets
 }
 
 export const addTicket = (state: TicketsState, ticket: Ticket) => {
-  const index = state.tickets.findIndex((t) => t.id === ticket.id)
-  if (index >= 0) state.tickets[index] = ticket
-  else state.tickets.push(ticket)
+  upsertById(state.tickets, normalizeTicket(ticket))
 }
 
 export const ticketById = (state: TicketsState, id: string) => {
-  return state.tickets.find((t) => String(t.id) === String(id)) ?? null
+  return findById(state.tickets, id)
 }
 
 export const ticketsForVessel = (state: TicketsState, vesselId: string) => {

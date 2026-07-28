@@ -1,13 +1,12 @@
 import { io, type Socket } from 'socket.io-client'
-import { API_BASE } from '@/api'
+import { API_BASE } from '@/services/http/client'
 import { useReminderStore } from '@/stores/reminders'
 import { useTicketStore } from '@/stores/tickets'
 import type { ConversationRecord, Reminder, Ticket } from '@/types/mock'
-import { normalizeConversationMessages } from '@/utils/conversations'
+import { normalizeConversationMessages, toNormalizedText } from '@/domain/conversations/utils'
 
 let socket: Socket | null = null
-
-const normalizeText = (value: unknown) => String(value ?? '').trim()
+let activeSocketToken = ''
 
 const toSocketOrigin = () => {
   return API_BASE.replace(/\/api\/CMPGarage\/?$/, '')
@@ -45,20 +44,21 @@ const syncConversationIntoStores = (conversation: ConversationRecord) => {
 }
 
 export const connectRealtimeMessaging = (token: string) => {
-  const normalizedToken = normalizeText(token)
+  const normalizedToken = toNormalizedText(token)
   if (!normalizedToken) return null
 
   if (socket) {
-    const activeToken = normalizeText(socket.io.opts.auth?.token)
-    if (activeToken === normalizedToken) return socket
+    if (activeSocketToken === normalizedToken) return socket
     socket.disconnect()
     socket = null
+    activeSocketToken = ''
   }
 
   socket = io(toSocketOrigin(), {
     transports: ['websocket'],
     auth: { token: normalizedToken },
   })
+  activeSocketToken = normalizedToken
 
   socket.on('conversation:updated', (conversation: ConversationRecord) => {
     if (!conversation?.type || !conversation?.entityId) return
@@ -75,6 +75,7 @@ export const disconnectRealtimeMessaging = () => {
   if (!socket) return
   socket.disconnect()
   socket = null
+  activeSocketToken = ''
 }
 
 export const getRealtimeMessagingSocket = () => socket

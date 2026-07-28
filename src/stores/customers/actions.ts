@@ -1,7 +1,8 @@
-import { apiFetch } from '@/api'
+import { apiFetch } from '@/services/http/client'
 import type { Customer } from '@/types/mock'
 import type { CustomersState } from './state'
 import { useUiStore } from '@/stores/ui'
+import { findById, replaceCollection, resolveRecordId, upsertById } from '@/stores/shared/records'
 
 type CustomerApiRecord = Customer & {
   _id?: string
@@ -10,7 +11,7 @@ type CustomerApiRecord = Customer & {
 const normalizeCustomer = (record: CustomerApiRecord): Customer => {
   return {
     ...record,
-    id: String(record.id ?? record._id ?? ''),
+    id: resolveRecordId(record),
   }
 }
 
@@ -18,19 +19,17 @@ export const fetchCustomers = async (state: CustomersState, force = false) => {
   if (!force && state.customers.length > 0) return state.customers
   const data = await apiFetch<CustomerApiRecord[]>('/getAllCustomers')
   const normalized = data.map(normalizeCustomer)
-  state.customers.splice(0, state.customers.length, ...normalized)
+  replaceCollection(state.customers, normalized)
   return state.customers
 }
 
 export const addCustomer = (state: CustomersState, customer: Customer) => {
   const normalized = normalizeCustomer(customer)
-  const index = state.customers.findIndex((c) => c.id === normalized.id)
-  if (index >= 0) state.customers[index] = normalized
-  else state.customers.push(normalized)
+  upsertById(state.customers, normalized)
 }
 
 export const customerById = (state: CustomersState, id: string) => {
-  return state.customers.find((c) => String(c.id) === String(id)) ?? null
+  return findById(state.customers, id)
 }
 
 /**

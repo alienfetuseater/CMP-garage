@@ -7,62 +7,23 @@
       <div v-else-if="error" class="status-card error">{{ error }}</div>
 
       <section v-else-if="customer" class="profile-card">
-        <header class="profile-header">
-          <div>
-            <p class="eyebrow">Customer profile</p>
-            <h2>{{ customer.name }}</h2>
-          </div>
+        <CustomerProfileHeader
+          :customer-name="customer.name"
+          @update-profile="updateCustomerProfile"
+          @add-vessel="addNewVessel"
+        />
 
-          <div class="header-actions profile-action-group">
-            <button type="button" class="primary profile-action-btn" @click="updateCustomerProfile">
-              Update Customer Profile
-            </button>
-            <button type="button" class="primary profile-action-btn" @click="addNewVessel">
-              Add New Vessel
-            </button>
-          </div>
-        </header>
+        <CustomerProfileDetails
+          :formatted-phone="formattedCustomerPhone"
+          :email="customer.email"
+          :address="customer.address"
+          :created-at="formatLocalDateTime(customer.createdAt)"
+        />
 
-        <ul class="details">
-          <li><strong>Phone</strong> {{ formattedCustomerPhone }}</li>
-          <li><strong>Email</strong> {{ customer.email }}</li>
-          <li><strong>Address</strong> {{ customer.address }}</li>
-          <li><strong>Profile created</strong> {{ formatLocalDateTime(customer.createdAt) }}</li>
-        </ul>
-
-        <div class="vessel-list">
-          <div class="section-heading profile-section-heading">
-            <h3>Vessels</h3>
-            <span class="count profile-count-badge">{{ vessels.length }}</span>
-          </div>
-
-          <div v-if="vessels.length === 0" class="empty-state">No vessels registered.</div>
-
-          <ul v-else class="vessel-grid">
-            <li
-              v-for="v in vessels"
-              :key="v.id"
-              class="vessel-item clickable"
-              @click="openVessel(v)"
-            >
-              <div class="vessel-thumb-wrap" v-if="v.boatPhotoDataUrl">
-                <img
-                  class="vessel-thumb"
-                  :src="v.boatPhotoDataUrl"
-                  :alt="`${v.vesselName} photo`"
-                />
-              </div>
-              <div v-else class="vessel-thumb-placeholder">No photo</div>
-              <strong>{{ v.vesselName }}</strong>
-              <span class="vessel-meta">{{ v.vesselMake }} · {{ v.vesselYear }}</span>
-              <div class="small">
-                Engine: {{ v.engineMake }} {{ v.engineModel }} · {{ v.engineHorsepower }} HP ·
-                Hours:
-                {{ v.engineHours }}
-              </div>
-            </li>
-          </ul>
-        </div>
+        <CustomerVesselGrid
+          :vessels="vesselCards"
+          @view-vessel="openVesselById"
+        />
       </section>
 
       <div v-else class="status-card">No customer found.</div>
@@ -77,7 +38,10 @@ import { useUiStore } from '@/stores/ui'
 import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
 import type { Customer, Vessel } from '@/types/mock'
-import { formatLocalDateTime } from '@/utils/datetime'
+import { formatLocalDateTime } from '@/shared/datetime/format'
+import CustomerProfileHeader from '@/components/Customer/CustomerProfileHeader.vue'
+import CustomerProfileDetails from '@/components/Customer/CustomerProfileDetails.vue'
+import CustomerVesselGrid from '@/components/Customer/CustomerVesselGrid.vue'
 
 const uiStore = useUiStore()
 const customerStore = useCustomerStore()
@@ -91,6 +55,17 @@ const vessels = ref<Vessel[]>([])
 const loading = computed(() => uiStore.loading)
 const error = computed(() => uiStore.error)
 const formattedCustomerPhone = computed(() => formatPhone(customer.value?.phone))
+const vesselCards = computed(() =>
+  vessels.value.map((vessel) => ({
+    id: vessel.id,
+    name: vessel.vesselName,
+    type: vessel.vesselMake,
+    year: vessel.vesselYear,
+    registrationNumber: vessel.hullIdNumber,
+    length: vessel.engineModel,
+    homePort: vessel.boatLocation || '—',
+  })),
+)
 
 const normalizeId = (value: unknown) => String(value ?? '').trim()
 const normalizeText = (value: unknown) =>
@@ -184,8 +159,8 @@ function updateCustomerProfile() {
   router.push({ name: 'CustomerRegistration', query: { id: customer.value.id } })
 }
 
-function openVessel(v: Vessel) {
-  router.push({ name: 'VesselProfile', query: { id: v.id } })
+function openVesselById(vesselId: string) {
+  router.push({ name: 'VesselProfile', query: { id: vesselId } })
 }
 
 onMounted(load)

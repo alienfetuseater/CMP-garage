@@ -13,151 +13,18 @@
         </header>
 
         <form class="registration-form" @submit.prevent="submit">
-          <div class="form-grid">
-            <label>
-              Vessel Name
-              <input v-model="form.vesselName" required />
-            </label>
+          <vessel-identity-section
+            :model-value="form"
+            :popular-boat-makes="popularBoatMakes"
+            :popular-engine-makes="popularEngineMakes"
+            @update:modelValue="updateForm"
+          />
 
-            <label>
-              Make
-              <select v-model="form.vesselMakeSelection">
-                <option value="" disabled>Select make</option>
-                <option v-for="make in popularBoatMakes" :key="make" :value="make">
-                  {{ make }}
-                </option>
-                <option value="other">Other</option>
-              </select>
-            </label>
-
-            <label v-if="form.vesselMakeSelection === 'other'">
-              Other Make
-              <input v-model="form.vesselMakeOther" required placeholder="Enter vessel make" />
-            </label>
-
-            <label>
-              Year
-              <input v-model.number="form.vesselYear" type="number" />
-            </label>
-
-            <label>
-              Hull ID Number
-              <input v-model="form.hullIdNumber" />
-            </label>
-
-            <label>
-              Number of Engines
-              <input v-model.number="form.numberOfEngines" type="number" min="0" />
-            </label>
-
-            <label>
-              Generator
-              <select v-model="form.generator">
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
-              </select>
-            </label>
-
-            <label>
-              Boat Location
-              <select v-model="form.boatLocation">
-                <option value="" disabled>Select location</option>
-                <option value="trailor">trailor</option>
-                <option value="slip">slip</option>
-                <option value="dry dock">dry dock</option>
-              </select>
-            </label>
-
-            <label>
-              Engine Make
-              <select v-model="form.engineMakeSelection">
-                <option value="" disabled>Select engine make</option>
-                <option v-for="make in popularEngineMakes" :key="make" :value="make">
-                  {{ make }}
-                </option>
-                <option value="other">Other</option>
-              </select>
-            </label>
-
-            <label v-if="form.engineMakeSelection === 'other'">
-              Other Engine Make
-              <input
-                v-model="form.engineMakeOther"
-                required
-                placeholder="Enter engine manufacturer"
-              />
-            </label>
-
-            <label>
-              Engine Model
-              <input v-model="form.engineModel" />
-            </label>
-
-            <label>
-              Engine Horsepower
-              <input v-model.number="form.engineHorsepower" type="number" min="0" step="1" />
-            </label>
-
-            <label>
-              Engine Hours
-              <input v-model.number="form.engineHours" type="number" min="0" step="1" />
-            </label>
-          </div>
-
-          <fieldset class="engine-serials" v-if="form.numberOfEngines && form.numberOfEngines > 0">
-            <legend>Engine Serial Numbers</legend>
-            <div
-              v-for="(serial, index) in form.engineSerialNumbers"
-              :key="index"
-              class="engine-serial-row"
-            >
-              <label>
-                Engine {{ index + 1 }} Serial Number
-                <input
-                  v-model="form.engineSerialNumbers[index]"
-                  :disabled="form.engineSerialNumbers[index] === 'Not Available'"
-                  placeholder="Enter serial number"
-                />
-              </label>
-              <button type="button" class="na-toggle" @click="toggleSerialNotAvailable(index)">
-                {{
-                  form.engineSerialNumbers[index] === 'Not Available' ? 'Use serial' : 'Mark N/A'
-                }}
-              </button>
-            </div>
-          </fieldset>
-          <p v-else class="hint">Add the number of engines above to enter serial numbers.</p>
-
-          <section class="photo-section">
-            <h3 class="photo-title">Vessel Photo</h3>
-
-            <div class="photo-preview-wrap" v-if="form.boatPhotoDataUrl">
-              <img class="photo-preview" :src="form.boatPhotoDataUrl" alt="Vessel preview" />
-            </div>
-
-            <p v-else class="hint">No vessel photo uploaded yet.</p>
-
-            <div class="photo-actions">
-              <input
-                ref="boatPhotoInputRef"
-                type="file"
-                accept="image/*"
-                class="visually-hidden"
-                @change="onBoatPhotoSelected"
-              />
-              <button type="button" class="secondary" @click="openBoatPhotoPicker">
-                {{ form.boatPhotoDataUrl ? 'Change photo' : 'Upload photo' }}
-              </button>
-              <button
-                v-if="form.boatPhotoDataUrl"
-                type="button"
-                class="secondary danger"
-                @click="removeBoatPhoto"
-              >
-                Remove photo
-              </button>
-            </div>
-          </section>
+          <vessel-photo-section
+            :model-value="form.boatPhotoDataUrl"
+            @update:modelValue="form.boatPhotoDataUrl = $event"
+            @error="handlePhotoError"
+          />
 
           <div class="actions">
             <button type="submit" class="primary" :disabled="loading">
@@ -176,7 +43,9 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { apiFetch } from '@/api'
+import VesselIdentitySection from '@/components/Vessel/VesselIdentitySection.vue'
+import VesselPhotoSection from '@/components/Vessel/VesselPhotoSection.vue'
+import { apiFetch } from '@/services/http/client'
 import { useUiStore } from '@/stores/ui'
 import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
@@ -210,7 +79,6 @@ const customers = ref<Customer[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 const success = ref(false)
-const boatPhotoInputRef = ref<HTMLInputElement | null>(null)
 const customerSubtitle = computed(() => {
   const customer = customers.value.find((entry) => entry.id === form.value.customerId)
   return customer ? `Customer: ${customer.name}` : ''
@@ -280,48 +148,12 @@ const form = ref<Form>({
   boatPhotoDataUrl: '',
 })
 
-function openBoatPhotoPicker() {
-  boatPhotoInputRef.value?.click()
+function updateForm(next: Form) {
+  form.value = next
 }
 
-function removeBoatPhoto() {
-  form.value.boatPhotoDataUrl = ''
-}
-
-function readFileAsDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => {
-      const value = String(reader.result || '')
-      resolve(value)
-    }
-    reader.onerror = () => reject(new Error('Unable to read selected image'))
-    reader.readAsDataURL(file)
-  })
-}
-
-async function onBoatPhotoSelected(event: Event) {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
-
-  try {
-    if (!file.type.startsWith('image/')) {
-      throw new Error('Please select an image file')
-    }
-
-    const maxBytes = 5 * 1024 * 1024
-    if (file.size > maxBytes) {
-      throw new Error('Image is too large. Use a file up to 5MB')
-    }
-
-    form.value.boatPhotoDataUrl = await readFileAsDataUrl(file)
-    error.value = null
-  } catch (err) {
-    error.value = err instanceof Error ? err.message : String(err)
-  } finally {
-    input.value = ''
-  }
+function handlePhotoError(message: string) {
+  error.value = message
 }
 
 function goBack() {

@@ -69,7 +69,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { apiFetch } from '@/api'
+import { apiFetch } from '@/services/http/client'
 import { useCustomerStore } from '@/stores/customers'
 import type { Customer } from '@/types/mock'
 

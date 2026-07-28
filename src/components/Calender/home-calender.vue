@@ -52,7 +52,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import type { Reminder, Ticket } from '@/types/mock'
-import { toLocalDateKey } from '@/utils/datetime'
+import { toLocalDateKey } from '@/shared/datetime/format'
 
 const props = defineProps<{ reminders: Reminder[]; tickets: Ticket[] }>()
 const emit = defineEmits<{
@@ -231,10 +231,13 @@ function handlePointerDown(event: PointerEvent, cell: CalendarCell) {
     return
   }
 
+  // Capture the selected day key once so the timeout callback has a stable string.
+  const dayKey = cell.dateKey
+
   longPressTimer.value = window.setTimeout(() => {
-    selectedDate.value = cell.dateKey
-    emitSelectedDate(cell.dateKey)
-    emit('double-click-date', { date: cell.dateKey })
+    selectedDate.value = dayKey
+    emitSelectedDate(dayKey)
+    emit('double-click-date', { date: dayKey })
     suppressNextClick.value = true
     longPressTimer.value = null
   }, 450)

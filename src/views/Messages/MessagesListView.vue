@@ -57,8 +57,8 @@ import { useAuthStore } from '@/stores/auth'
 import { useReminderStore } from '@/stores/reminders'
 import { useTicketStore } from '@/stores/tickets'
 import type { ConversationSummary } from '@/types/mock'
-import { formatLocalDateTime } from '@/utils/datetime'
-import { buildConversationSummary } from '@/utils/conversations'
+import { formatLocalDateTime } from '@/shared/datetime/format'
+import { buildConversationSummary } from '@/domain/conversations/utils'
 
 const router = useRouter()
 const authStore = useAuthStore()

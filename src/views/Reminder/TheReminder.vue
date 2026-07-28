@@ -86,8 +86,8 @@ import { useReminderStore } from '@/stores/reminders'
 import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
 import type { Reminder } from '@/types/mock'
-import { formatLocalDateTime } from '@/utils/datetime'
-import { splitNoteHistory } from '@/utils/notes'
+import { formatLocalDateTime } from '@/shared/datetime/format'
+import { splitNoteHistory } from '@/domain/notes/history'
 
 const uiStore = useUiStore()
 const reminderStore = useReminderStore()

@@ -11,20 +11,20 @@ type RawConversationMessage = Partial<ConversationMessage> & {
   _id?: string
 }
 
-const normalizeText = (value: unknown) => String(value ?? '').trim()
+export const toNormalizedText = (value: unknown) => String(value ?? '').trim()
 
 export const normalizeConversationMessage = (
   value: RawConversationMessage,
 ): ConversationMessage => ({
-  id: normalizeText(value.id ?? value._id),
-  senderId: normalizeText(value.senderId),
-  senderName: normalizeText(value.senderName ?? value.sender) || 'Unknown user',
-  recipientId: normalizeText(value.recipientId),
-  recipientName: normalizeText(value.recipientName),
-  text: normalizeText(value.text),
-  timestamp: normalizeText(value.timestamp),
+  id: toNormalizedText(value.id ?? value._id),
+  senderId: toNormalizedText(value.senderId),
+  senderName: toNormalizedText(value.senderName ?? value.sender) || 'Unknown user',
+  recipientId: toNormalizedText(value.recipientId),
+  recipientName: toNormalizedText(value.recipientName),
+  text: toNormalizedText(value.text),
+  timestamp: toNormalizedText(value.timestamp),
   readByUserIds: Array.isArray(value.readByUserIds)
-    ? value.readByUserIds.map((entry) => normalizeText(entry)).filter(Boolean)
+    ? value.readByUserIds.map((entry) => toNormalizedText(entry)).filter(Boolean)
     : [],
 })
 
@@ -42,18 +42,18 @@ export const normalizeConversationMessages = (value: unknown): ConversationMessa
 
 const buildConversationTitle = (type: ConversationType, record: Ticket | Reminder) => {
   return type === 'ticket'
-    ? normalizeText((record as Ticket).service_title) || 'Untitled ticket'
-    : normalizeText((record as Reminder).title) || 'Untitled reminder'
+    ? toNormalizedText((record as Ticket).service_title) || 'Untitled ticket'
+    : toNormalizedText((record as Reminder).title) || 'Untitled reminder'
 }
 
 const buildConversationSubtitle = (type: ConversationType, record: Ticket | Reminder) => {
   if (type === 'ticket') {
     const ticket = record as Ticket
-    return `${normalizeText(ticket.service_category) || 'service'} • ${normalizeText(ticket.status) || 'N/A'}`
+    return `${toNormalizedText(ticket.service_category) || 'service'} • ${toNormalizedText(ticket.status) || 'N/A'}`
   }
 
   const reminder = record as Reminder
-  return `${normalizeText(reminder.relatedTo?.type) || 'reminder'} • ${reminder.completed ? 'completed' : 'open'}`
+  return `${toNormalizedText(reminder.relatedTo?.type) || 'reminder'} • ${reminder.completed ? 'completed' : 'open'}`
 }
 
 export const buildConversationSummary = (
@@ -63,7 +63,7 @@ export const buildConversationSummary = (
   archiveMode: 'active' | 'archived' | 'all' = 'active',
 ): ConversationSummary | null => {
   const archivedByUserIds = Array.isArray(record.archivedByUserIds)
-    ? record.archivedByUserIds.map((entry) => normalizeText(entry)).filter(Boolean)
+    ? record.archivedByUserIds.map((entry) => toNormalizedText(entry)).filter(Boolean)
     : []
   const isArchivedForUser = currentUserId ? archivedByUserIds.includes(currentUserId) : false
 
@@ -101,8 +101,8 @@ export const buildConversationSummary = (
     subtitle: buildConversationSubtitle(type, record),
     sourceRouteName: type === 'ticket' ? 'Ticket' : 'Reminder',
     partnerNames: Array.from(otherPartyNames),
-    lastMessageAt: lastMessage.timestamp,
-    lastMessagePreview: lastMessage.text.slice(0, 140),
+    lastMessageAt: lastMessage?.timestamp ?? '',
+    lastMessagePreview: lastMessage?.text?.slice(0, 140) ?? '',
     messageCount: messages.length,
     unreadCount,
     hasUnread: unreadCount > 0,

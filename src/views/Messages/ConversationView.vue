@@ -7,98 +7,32 @@
       <div v-else-if="error" class="status-card error">{{ error }}</div>
 
       <section v-else-if="conversation" class="conversation-card">
-        <header class="conversation-header">
-          <div>
-            <p class="eyebrow">Internal {{ conversation.type }} conversation</p>
-            <h2>{{ conversation.title }}</h2>
-            <p class="conversation-subtitle">{{ conversation.subtitle }}</p>
-          </div>
+        <ConversationHeader
+          :conversation="conversation"
+          :archiving="archiving"
+          :deleting="deleting"
+          @open-source-record="openSourceRecord"
+          @archive-conversation="archiveConversation"
+          @delete-conversation="deleteConversation"
+        />
 
-          <div class="header-actions">
-            <button type="button" class="secondary" @click="openSourceRecord">
-              Open {{ conversation.type }}
-            </button>
-            <button
-              type="button"
-              class="secondary"
-              :disabled="archiving"
-              @click="archiveConversation"
-            >
-              Archive Conversation
-            </button>
-            <button
-              type="button"
-              class="secondary danger"
-              :disabled="deleting"
-              @click="deleteConversation"
-            >
-              Delete Conversation
-            </button>
-          </div>
-        </header>
+        <ConversationThread
+          :messages="conversation.messages"
+          :current-user-id="currentUserId"
+          :deleting-message-id="deletingMessageId"
+          :unread-count="unreadCount"
+          :message-type="conversation.type"
+          @delete-message="deleteSingleMessage"
+        />
 
-        <section class="message-thread-section">
-          <div class="section-heading">
-            <h3>Conversation</h3>
-            <span>
-              {{ conversation.messages.length }} messages
-              <strong v-if="unreadCount > 0" class="unread-pill">{{ unreadCount }} unread</strong>
-            </span>
-          </div>
-
-          <div v-if="conversation.messages.length" class="message-thread">
-            <article
-              v-for="entry in conversation.messages"
-              :key="entry.id"
-              class="message-bubble"
-              :class="entry.senderId === currentUserId ? 'outbound' : 'inbound'"
-            >
-              <div class="message-meta">
-                <strong>{{ entry.senderName }}</strong>
-                <span>{{ formatLocalDateTime(entry.timestamp) }}</span>
-                <button
-                  type="button"
-                  class="message-delete"
-                  :disabled="deletingMessageId === entry.id"
-                  @click="deleteSingleMessage(entry.id)"
-                >
-                  {{ deletingMessageId === entry.id ? 'Deleting...' : 'Delete' }}
-                </button>
-              </div>
-              <p>{{ entry.text }}</p>
-            </article>
-          </div>
-          <div v-else class="empty-state">No messages yet for this {{ conversation.type }}.</div>
-        </section>
-
-        <section class="composer-section">
-          <div class="section-heading">
-            <h3>New Internal Message</h3>
-          </div>
-
-          <label>
-            Message
-            <textarea
-              v-model="draftMessage"
-              rows="6"
-              placeholder="Write an internal message about this ticket or reminder"
-            ></textarea>
-          </label>
-
-          <div class="actions">
-            <button
-              type="button"
-              class="primary"
-              :disabled="sending || !draftMessage.trim()"
-              @click="sendMessage"
-            >
-              Send Message
-            </button>
-            <span v-if="sending">Sending...</span>
-            <span v-if="success" class="success">{{ success }}</span>
-            <span v-if="sendError" class="error">{{ sendError }}</span>
-          </div>
-        </section>
+        <MessageComposer
+          :draft-message="draftMessage"
+          :sending="sending"
+          :success="success"
+          :send-error="sendError"
+          @update:draft-message="draftMessage = $event"
+          @send-message="sendMessage"
+        />
       </section>
 
       <div v-else class="status-card">Conversation not found.</div>
@@ -109,16 +43,18 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { apiFetch } from '@/api'
+import { apiFetch } from '@/services/http/client'
 import { useAuthStore } from '@/stores/auth'
 import { useReminderStore } from '@/stores/reminders'
 import { useTicketStore } from '@/stores/tickets'
 import type { ConversationRecord, ConversationType, Reminder, Ticket } from '@/types/mock'
-import { formatLocalDateTime } from '@/utils/datetime'
 import {
   countUnreadConversationMessages,
   normalizeConversationMessages,
-} from '@/utils/conversations'
+} from '@/domain/conversations/utils'
+import ConversationHeader from '@/components/Messages/ConversationHeader.vue'
+import ConversationThread from '@/components/Messages/ConversationThread.vue'
+import MessageComposer from '@/components/Messages/MessageComposer.vue'
 
 const authStore = useAuthStore()
 const reminderStore = useReminderStore()
@@ -293,145 +229,6 @@ async function sendMessage() {
   if (!conversation.value) return
 
   sending.value = true
-
-  async function archiveConversation() {
-    if (!conversation.value || archiving.value) return
-
-    archiving.value = true
-    sendError.value = null
-    success.value = null
-
-    try {
-      await apiFetch<{ archived: boolean }>(
-        `/conversations/${encodeURIComponent(conversation.value.type)}/${encodeURIComponent(conversation.value.entityId)}/archive`,
-        { method: 'POST' },
-      )
-
-      if (conversation.value.type === 'ticket') {
-        const existing = ticketStore.ticketById(conversation.value.entityId)
-        if (existing) {
-          ticketStore.addTicket({
-            ...existing,
-            archivedByUserIds: Array.from(
-              new Set([...(existing.archivedByUserIds ?? []), currentUserId.value].filter(Boolean)),
-            ),
-          })
-        }
-      } else {
-        const existing = reminderStore.reminderById(conversation.value.entityId)
-        if (existing) {
-          reminderStore.addReminder({
-            ...existing,
-            archivedByUserIds: Array.from(
-              new Set([...(existing.archivedByUserIds ?? []), currentUserId.value].filter(Boolean)),
-            ),
-          })
-        }
-      }
-
-      router.push({
-        name: conversation.value.sourceRouteName,
-        query: { id: conversation.value.entityId },
-      })
-    } catch (err) {
-      sendError.value = err instanceof Error ? err.message : String(err)
-    } finally {
-      archiving.value = false
-    }
-  }
-
-  async function deleteSingleMessage(messageId: string) {
-    if (!conversation.value || !messageId || deletingMessageId.value) return
-    if (!window.confirm('Delete this message from the conversation?')) {
-      return
-    }
-
-    deletingMessageId.value = messageId
-    sendError.value = null
-    success.value = null
-
-    try {
-      const response = await apiFetch<{ conversation: ConversationRecord }>(
-        `/conversations/${encodeURIComponent(conversation.value.type)}/${encodeURIComponent(conversation.value.entityId)}/messages/${encodeURIComponent(messageId)}`,
-        {
-          method: 'DELETE',
-        },
-      )
-
-      const normalizedConversation: ConversationRecord = {
-        ...response.conversation,
-        messages: normalizeConversationMessages(response.conversation.messages),
-      }
-
-      conversation.value = normalizedConversation
-      syncConversationIntoStores(normalizedConversation)
-
-      if (!normalizedConversation.messages.length) {
-        router.push({
-          name: normalizedConversation.sourceRouteName,
-          query: { id: normalizedConversation.entityId },
-        })
-        return
-      }
-
-      success.value = 'Message deleted'
-    } catch (err) {
-      sendError.value = err instanceof Error ? err.message : String(err)
-    } finally {
-      deletingMessageId.value = ''
-    }
-  }
-
-  async function deleteConversation() {
-    if (!conversation.value || deleting.value) return
-    if (
-      !window.confirm(
-        'Delete this conversation and clear all messages for everyone on this thread?',
-      )
-    ) {
-      return
-    }
-
-    deleting.value = true
-    sendError.value = null
-    success.value = null
-
-    try {
-      await apiFetch<{ deleted: boolean }>(
-        `/conversations/${encodeURIComponent(conversation.value.type)}/${encodeURIComponent(conversation.value.entityId)}`,
-        { method: 'DELETE' },
-      )
-
-      if (conversation.value.type === 'ticket') {
-        const existing = ticketStore.ticketById(conversation.value.entityId)
-        if (existing) {
-          ticketStore.addTicket({
-            ...existing,
-            messages: [],
-            archivedByUserIds: [],
-          })
-        }
-      } else {
-        const existing = reminderStore.reminderById(conversation.value.entityId)
-        if (existing) {
-          reminderStore.addReminder({
-            ...existing,
-            messages: [],
-            archivedByUserIds: [],
-          })
-        }
-      }
-
-      router.push({
-        name: conversation.value.sourceRouteName,
-        query: { id: conversation.value.entityId },
-      })
-    } catch (err) {
-      sendError.value = err instanceof Error ? err.message : String(err)
-    } finally {
-      deleting.value = false
-    }
-  }
   sendError.value = null
   success.value = null
 
@@ -460,6 +257,143 @@ async function sendMessage() {
     sendError.value = err instanceof Error ? err.message : String(err)
   } finally {
     sending.value = false
+  }
+}
+
+async function archiveConversation() {
+  if (!conversation.value || archiving.value) return
+
+  archiving.value = true
+  sendError.value = null
+  success.value = null
+
+  try {
+    await apiFetch<{ archived: boolean }>(
+      `/conversations/${encodeURIComponent(conversation.value.type)}/${encodeURIComponent(conversation.value.entityId)}/archive`,
+      { method: 'POST' },
+    )
+
+    if (conversation.value.type === 'ticket') {
+      const existing = ticketStore.ticketById(conversation.value.entityId)
+      if (existing) {
+        ticketStore.addTicket({
+          ...existing,
+          archivedByUserIds: Array.from(
+            new Set([...(existing.archivedByUserIds ?? []), currentUserId.value].filter(Boolean)),
+          ),
+        })
+      }
+    } else {
+      const existing = reminderStore.reminderById(conversation.value.entityId)
+      if (existing) {
+        reminderStore.addReminder({
+          ...existing,
+          archivedByUserIds: Array.from(
+            new Set([...(existing.archivedByUserIds ?? []), currentUserId.value].filter(Boolean)),
+          ),
+        })
+      }
+    }
+
+    router.push({
+      name: conversation.value.sourceRouteName,
+      query: { id: conversation.value.entityId },
+    })
+  } catch (err) {
+    sendError.value = err instanceof Error ? err.message : String(err)
+  } finally {
+    archiving.value = false
+  }
+}
+
+async function deleteSingleMessage(messageId: string) {
+  if (!conversation.value || !messageId || deletingMessageId.value) return
+  if (!window.confirm('Delete this message from the conversation?')) {
+    return
+  }
+
+  deletingMessageId.value = messageId
+  sendError.value = null
+  success.value = null
+
+  try {
+    const response = await apiFetch<{ conversation: ConversationRecord }>(
+      `/conversations/${encodeURIComponent(conversation.value.type)}/${encodeURIComponent(conversation.value.entityId)}/messages/${encodeURIComponent(messageId)}`,
+      {
+        method: 'DELETE',
+      },
+    )
+
+    const normalizedConversation: ConversationRecord = {
+      ...response.conversation,
+      messages: normalizeConversationMessages(response.conversation.messages),
+    }
+
+    conversation.value = normalizedConversation
+    syncConversationIntoStores(normalizedConversation)
+
+    if (!normalizedConversation.messages.length) {
+      router.push({
+        name: normalizedConversation.sourceRouteName,
+        query: { id: normalizedConversation.entityId },
+      })
+      return
+    }
+
+    success.value = 'Message deleted'
+  } catch (err) {
+    sendError.value = err instanceof Error ? err.message : String(err)
+  } finally {
+    deletingMessageId.value = ''
+  }
+}
+
+async function deleteConversation() {
+  if (!conversation.value || deleting.value) return
+  if (
+    !window.confirm('Delete this conversation and clear all messages for everyone on this thread?')
+  ) {
+    return
+  }
+
+  deleting.value = true
+  sendError.value = null
+  success.value = null
+
+  try {
+    await apiFetch<{ deleted: boolean }>(
+      `/conversations/${encodeURIComponent(conversation.value.type)}/${encodeURIComponent(conversation.value.entityId)}`,
+      { method: 'DELETE' },
+    )
+
+    if (conversation.value.type === 'ticket') {
+      const existing = ticketStore.ticketById(conversation.value.entityId)
+      if (existing) {
+        ticketStore.addTicket({
+          ...existing,
+          messages: [],
+          archivedByUserIds: [],
+        })
+      }
+    } else {
+      const existing = reminderStore.reminderById(conversation.value.entityId)
+      if (existing) {
+        reminderStore.addReminder({
+          ...existing,
+          messages: [],
+          archivedByUserIds: [],
+        })
+      }
+    }
+
+    router.push({
+      name: conversation.value.sourceRouteName,
+      query: { id: conversation.value.entityId },
+    })
+  } catch (err) {
+    sendError.value = err instanceof Error ? err.message : String(err)
+  } finally {
+    deleting.value = false
   }
 }
 

@@ -42,7 +42,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Reminder, ReminderDisplayItem, Ticket } from '@/types/mock'
-import { formatLocalDateTime, formatLocalDate } from '@/utils/datetime'
+import { formatLocalDateTime, formatLocalDate } from '@/shared/datetime/format'
 
 type DayEntry =
   | {

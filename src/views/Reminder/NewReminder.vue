@@ -82,14 +82,14 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { apiFetch } from '@/api'
+import { apiFetch } from '@/services/http/client'
 import { useUiStore } from '@/stores/ui'
 import { useReminderStore } from '@/stores/reminders'
 import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
 import { useTicketStore } from '@/stores/tickets'
 import type { Reminder } from '@/types/mock'
-import { formatLocalDateTime } from '@/utils/datetime'
+import { formatLocalDateTime } from '@/shared/datetime/format'
 
 type RelatedType = Reminder['relatedTo']['type']
 type ReminderApiRecord = Reminder & { _id?: string }
@@ -183,7 +183,7 @@ function hydrateFromQuery() {
   }
 
   if (dueDateQuery) {
-    const [dateOnly] = dueDateQuery.split('T')
+    const [dateOnly = ''] = dueDateQuery.split('T')
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) {
       form.dueDate = dateOnly
     }

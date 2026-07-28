@@ -13,135 +13,61 @@
             <h2>{{ ticket.service_title }}</h2>
           </div>
 
-          <div class="header-actions profile-action-group">
-            <div class="ticket-badge profile-status-badge">{{ ticket.status }}</div>
-            <button type="button" class="primary profile-action-btn" @click="openConversation">
-              messages
-            </button>
-            <button
-              v-if="!isTicketClosed"
-              type="button"
-              class="primary profile-action-btn"
-              @click="editWork"
-            >
-              Update
-            </button>
-            <button
-              v-if="!isTicketClosed"
-              type="button"
-              class="primary profile-action-btn"
-              @click="closeOutTicket"
-            >
-              Close Ticket
-            </button>
-            <button
-              v-else
-              type="button"
-              class="primary profile-action-btn"
-              :disabled="updatingTicketStatus"
-              @click="reopenTicket"
-            >
-              Reopen Ticket
-            </button>
-            <button
-              type="button"
-              class="primary profile-action-btn"
-              @click="generateTicketUpdatePreview"
-              :disabled="generatingTicketPreview"
-            >
-              {{ isTicketClosed ? 'Final Invoice Preview' : 'Preview Update' }}
-            </button>
-            <span v-if="updatingTicketStatus">Updating status...</span>
-            <span v-if="ticketStatusError" class="error">{{ ticketStatusError }}</span>
-          </div>
+          <TicketHeaderActions
+            :status="ticket.status"
+            :is-ticket-closed="isTicketClosed"
+            :updating-ticket-status="updatingTicketStatus"
+            :generating-ticket-preview="generatingTicketPreview"
+            :ticket-status-error="ticketStatusError"
+            @open-conversation="openConversation"
+            @edit-work="editWork"
+            @close-ticket="closeOutTicket"
+            @reopen-ticket="reopenTicket"
+            @generate-preview="generateTicketUpdatePreview"
+          />
         </header>
 
-        <div class="owner-strip">
-          <span class="owner-label">Customer</span>
-          <span class="clickable owner owner-link" @click="openCustomer">
-            {{ customerName }}
-          </span>
-          <span class="owner-divider">•</span>
-          <span class="owner-label">Vessel</span>
-          <span class="clickable owner owner-link" @click="openVessel">
-            {{ vesselName }}
-          </span>
-        </div>
+        <TicketProfileSummary
+          :ticket="ticket"
+          :customer-name="customerName"
+          :vessel-name="vesselName"
+          @open-customer="openCustomer"
+          @open-vessel="openVessel"
+        />
 
-        <ul class="details">
-          <li><strong>Status</strong> {{ ticket.status }}</li>
-          <li><strong>Priority</strong> {{ ticket.priority }}</li>
-          <li><strong>Created</strong> {{ formatLocalDateTime(ticket.createdAt) }}</li>
-          <li><strong>Scheduled</strong> {{ formatLocalDateTime(ticket.scheduledDate) }}</li>
-        </ul>
+        <TicketNotesSection
+          title="Initial Assessment"
+          :text="initialAssessmentText"
+          :photos="initialAssessmentPhotos"
+          empty-text="No initial assessment provided for this ticket."
+        />
 
-        <section class="notes-block">
-          <div class="section-heading profile-section-heading">
-            <h3>Initial Assessment</h3>
-          </div>
+        <TicketNotesSection
+          title="Recommended Service"
+          :text="recommendedServiceText"
+          empty-text="No recommended service provided for this ticket."
+        />
 
-          <p v-if="initialAssessmentText" class="notes-text">{{ initialAssessmentText }}</p>
-          <div v-if="initialAssessmentPhotos.length" class="photo-grid">
-            <figure v-for="photo in initialAssessmentPhotos" :key="photo.id" class="photo-card">
-              <img :src="photo.dataUrl" :alt="photo.name" class="photo-preview" />
-              <figcaption class="photo-meta">
-                <span>{{ photo.name?.trim() || 'Ticket Photo' }}</span>
-                <span>{{ formatLocalDateTime(photo.uploadedAt) }}</span>
-              </figcaption>
-            </figure>
-          </div>
-          <div v-if="!initialAssessmentText && !initialAssessmentPhotos.length" class="empty-state">
-            No initial assessment provided for this ticket.
-          </div>
-        </section>
+        <TicketPlanSection
+          title="Plan of Action"
+          item-label="items"
+          :completed-count="completedPlanCount"
+          :total-count="totalPlanCount"
+          :progress="planProgress"
+          :items="planItems"
+          empty-text="No plan items have been added to this ticket yet."
+        />
 
-        <section class="notes-block">
-          <div class="section-heading profile-section-heading">
-            <h3>Recommended Service</h3>
-          </div>
-
-          <p v-if="recommendedServiceText" class="notes-text">{{ recommendedServiceText }}</p>
-          <div v-else class="empty-state">No recommended service provided for this ticket.</div>
-        </section>
-
-        <section class="plan-block">
-          <div class="section-heading profile-section-heading">
-            <h3>Plan of Action</h3>
-            <p>
-              {{ completedPlanCount }} of {{ totalPlanCount }} items complete ({{ planProgress }}%)
-            </p>
-          </div>
-
-          <div v-if="totalPlanCount > 0" class="plan-items">
-            <label v-for="item in planItems" :key="item.id" class="plan-item">
-              <input type="checkbox" :checked="item.completed" disabled />
-              <span :class="{ done: item.completed }">{{ item.text }}</span>
-            </label>
-          </div>
-          <div v-else class="empty-state">No plan items have been added to this ticket yet.</div>
-        </section>
-
-        <section class="plan-block">
-          <div class="section-heading profile-section-heading">
-            <h3>Required Parts</h3>
-            <p>
-              {{ completedRequiredParts }} of {{ totalRequiredParts }} parts complete ({{
-                requiredPartsProgress
-              }}%)
-            </p>
-          </div>
-
-          <div v-if="totalRequiredParts > 0" class="plan-items">
-            <label v-for="part in requiredParts" :key="part.id" class="plan-item">
-              <input type="checkbox" :checked="part.completed" disabled />
-              <span :class="{ done: part.completed }">{{ part.text }}</span>
-              <span class="part-cost">{{ formatCurrency(part.cost ?? 0) }}</span>
-            </label>
-          </div>
-          <div v-else class="empty-state">
-            No required parts have been added to this ticket yet.
-          </div>
-        </section>
+        <TicketPlanSection
+          title="Required Parts"
+          item-label="parts"
+          :completed-count="completedRequiredParts"
+          :total-count="totalRequiredParts"
+          :progress="requiredPartsProgress"
+          :items="requiredParts"
+          :show-cost="true"
+          empty-text="No required parts have been added to this ticket yet."
+        />
 
         <section class="notes-block">
           <div class="section-heading profile-section-heading">
@@ -156,185 +82,48 @@
           <div v-else class="empty-state">No notes provided for this ticket.</div>
         </section>
 
-        <section class="notes-block">
-          <div class="section-heading profile-section-heading">
-            <h3>Summary of Work Completed</h3>
-          </div>
+        <TicketNotesSection
+          title="Summary of Work Completed"
+          :text="summaryOfWorkCompletedText"
+          :photos="summaryOfWorkCompletedPhotos"
+          empty-text="No summary of work completed provided for this ticket."
+        />
 
-          <p v-if="summaryOfWorkCompletedText" class="notes-text">
-            {{ summaryOfWorkCompletedText }}
-          </p>
-          <div v-if="summaryOfWorkCompletedPhotos.length" class="photo-grid">
-            <figure
-              v-for="photo in summaryOfWorkCompletedPhotos"
-              :key="photo.id"
-              class="photo-card"
-            >
-              <img :src="photo.dataUrl" :alt="photo.name" class="photo-preview" />
-              <figcaption class="photo-meta">
-                <span>{{ photo.name?.trim() || 'Ticket Photo' }}</span>
-                <span>{{ formatLocalDateTime(photo.uploadedAt) }}</span>
-              </figcaption>
-            </figure>
-          </div>
-          <div
-            v-if="!summaryOfWorkCompletedText && !summaryOfWorkCompletedPhotos.length"
-            class="empty-state"
-          >
-            No summary of work completed provided for this ticket.
-          </div>
-        </section>
+        <TicketInvoiceSection
+          :selected-parts-total="selectedPartsTotal"
+          :normalized-labor-cost="normalizedLaborCost"
+          :invoice-total="invoiceTotal"
+        />
 
-        <section class="notes-block invoice-block">
-          <div class="section-heading profile-section-heading">
-            <h3>Invoice Cost</h3>
-            <p>Total of selected required parts plus labor cost.</p>
-          </div>
+        <TicketDiagnosticsSection
+          :diagnostic-sections="diagnosticSections"
+          :diagnostics="diagnostics"
+          :show-diagnostics="showDiagnostics"
+          :saving-diagnostics="savingDiagnostics"
+          :diagnostics-success="diagnosticsSuccess"
+          :diagnostics-error="diagnosticsError"
+          @update:show-diagnostics="showDiagnostics = $event"
+          @update-diagnostic="updateDiagnosticField"
+          @save="saveDiagnostics"
+        />
 
-          <div class="invoice-summary">
-            <p><strong>Selected Parts Total</strong> {{ formatCurrency(selectedPartsTotal) }}</p>
-            <p><strong>Labor Cost</strong> {{ formatCurrency(normalizedLaborCost) }}</p>
-            <p class="invoice-grand-total">
-              <strong>Invoice Total</strong> {{ formatCurrency(invoiceTotal) }}
-            </p>
-          </div>
-        </section>
-
-        <section class="diagnostics-section">
-          <div class="section-heading profile-section-heading diagnostics-heading">
-            <div>
-              <h3>Diagnostics</h3>
-              <p>Fill out the inspection details here after the ticket has been created.</p>
-            </div>
-
-            <fieldset class="diagnostics-toggle">
-              <legend>Show diagnostics form</legend>
-              <label>
-                <input v-model="showDiagnostics" type="radio" :value="false" />
-                Hide
-              </label>
-              <label>
-                <input v-model="showDiagnostics" type="radio" :value="true" />
-                Show
-              </label>
-            </fieldset>
-          </div>
-
-          <div v-if="showDiagnostics" class="diagnostics-form">
-            <div
-              v-for="section in diagnosticSections"
-              :key="section.title"
-              class="diagnostic-group"
-            >
-              <div class="diagnostic-group-header">
-                <h4>{{ section.title }}</h4>
-              </div>
-
-              <div class="diagnostics-grid">
-                <label v-for="field in section.fields" :key="field.key">
-                  {{ field.label }}
-                  <select v-model="diagnostics[field.key]">
-                    <option value="good">good</option>
-                    <option value="monitor">monitor</option>
-                    <option value="action">action</option>
-                    <option value="N/A">N/A</option>
-                  </select>
-                </label>
-              </div>
-            </div>
-
-            <div class="diagnostics-footer">
-              <button
-                type="button"
-                class="primary diagnostics-save"
-                @click="saveDiagnostics"
-                :disabled="savingDiagnostics"
-              >
-                Save Diagnostics
-              </button>
-              <span v-if="savingDiagnostics">Saving...</span>
-              <span v-if="diagnosticsSuccess" class="success">Saved</span>
-              <span v-if="diagnosticsError" class="error">{{ diagnosticsError }}</span>
-            </div>
-          </div>
-        </section>
-
-        <div
-          v-if="showTicketUpdatePreview"
-          class="preview-backdrop"
-          @click.self="closeTicketUpdatePreview"
-        >
-          <section
-            class="preview-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="ticket-update-preview-title"
-          >
-            <header class="preview-header">
-              <div>
-                <p class="eyebrow">Ticket document preview</p>
-                <h3 id="ticket-update-preview-title">
-                  {{ isTicketClosed ? 'Final Invoice' : 'Progress Update' }}
-                </h3>
-              </div>
-              <button type="button" class="close-preview" @click="closeTicketUpdatePreview">
-                ✕
-              </button>
-            </header>
-
-            <div class="preview-frame-wrap">
-              <div v-if="previewActionBusy && !ticketPreviewUrl" class="preview-loading">
-                Loading preview...
-              </div>
-              <iframe
-                v-if="ticketPreviewUrl"
-                ref="previewFrameRef"
-                class="preview-frame"
-                :src="ticketPreviewUrl"
-                :title="isTicketClosed ? 'Final Invoice Preview' : 'Progress Update Preview'"
-              ></iframe>
-            </div>
-
-            <div class="preview-actions">
-              <button
-                type="button"
-                class="preview-action-button"
-                :disabled="previewActionBusy"
-                @click="printTicketPreview"
-              >
-                Print
-              </button>
-              <button
-                type="button"
-                class="preview-action-button"
-                :disabled="previewActionBusy"
-                @click="saveTicketPreview"
-              >
-                Save
-              </button>
-              <button
-                type="button"
-                class="preview-action-button"
-                :disabled="previewActionBusy"
-                @click="emailTicketUpdate"
-              >
-                Email
-              </button>
-              <button
-                type="button"
-                class="preview-action-button preview-cancel-button"
-                :disabled="previewActionBusy"
-                @click="closeTicketUpdatePreview"
-                aria-label="Cancel preview"
-              >
-                ✕
-              </button>
-              <span v-if="previewActionBusy">Working...</span>
-              <span v-if="previewActionSuccess" class="success">{{ previewActionSuccess }}</span>
-              <span v-if="previewActionError" class="error">{{ previewActionError }}</span>
-            </div>
-          </section>
-        </div>
+        <DocumentPreviewModal
+          v-model="showTicketUpdatePreview"
+          eyebrow="Ticket document preview"
+          :heading="isTicketClosed ? 'Final Invoice' : 'Progress Update'"
+          :preview-url="ticketPreviewUrl"
+          :loading="previewActionBusy"
+          :busy="previewActionBusy"
+          :success="previewActionSuccess"
+          :error="previewActionError"
+          :iframe-title="isTicketClosed ? 'Final Invoice Preview' : 'Progress Update Preview'"
+          title-id="ticket-update-preview-title"
+          :show-save-button="true"
+          :show-email-button="true"
+          @save="saveTicketPreview"
+          @email="emailTicketUpdate"
+          @update:model-value="handlePreviewVisibilityChange"
+        />
       </section>
 
       <div v-else class="status-card">No ticket found.</div>
@@ -349,7 +138,14 @@ import { useUiStore } from '@/stores/ui'
 import { useTicketStore } from '@/stores/tickets'
 import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
-import { API_BASE, apiFetch } from '@/api'
+import { API_BASE, apiFetch } from '@/services/http/client'
+import TicketHeaderActions from '@/components/Ticket/TicketHeaderActions.vue'
+import TicketNotesSection from '@/components/Ticket/TicketNotesSection.vue'
+import TicketPlanSection from '@/components/Ticket/TicketPlanSection.vue'
+import TicketInvoiceSection from '@/components/Ticket/TicketInvoiceSection.vue'
+import TicketDiagnosticsSection from '@/components/Ticket/TicketDiagnosticsSection.vue'
+import TicketProfileSummary from '@/components/Ticket/TicketProfileSummary.vue'
+import DocumentPreviewModal from '@/components/Shared/DocumentPreviewModal.vue'
 import type {
   DiagnosticLevel,
   PlanActionItem,
@@ -357,8 +153,8 @@ import type {
   Ticket,
   TicketPhotoAttachment,
 } from '@/types/mock'
-import { formatLocalDateTime } from '@/utils/datetime'
-import { splitNoteHistory } from '@/utils/notes'
+import { formatLocalDateTime } from '@/shared/datetime/format'
+import { splitNoteHistory } from '@/domain/notes/history'
 
 const uiStore = useUiStore()
 const ticketStore = useTicketStore()
@@ -381,7 +177,6 @@ const ticketStatusError = ref<string | null>(null)
 const generatingTicketPreview = ref(false)
 const showTicketUpdatePreview = ref(false)
 const ticketPreviewUrl = ref<string | null>(null)
-const previewFrameRef = ref<HTMLIFrameElement | null>(null)
 const previewActionBusy = ref(false)
 const previewActionSuccess = ref<string | null>(null)
 const previewActionError = ref<string | null>(null)
@@ -564,6 +359,12 @@ function hydrateDiagnostics() {
   showDiagnostics.value = false
 }
 
+function updateDiagnosticField(payload: { key: string; value: DiagnosticLevel }) {
+  const field = payload.key as (typeof diagnosticFields)[number]
+  if (!diagnosticFields.includes(field)) return
+  diagnostics[field] = payload.value
+}
+
 async function saveDiagnostics() {
   if (!ticket.value) return
 
@@ -637,6 +438,15 @@ function generateTicketUpdatePreview() {
   })
 }
 
+function handlePreviewVisibilityChange(isOpen: boolean) {
+  if (!isOpen) {
+    closeTicketUpdatePreview()
+    return
+  }
+
+  showTicketUpdatePreview.value = true
+}
+
 function closeTicketUpdatePreview() {
   showTicketUpdatePreview.value = false
   previewActionSuccess.value = null
@@ -646,12 +456,6 @@ function closeTicketUpdatePreview() {
     URL.revokeObjectURL(ticketPreviewUrl.value)
     ticketPreviewUrl.value = null
   }
-}
-
-function printTicketPreview() {
-  previewActionSuccess.value = null
-  previewActionError.value = null
-  previewFrameRef.value?.contentWindow?.print()
 }
 
 function saveTicketPreview() {
@@ -697,13 +501,6 @@ async function emailTicketUpdate() {
   } finally {
     previewActionBusy.value = false
   }
-}
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(value || 0)
 }
 
 function goBack() {

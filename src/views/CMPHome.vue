@@ -81,7 +81,7 @@ import { useUiStore } from '@/stores/ui'
 import { useTicketStore } from '@/stores/tickets'
 import { useReminderStore } from '@/stores/reminders'
 import type { Ticket, Reminder, ReminderDisplayItem } from '@/types/mock'
-import { formatLocalDateTime } from '@/utils/datetime'
+import { formatLocalDateTime } from '@/shared/datetime/format'
 
 const uiStore = useUiStore()
 const ticketStore = useTicketStore()

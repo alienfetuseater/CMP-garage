@@ -1,7 +1,8 @@
-import { apiFetch } from '@/api'
+import { apiFetch } from '@/services/http/client'
 import type { Vessel } from '@/types/mock'
 import type { VesselsState } from './state'
 import { useUiStore } from '@/stores/ui'
+import { findById, replaceCollection, resolveRecordId, upsertById } from '@/stores/shared/records'
 
 type VesselApiRecord = Vessel & {
   _id?: string
@@ -10,7 +11,7 @@ type VesselApiRecord = Vessel & {
 const normalizeVessel = (record: VesselApiRecord): Vessel => {
   return {
     ...record,
-    id: String(record.id ?? record._id ?? ''),
+    id: resolveRecordId(record),
   }
 }
 
@@ -18,19 +19,17 @@ export const fetchVessels = async (state: VesselsState, force = false) => {
   if (!force && state.vessels.length > 0) return state.vessels
   const data = await apiFetch<VesselApiRecord[]>('/getAllBoats')
   const normalized = data.map(normalizeVessel)
-  state.vessels.splice(0, state.vessels.length, ...normalized)
+  replaceCollection(state.vessels, normalized)
   return state.vessels
 }
 
 export const addVessel = (state: VesselsState, vessel: Vessel) => {
   const normalized = normalizeVessel(vessel)
-  const index = state.vessels.findIndex((v) => v.id === normalized.id)
-  if (index >= 0) state.vessels[index] = normalized
-  else state.vessels.push(normalized)
+  upsertById(state.vessels, normalized)
 }
 
 export const vesselById = (state: VesselsState, id: string) => {
-  return state.vessels.find((v) => String(v.id) === String(id)) ?? null
+  return findById(state.vessels, id)
 }
 
 export const getVessel = async (state: VesselsState, id: string) => {

@@ -5,7 +5,7 @@
         <ul>
           <li>
             <RouterLink to="/" class="home-link" title="Home">
-              <img class="nav-logo" src="/CMPicon.png" alt="CMP Garage" />
+              <img class="nav-logo" :src="logoSrc" alt="CMP Garage" />
             </RouterLink>
             <span class="brand-banner">Coastal Marine Pro</span>
           </li>
@@ -13,240 +13,47 @@
       </nav>
 
       <div class="nav-tools">
-        <div class="search-wrap" @focusin="showResults = true" @focusout="onSearchBlur">
-          <input
-            v-model="searchQuery"
-            class="search-input"
-            type="search"
-            placeholder="Search customers, vessels, or tickets"
-            aria-label="Search customers, vessels, or tickets"
-            @focus="showResults = true"
-          />
-
-          <div v-if="showResults && searchQuery.trim()" class="search-results">
-            <div v-if="!hasAnyResults" class="search-empty">No matches found.</div>
-
-            <section v-if="filteredCustomers.length" class="search-group">
-              <h4>Customers</h4>
-              <button
-                v-for="customer in filteredCustomers"
-                :key="customer.id"
-                type="button"
-                class="search-item"
-                @mousedown.prevent
-                @click="openCustomer(customer.id)"
-              >
-                <span class="result-title">{{ customer.name }}</span>
-                <span class="result-meta">{{ customer.phone }} · {{ customer.email }}</span>
-              </button>
-            </section>
-
-            <section v-if="filteredVessels.length" class="search-group">
-              <h4>Vessels</h4>
-              <button
-                v-for="vessel in filteredVessels"
-                :key="vessel.id"
-                type="button"
-                class="search-item"
-                @mousedown.prevent
-                @click="openVessel(vessel.id)"
-              >
-                <span class="result-title">{{ vessel.vesselName }}</span>
-                <span class="result-meta"
-                  >{{ vessel.vesselMake }} ({{ vessel.vesselYear }}) ·
-                  {{ vessel.customerName }}</span
-                >
-              </button>
-            </section>
-
-            <section v-if="filteredTickets.length" class="search-group">
-              <h4>Tickets</h4>
-              <button
-                v-for="ticket in filteredTickets"
-                :key="ticket.id"
-                type="button"
-                class="search-item"
-                @mousedown.prevent
-                @click="openTicket(ticket.id)"
-              >
-                <span class="result-title">{{ ticket.service_title }}</span>
-                <span class="result-meta"
-                  >{{ ticket.status }} · {{ ticket.priority }} ·
-                  {{ ticket.customerName || 'Customer' }}</span
-                >
-              </button>
-            </section>
-          </div>
-        </div>
+        <NavSearchPanel
+          :search-query="searchQuery"
+          :show-results="showResults"
+          :has-any-results="hasAnyResults"
+          :filtered-customers="filteredCustomers"
+          :filtered-vessels="filteredVessels"
+          :filtered-tickets="filteredTickets"
+          @update:search-query="searchQuery = $event"
+          @focus="showResults = true"
+          @blur="onSearchBlur"
+          @open-customer="openCustomer"
+          @open-vessel="openVessel"
+          @open-ticket="openTicket"
+        />
 
         <div ref="mobileMenuWrapRef" class="mobile-menu-wrap" @click.stop>
-          <button
-            class="mobile-menu-btn"
-            type="button"
-            aria-label="Open navigation menu"
-            :aria-expanded="showMobileMenu"
-            @click="toggleMobileMenu"
-          >
-            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M4 7h16" />
-              <path d="M4 12h16" />
-              <path d="M4 17h16" />
-            </svg>
-          </button>
-
-          <div v-if="showMobileMenu" class="mobile-menu-dropdown">
-            <div class="mobile-menu-head">
-              <strong>{{ mobileMenuTitle }}</strong>
-              <button
-                v-if="mobileMenuView !== 'menu'"
-                type="button"
-                class="mobile-menu-back"
-                @click="mobileMenuView = 'menu'"
-              >
-                Back
-              </button>
-            </div>
-
-            <div v-if="mobileMenuView === 'menu'" class="mobile-menu-list">
-              <button
-                type="button"
-                class="mobile-menu-item"
-                @click="goToRoute('CustomerRegistration')"
-              >
-                New Customer
-              </button>
-              <button
-                type="button"
-                class="mobile-menu-item"
-                @click="goToRoute('CustomerDirectory')"
-              >
-                Directory
-              </button>
-              <button
-                type="button"
-                class="mobile-menu-item"
-                @click="openMobileMenuPanel('messages')"
-              >
-                Team Messages
-                <span class="mobile-menu-count">{{ messageBadgeCountLabel }}</span>
-              </button>
-              <button type="button" class="mobile-menu-item" @click="openArchivedConversations">
-                Archived Conversations
-              </button>
-              <button
-                type="button"
-                class="mobile-menu-item"
-                @click="openMobileMenuPanel('reminders')"
-              >
-                Reminders
-                <span class="mobile-menu-count">{{ badgeCountLabel }}</span>
-              </button>
-              <button
-                type="button"
-                class="mobile-menu-item"
-                @click="openMobileMenuPanel('tickets')"
-              >
-                Tickets
-                <span class="mobile-menu-count">{{ ticketBadgeCountLabel }}</span>
-              </button>
-              <button type="button" class="mobile-menu-item" @click="handleLogout">Logout</button>
-            </div>
-
-            <div v-else-if="mobileMenuView === 'messages'" class="mobile-menu-panel">
-              <button
-                type="button"
-                class="notification-item archived-link"
-                @click="openMessagesPage"
-              >
-                Open All Team Messages
-              </button>
-
-              <div v-if="messageConversations.length === 0" class="notifications-empty">
-                No active internal conversations.
-              </div>
-
-              <template v-if="messageConversations.length > 0">
-                <button
-                  v-for="conversation in messageConversations"
-                  :key="conversation.conversationId"
-                  type="button"
-                  class="notification-item"
-                  @click="openConversationFromMobileMenu(conversation)"
-                >
-                  <span class="notification-title">
-                    {{ conversation.title }}
-                    <span v-if="conversation.unreadCount > 0" class="conversation-unread-badge">
-                      {{ conversation.unreadCount }}
-                    </span>
-                  </span>
-                  <span class="notification-meta">
-                    {{ conversation.subtitle }} ·
-                    {{ conversation.partnerNames.join(', ') || 'Conversation' }} ·
-                    {{ formatLocalDateTime(conversation.lastMessageAt) }}
-                  </span>
-                </button>
-              </template>
-
-              <button
-                type="button"
-                class="notification-item archived-link"
-                @click="openArchivedConversations"
-              >
-                Open Archived Conversations
-              </button>
-            </div>
-
-            <div v-else-if="mobileMenuView === 'reminders'" class="mobile-menu-panel">
-              <div v-if="openRemindersList.length === 0" class="notifications-empty">
-                No open reminders.
-              </div>
-
-              <template v-else>
-                <button
-                  v-for="reminder in openRemindersList"
-                  :key="reminder.id"
-                  type="button"
-                  class="notification-item"
-                  @click="openReminderFromMobileMenu(reminder.id)"
-                >
-                  <span class="notification-title">{{ reminder.title }}</span>
-                  <span class="notification-meta">{{ formatLocalDateTime(reminder.dueDate) }}</span>
-                </button>
-              </template>
-            </div>
-
-            <div v-else class="mobile-menu-panel">
-              <div v-if="openTicketsList.length === 0" class="notifications-empty">
-                No open tickets.
-              </div>
-
-              <template v-else>
-                <button
-                  v-for="ticket in openTicketsList"
-                  :key="ticket.id"
-                  type="button"
-                  class="notification-item"
-                  @click="openTicketFromMobileMenu(ticket.id)"
-                >
-                  <span class="notification-title">{{ ticket.service_title }}</span>
-                  <span class="notification-meta"
-                    >{{ ticket.status }} · {{ ticket.priority }} ·
-                    {{ formatLocalDateTime(ticket.scheduledDate) }}</span
-                  >
-                </button>
-              </template>
-            </div>
-          </div>
+          <MobileNavMenu
+            :show-mobile-menu="showMobileMenu"
+            :mobile-menu-title="mobileMenuTitle"
+            :mobile-menu-view="mobileMenuView"
+            :message-badge-count-label="messageBadgeCountLabel"
+            :badge-count-label="badgeCountLabel"
+            :ticket-badge-count-label="ticketBadgeCountLabel"
+            :message-conversations="messageConversations"
+            :open-reminders-list="openRemindersList"
+            :open-tickets-list="openTicketsList"
+            @toggle-mobile-menu="toggleMobileMenu"
+            @set-mobile-menu-view="handleMobileMenuViewChange"
+            @go-to-route="goToRoute"
+            @open-mobile-menu-panel="openMobileMenuPanel"
+            @open-archived-conversations="openArchivedConversations"
+            @open-messages-page="openMessagesPage"
+            @open-conversation="openConversationFromMobileMenu"
+            @open-reminder="openReminderFromMobileMenu"
+            @open-ticket="openTicketFromMobileMenu"
+            @logout="handleLogout"
+          />
         </div>
 
         <div class="action-icons">
-          <button
-            type="button"
-            class="nav-icon-link nav-logout-btn"
-            aria-label="Logout"
-            title="Logout"
-            @click="handleLogout"
-          >
+          <NavActionControl :ariaLabel="'Logout'" title="Logout" @click="handleLogout">
             <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path
                 d="M14 7V4.5A1.5 1.5 0 0 0 12.5 3h-7A1.5 1.5 0 0 0 4 4.5v15A1.5 1.5 0 0 0 5.5 21h7a1.5 1.5 0 0 0 1.5-1.5V17"
@@ -254,33 +61,27 @@
               <path d="M10 12h10" />
               <path d="m16.5 8.5 3.5 3.5-3.5 3.5" />
             </svg>
-          </button>
+          </NavActionControl>
 
-          <RouterLink
+          <NavActionControl
             to="/CustomerRegistration"
-            class="nav-icon-link"
-            aria-label="New Client"
+            :ariaLabel="'New Client'"
             title="New Client Registration"
           >
             <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="M12 12.2a3.6 3.6 0 1 0 0-7.2 3.6 3.6 0 0 0 0 7.2Z" />
               <path d="M5.5 19.5a6.5 6.5 0 0 1 13 0" />
             </svg>
-          </RouterLink>
+          </NavActionControl>
 
-          <RouterLink
-            to="/CustomerDirectory"
-            class="nav-icon-link"
-            aria-label="Client Directory"
-            title="Directory"
-          >
+          <NavActionControl to="/CustomerDirectory" :ariaLabel="'Client Directory'" title="Directory">
             <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path
                 d="M6 4.5h10.5A2.5 2.5 0 0 1 19 7v11.5a2.5 2.5 0 0 0-2.5-2.5H6A2.5 2.5 0 0 1 3.5 13.5V7A2.5 2.5 0 0 1 6 4.5Z"
               />
               <path d="M8 7.5h7.5M8 11h7.5" />
             </svg>
-          </RouterLink>
+          </NavActionControl>
 
           <div ref="messageWrapRef" class="notifications-wrap">
             <button
@@ -300,22 +101,13 @@
               }}</span>
             </button>
 
-            <div v-if="showMessagesPopup" class="notifications-popup">
-              <div class="notifications-head">
-                <strong class="notifications-title">Team Messages</strong>
-                <div class="notifications-actions">
-                  <span class="notifications-total">{{ unreadConversationCount }}</span>
-                  <button
-                    type="button"
-                    class="popup-close-btn"
-                    aria-label="Close messages popup"
-                    @click="closeMessagePopup"
-                  >
-                    X
-                  </button>
-                </div>
-              </div>
-
+            <NavbarNotificationPopover
+              v-if="showMessagesPopup"
+              title="Team Messages"
+              :count="unreadConversationCount"
+              close-label="Close messages popup"
+              @close="closeMessagePopup"
+            >
               <button
                 type="button"
                 class="notification-item archived-link"
@@ -361,7 +153,7 @@
               >
                 Open Archived Conversations
               </button>
-            </div>
+            </NavbarNotificationPopover>
           </div>
 
           <div ref="reminderWrapRef" class="notifications-wrap">
@@ -381,22 +173,13 @@
               <span v-if="openReminderCount > 0" class="notify-count">{{ badgeCountLabel }}</span>
             </button>
 
-            <div v-if="showNotifications" class="notifications-popup">
-              <div class="notifications-head">
-                <strong class="notifications-title">Open Reminders</strong>
-                <div class="notifications-actions">
-                  <span class="notifications-total">{{ openReminderCount }}</span>
-                  <button
-                    type="button"
-                    class="popup-close-btn"
-                    aria-label="Close reminders popup"
-                    @click="closeReminderPopup"
-                  >
-                    X
-                  </button>
-                </div>
-              </div>
-
+            <NavbarNotificationPopover
+              v-if="showNotifications"
+              title="Open Reminders"
+              :count="openReminderCount"
+              close-label="Close reminders popup"
+              @close="closeReminderPopup"
+            >
               <div v-if="openRemindersList.length === 0" class="notifications-empty">
                 No open reminders.
               </div>
@@ -413,7 +196,7 @@
                 <span class="notification-title">{{ reminder.title }}</span>
                 <span class="notification-meta">{{ formatLocalDateTime(reminder.dueDate) }}</span>
               </button>
-            </div>
+            </NavbarNotificationPopover>
           </div>
 
           <div ref="ticketWrapRef" class="notifications-wrap">
@@ -440,22 +223,13 @@
               }}</span>
             </button>
 
-            <div v-if="showTicketsPopup" class="notifications-popup">
-              <div class="notifications-head">
-                <strong class="notifications-title">Open Tickets</strong>
-                <div class="notifications-actions">
-                  <span class="notifications-total">{{ openTicketCount }}</span>
-                  <button
-                    type="button"
-                    class="popup-close-btn"
-                    aria-label="Close tickets popup"
-                    @click="closeTicketPopup"
-                  >
-                    X
-                  </button>
-                </div>
-              </div>
-
+            <NavbarNotificationPopover
+              v-if="showTicketsPopup"
+              title="Open Tickets"
+              :count="openTicketCount"
+              close-label="Close tickets popup"
+              @close="closeTicketPopup"
+            >
               <div v-if="openTicketsList.length === 0" class="notifications-empty">
                 No open tickets.
               </div>
@@ -475,7 +249,7 @@
                   {{ formatLocalDateTime(ticket.scheduledDate) }}</span
                 >
               </button>
-            </div>
+            </NavbarNotificationPopover>
           </div>
         </div>
       </div>
@@ -484,7 +258,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
@@ -492,98 +266,63 @@ import { useTicketStore } from '@/stores/tickets'
 import { useReminderStore } from '@/stores/reminders'
 import { useAuthStore } from '@/stores/auth'
 import type { ConversationSummary } from '@/types/mock'
-import { formatLocalDateTime } from '@/utils/datetime'
-import { buildConversationSummary } from '@/utils/conversations'
+import { formatLocalDateTime } from '@/shared/datetime/format'
+import { buildConversationSummary } from '@/domain/conversations/utils'
+import { reminderSortKey, isTicketOpen, toBadgeCountLabel } from '@/domain/navbar/activity'
+import { useNavbarSearch } from '@/composables/navbar/useNavbarSearch'
+import { useNavbarOverlays } from '@/composables/navbar/useNavbarOverlays'
+import NavSearchPanel from '@/components/NavBar/NavSearchPanel.vue'
+import MobileNavMenu from '@/components/NavBar/MobileNavMenu.vue'
+import NavbarNotificationPopover from '@/components/NavBar/NavbarNotificationPopover.vue'
+import NavActionControl from '@/components/NavBar/NavActionControl.vue'
+
+type MobileMenuView = 'menu' | 'messages' | 'reminders' | 'tickets'
 
 const router = useRouter()
+const logoSrc = '/CMPicon.png'
 const customerStore = useCustomerStore()
 const vesselStore = useVesselStore()
 const ticketStore = useTicketStore()
 const reminderStore = useReminderStore()
 const authStore = useAuthStore()
 
-const searchQuery = ref('')
-const showResults = ref(false)
-const showMessagesPopup = ref(false)
-const showNotifications = ref(false)
-const showTicketsPopup = ref(false)
-const showMobileMenu = ref(false)
-const mobileMenuView = ref<'menu' | 'messages' | 'reminders' | 'tickets'>('menu')
-const messageWrapRef = ref<HTMLElement | null>(null)
-const reminderWrapRef = ref<HTMLElement | null>(null)
-const ticketWrapRef = ref<HTMLElement | null>(null)
-const mobileMenuWrapRef = ref<HTMLElement | null>(null)
-
-const normalize = (value: string) => value.trim().toLowerCase()
-
-const filteredCustomers = computed(() => {
-  const q = normalize(searchQuery.value)
-  if (!q) return []
-
-  return customerStore.customers
-    .filter((customer) => {
-      const name = normalize(customer.name || '')
-      const phone = normalize(customer.phone || '')
-      const email = normalize(customer.email || '')
-      return name.includes(q) || phone.includes(q) || email.includes(q)
-    })
-    .slice(0, 6)
+const {
+  searchQuery,
+  showResults,
+  filteredCustomers,
+  filteredVessels,
+  filteredTickets,
+  hasAnyResults,
+  closeSearch,
+  onSearchBlur,
+} = useNavbarSearch({
+  customers: () => customerStore.customers,
+  vessels: () => vesselStore.vessels,
+  tickets: () => ticketStore.tickets,
 })
 
-const filteredVessels = computed(() => {
-  const q = normalize(searchQuery.value)
-  if (!q) return []
-
-  return vesselStore.vessels
-    .filter((vessel) => {
-      const vesselName = normalize(vessel.vesselName || '')
-      const make = normalize(vessel.vesselMake || '')
-      const owner = normalize(vessel.customerName || '')
-      const year = String(vessel.vesselYear || '')
-      return vesselName.includes(q) || make.includes(q) || owner.includes(q) || year.includes(q)
-    })
-    .slice(0, 6)
-})
-
-const filteredTickets = computed(() => {
-  const q = normalize(searchQuery.value)
-  if (!q) return []
-
-  return ticketStore.tickets
-    .filter((ticket) => {
-      const title = normalize(ticket.service_title || '')
-      const category = normalize(ticket.service_category || '')
-      const status = normalize(ticket.status || '')
-      const priority = normalize(ticket.priority || '')
-      const customer = normalize(ticket.customerName || '')
-      const vessel = normalize(ticket.vesselName || '')
-      const id = normalize(ticket.id || '')
-      return (
-        title.includes(q) ||
-        category.includes(q) ||
-        status.includes(q) ||
-        priority.includes(q) ||
-        customer.includes(q) ||
-        vessel.includes(q) ||
-        id.includes(q)
-      )
-    })
-    .slice(0, 6)
-})
-
-const hasAnyResults = computed(
-  () =>
-    filteredCustomers.value.length > 0 ||
-    filteredVessels.value.length > 0 ||
-    filteredTickets.value.length > 0,
-)
-
-function reminderSortKey(dueDate?: string) {
-  if (!dueDate) return Number.POSITIVE_INFINITY
-
-  const timestamp = new Date(dueDate).getTime()
-  return Number.isNaN(timestamp) ? Number.POSITIVE_INFINITY : timestamp
-}
+const {
+  showMessagesPopup,
+  showNotifications,
+  showTicketsPopup,
+  showMobileMenu,
+  mobileMenuView,
+  mobileMenuTitle,
+  messageWrapRef,
+  reminderWrapRef,
+  ticketWrapRef,
+  mobileMenuWrapRef,
+  toggleReminderPopup,
+  toggleMessagePopup,
+  toggleTicketPopup,
+  toggleMobileMenu,
+  openMobileMenuPanel,
+  closeMessagePopup,
+  closeReminderPopup,
+  closeTicketPopup,
+  closeAllPopups,
+  closeMobileMenu,
+} = useNavbarOverlays()
 
 const openRemindersList = computed(() =>
   reminderStore.reminders
@@ -592,13 +331,6 @@ const openRemindersList = computed(() =>
     .sort((a, b) => reminderSortKey(a.dueDate) - reminderSortKey(b.dueDate))
     .slice(0, 8),
 )
-
-function isTicketOpen(status?: string) {
-  const normalized = String(status || '')
-    .trim()
-    .toLowerCase()
-  return normalized !== 'closed' && normalized !== 'completed' && normalized !== 'cancelled'
-}
 
 const openTicketsList = computed(() =>
   ticketStore.tickets
@@ -648,119 +380,15 @@ const openTicketCount = computed(
   () => ticketStore.tickets.filter((ticket) => isTicketOpen(ticket.status)).length,
 )
 
-const badgeCountLabel = computed(() =>
-  openReminderCount.value > 99 ? '99+' : String(openReminderCount.value),
-)
+const badgeCountLabel = computed(() => toBadgeCountLabel(openReminderCount.value))
 
-const ticketBadgeCountLabel = computed(() =>
-  openTicketCount.value > 99 ? '99+' : String(openTicketCount.value),
-)
+const ticketBadgeCountLabel = computed(() => toBadgeCountLabel(openTicketCount.value))
 
-const messageBadgeCountLabel = computed(() =>
-  unreadMessageCount.value > 99 ? '99+' : String(unreadMessageCount.value),
-)
+const messageBadgeCountLabel = computed(() => toBadgeCountLabel(unreadMessageCount.value))
 
-const mobileMenuTitle = computed(() => {
-  if (mobileMenuView.value === 'messages') return 'Team Messages'
-  if (mobileMenuView.value === 'reminders') return 'Open Reminders'
-  if (mobileMenuView.value === 'tickets') return 'Open Tickets'
-  return 'Menu'
-})
-
-function closeSearch() {
-  searchQuery.value = ''
-  showResults.value = false
+function handleMobileMenuViewChange(nextView: string) {
+  mobileMenuView.value = nextView as MobileMenuView
 }
-
-function onSearchBlur() {
-  window.setTimeout(() => {
-    showResults.value = false
-  }, 120)
-}
-
-function toggleReminderPopup() {
-  showMobileMenu.value = false
-  const nextState = !showNotifications.value
-  showMessagesPopup.value = false
-  showTicketsPopup.value = false
-  showNotifications.value = nextState
-}
-
-function toggleMessagePopup() {
-  showMobileMenu.value = false
-  const nextState = !showMessagesPopup.value
-  showNotifications.value = false
-  showTicketsPopup.value = false
-  showMessagesPopup.value = nextState
-}
-
-function toggleTicketPopup() {
-  showMobileMenu.value = false
-  const nextState = !showTicketsPopup.value
-  showMessagesPopup.value = false
-  showNotifications.value = false
-  showTicketsPopup.value = nextState
-}
-
-function toggleMobileMenu() {
-  const nextState = !showMobileMenu.value
-  closeAllPopups()
-  mobileMenuView.value = 'menu'
-  showMobileMenu.value = nextState
-}
-
-function openMobileMenuPanel(panel: 'messages' | 'reminders' | 'tickets') {
-  closeAllPopups()
-  showMobileMenu.value = true
-  mobileMenuView.value = panel
-}
-
-function closeMessagePopup() {
-  showMessagesPopup.value = false
-}
-
-function closeReminderPopup() {
-  showNotifications.value = false
-}
-
-function closeTicketPopup() {
-  showTicketsPopup.value = false
-}
-
-function closeAllPopups() {
-  showMessagesPopup.value = false
-  showNotifications.value = false
-  showTicketsPopup.value = false
-}
-
-function closeMobileMenu() {
-  showMobileMenu.value = false
-  mobileMenuView.value = 'menu'
-}
-
-function onDocumentClick(event: MouseEvent) {
-  const targetNode = event.target as Node | null
-  if (!targetNode) return
-
-  const inMessageWrap = messageWrapRef.value?.contains(targetNode) ?? false
-  const inReminderWrap = reminderWrapRef.value?.contains(targetNode) ?? false
-  const inTicketWrap = ticketWrapRef.value?.contains(targetNode) ?? false
-  const inMobileMenuWrap = mobileMenuWrapRef.value?.contains(targetNode) ?? false
-  if (!inMessageWrap && !inReminderWrap && !inTicketWrap) {
-    closeAllPopups()
-  }
-  if (!inMobileMenuWrap) {
-    closeMobileMenu()
-  }
-}
-
-onMounted(() => {
-  document.addEventListener('click', onDocumentClick)
-})
-
-onBeforeUnmount(() => {
-  document.removeEventListener('click', onDocumentClick)
-})
 
 function openCustomer(id: string) {
   closeSearch()

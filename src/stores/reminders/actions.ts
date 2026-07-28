@@ -1,8 +1,15 @@
-import { apiFetch } from '@/api'
+import { apiFetch } from '@/services/http/client'
 import type { Reminder } from '@/types/mock'
 import type { RemindersState } from './state'
 import { useUiStore } from '@/stores/ui'
-import { normalizeConversationMessages } from '@/utils/conversations'
+import { normalizeConversationMessages } from '@/domain/conversations/utils'
+import {
+  findById,
+  replaceCollection,
+  resolveRecordId,
+  toNormalizedStringList,
+  upsertById,
+} from '@/stores/shared/records'
 
 type ReminderApiRecord = Reminder & {
   _id?: string
@@ -15,16 +22,15 @@ type ReminderApiRecord = Reminder & {
 }
 
 const normalizeReminder = (record: ReminderApiRecord): Reminder => {
-  const normalizedId = String(record.id ?? record._id ?? '')
-  const relatedId = String(record.relatedTo?.id ?? record.relatedTo?._id ?? '')
+  const normalizedId = resolveRecordId(record)
+  const relatedId = resolveRecordId(record.relatedTo ?? {})
 
   return {
     ...record,
     id: normalizedId,
     notes: String(record.notes ?? ''),
-    archivedByUserIds: Array.isArray(record.archivedByUserIds)
-      ? record.archivedByUserIds.map((entry) => String(entry ?? '').trim()).filter(Boolean)
-      : [],
+    // Archived user lists can arrive as mixed values; normalize once at the edge.
+    archivedByUserIds: toNormalizedStringList(record.archivedByUserIds),
     messages: normalizeConversationMessages(record.messages),
     relatedTo: {
       type: record.relatedTo?.type ?? 'customer',
@@ -37,19 +43,17 @@ export const fetchReminders = async (state: RemindersState, force = false) => {
   if (!force && state.reminders.length > 0) return state.reminders
   const data = await apiFetch<ReminderApiRecord[]>('/getAllReminders')
   const normalized = data.map(normalizeReminder)
-  state.reminders.splice(0, state.reminders.length, ...normalized)
+  replaceCollection(state.reminders, normalized)
   return state.reminders
 }
 
 export const addReminder = (state: RemindersState, reminder: Reminder) => {
   const normalized = normalizeReminder(reminder)
-  const index = state.reminders.findIndex((t) => t.id === normalized.id)
-  if (index >= 0) state.reminders[index] = normalized
-  else state.reminders.push(normalized)
+  upsertById(state.reminders, normalized)
 }
 
 export const reminderById = (state: RemindersState, id: string) => {
-  return state.reminders.find((t) => String(t.id) === String(id)) ?? null
+  return findById(state.reminders, id)
 }
 
 export const remindersForVessel = (state: RemindersState, vesselId: string) => {
