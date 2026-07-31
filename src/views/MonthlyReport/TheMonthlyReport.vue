@@ -10,11 +10,10 @@
         <header class="profile-header">
           <div>
             <p class="eyebrow">Monthly report</p>
-            <h2>{{ report.service_title }}</h2>
+            <h2>{{ vesselName ?? report.vesselName ?? 'Monthly Report' }}</h2>
           </div>
 
           <div class="header-actions profile-action-group">
-            <div class="ticket-badge profile-status-badge">{{ report.status }}</div>
             <button type="button" class="primary profile-action-btn" @click="editReport">
               Update
             </button>
@@ -26,8 +25,6 @@
             >
               Preview Report
             </button>
-            <span v-if="updatingStatus">Updating...</span>
-            <span v-if="statusError" class="error">{{ statusError }}</span>
           </div>
         </header>
 
@@ -45,52 +42,14 @@
             </button>
           </div>
           <div class="summary-item">
-            <span class="summary-label">Report Month</span>
-            <span>{{ formatReportMonth(report.reportMonth) }}</span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-label">Priority</span>
-            <span>{{ report.priority }}</span>
+            <span class="summary-label">Report Date</span>
+            <span>{{ formatReportDate(report.reportDate) }}</span>
           </div>
           <div class="summary-item">
             <span class="summary-label">Created</span>
             <span>{{ formatLocalDateTime(report.createdAt) }}</span>
           </div>
         </div>
-
-        <TicketNotesSection
-          title="Initial Assessment"
-          :text="initialAssessmentText"
-          :photos="initialAssessmentPhotos"
-          empty-text="No initial assessment provided for this report."
-        />
-
-        <TicketNotesSection
-          title="Recommended Service"
-          :text="recommendedServiceText"
-          empty-text="No recommended service provided for this report."
-        />
-
-        <TicketPlanSection
-          title="Plan of Action"
-          item-label="items"
-          :completed-count="completedPlanCount"
-          :total-count="totalPlanCount"
-          :progress="planProgress"
-          :items="planItems"
-          empty-text="No plan items have been added to this report yet."
-        />
-
-        <TicketPlanSection
-          title="Required Parts"
-          item-label="parts"
-          :completed-count="completedRequiredParts"
-          :total-count="totalRequiredParts"
-          :progress="requiredPartsProgress"
-          :items="requiredParts"
-          :show-cost="true"
-          empty-text="No required parts have been added to this report yet."
-        />
 
         <section class="notes-block">
           <div class="section-heading profile-section-heading">
@@ -105,35 +64,19 @@
           <div v-else class="empty-state">No notes provided for this report.</div>
         </section>
 
-        <TicketNotesSection
-          title="Summary of Work Completed"
-          :text="summaryOfWorkCompletedText"
-          :photos="summaryOfWorkCompletedPhotos"
-          empty-text="No summary of work completed provided for this report."
-        />
-
-        <TicketInvoiceSection
-          :selected-parts-total="selectedPartsTotal"
-          :normalized-labor-cost="normalizedLaborCost"
-          :invoice-total="invoiceTotal"
-        />
-
         <TicketDiagnosticsSection
-          :diagnostic-sections="diagnosticSections"
+          :diagnostic-sections="monthlyReportDiagnosticSections"
           :diagnostics="diagnostics"
-          :show-diagnostics="showDiagnostics"
-          :saving-diagnostics="savingDiagnostics"
-          :diagnostics-success="diagnosticsSuccess"
-          :diagnostics-error="diagnosticsError"
-          @update:show-diagnostics="showDiagnostics = $event"
-          @update-diagnostic="updateDiagnosticField"
-          @save="saveDiagnostics"
+          :show-diagnostics="true"
+          :embedded="true"
+          :readonly="true"
+          description="Inspection findings recorded for this monthly report."
         />
 
         <DocumentPreviewModal
           v-model="showPreview"
           eyebrow="Monthly report preview"
-          :heading="report.service_title"
+          :heading="`${vesselName ?? report.vesselName ?? 'Vessel'} Monthly Report`"
           :preview-url="previewUrl"
           :loading="previewActionBusy"
           :busy="previewActionBusy"
@@ -155,27 +98,22 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, onBeforeUnmount, onMounted } from 'vue'
+import { computed, ref, onBeforeUnmount, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUiStore } from '@/stores/ui'
 import { useMonthlyReportStore } from '@/stores/monthlyReports'
 import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
 import { API_BASE, apiFetch } from '@/services/http/client'
-import TicketNotesSection from '@/components/Ticket/TicketNotesSection.vue'
-import TicketPlanSection from '@/components/Ticket/TicketPlanSection.vue'
-import TicketInvoiceSection from '@/components/Ticket/TicketInvoiceSection.vue'
 import TicketDiagnosticsSection from '@/components/Ticket/TicketDiagnosticsSection.vue'
 import DocumentPreviewModal from '@/components/Shared/DocumentPreviewModal.vue'
-import type {
-  DiagnosticLevel,
-  MonthlyReport,
-  PlanActionItem,
-  RequiredPartItem,
-  TicketPhotoAttachment,
-} from '@/types/mock'
+import type { MonthlyReport, TicketDiagnostics } from '@/types/mock'
 import { formatLocalDateTime } from '@/shared/datetime/format'
 import { splitNoteHistory } from '@/domain/notes/history'
+import {
+  createMonthlyReportDiagnostics,
+  monthlyReportDiagnosticSections,
+} from '@/domain/monthlyReports/diagnostics'
 
 const uiStore = useUiStore()
 const reportStore = useMonthlyReportStore()
@@ -189,12 +127,6 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const customerName = ref<string | null>(null)
 const vesselName = ref<string | null>(null)
-const updatingStatus = ref(false)
-const statusError = ref<string | null>(null)
-const savingDiagnostics = ref(false)
-const diagnosticsSuccess = ref(false)
-const diagnosticsError = ref<string | null>(null)
-const showDiagnostics = ref(false)
 const generatingPreview = ref(false)
 const showPreview = ref(false)
 const previewUrl = ref<string | null>(null)
@@ -202,134 +134,14 @@ const previewActionBusy = ref(false)
 const previewActionSuccess = ref<string | null>(null)
 const previewActionError = ref<string | null>(null)
 
-const diagnosticSections = [
-  {
-    title: 'Engine and Drive',
-    fields: [
-      { key: 'engine_oil', label: 'Engine oil level and condition' },
-      { key: 'gear_lube', label: 'Gear lube' },
-      { key: 'fuel_system', label: 'Fuel system' },
-      { key: 'cooling_system', label: 'Cooling system' },
-      { key: 'propeller_hardware', label: 'Propeller hardware' },
-      { key: 'anodes_engine_drive', label: 'Anodes engine drive' },
-      { key: 'belts_hoses', label: 'Belts and hoses' },
-      { key: 'steering_engine_mount_hardware', label: 'Steering and engine mount hardware' },
-    ],
-  },
-  {
-    title: 'Electrical and Batteries',
-    fields: [
-      { key: 'battery_voltage', label: 'Battery voltage and load test' },
-      { key: 'terminals_connections', label: 'Terminals and connections' },
-      { key: 'charger_shore_power', label: 'Charger and shore power' },
-      { key: 'bilge_pump', label: 'Bilge pump' },
-      { key: 'navigation_anchorLights', label: 'Navigation and anchor lights' },
-      { key: 'ham_electronics_powerUp', label: 'Helm electronics and power up' },
-    ],
-  },
-  {
-    title: 'Hull and Exterior',
-    fields: [
-      { key: 'hull_gellcoat', label: 'Hull and gelcoat' },
-      { key: 'throughHull_seacocks', label: 'Through-hull and seacocks' },
-      { key: 'hull_trimTab_anodes', label: 'Hull and trim tab anodes' },
-      { key: 'bottom_paint_growth', label: 'Bottom paint and growth' },
-      { key: 'trim_tabs_operation', label: 'Trim tabs operation' },
-    ],
-  },
-  {
-    title: 'Lift and Mooring',
-    fields: [
-      { key: 'liftCables_pulleys', label: 'Lift cables and pulleys' },
-      { key: 'liftMotors_switches', label: 'Lift motors and switches' },
-      { key: 'bunks_guidePosts', label: 'Bunks and guide posts' },
-      { key: 'dockLines_chafePoints', label: 'Dock lines and chafe points' },
-    ],
-  },
-  {
-    title: 'Onboard Systems',
-    fields: [
-      { key: 'steeringFluid_operation', label: 'Steering fluid and operation' },
-      { key: 'liveWell_washdownPumps', label: 'Live well and washdown pumps' },
-      { key: 'freshwater_system', label: 'Freshwater system' },
-      { key: 'head_waste_system', label: 'Head and waste system' },
-    ],
-  },
-  {
-    title: 'Deck and Interior',
-    fields: [
-      { key: 'hatches_latches_drains', label: 'Hatches, latches and drains' },
-      { key: 'upholstery_canvas', label: 'Upholstery and canvas' },
-      { key: 'safety_equipment_check', label: 'Safety equipment check' },
-    ],
-  },
-] as const
-
-const diagnosticFields = diagnosticSections.flatMap((section) =>
-  section.fields.map((field) => field.key),
-)
-
-const diagnostics = reactive<Record<(typeof diagnosticFields)[number], DiagnosticLevel>>(
-  diagnosticFields.reduce(
-    (accumulator, field) => {
-      accumulator[field] = 'N/A'
-      return accumulator
-    },
-    {} as Record<(typeof diagnosticFields)[number], DiagnosticLevel>,
-  ),
-)
-
-const planItems = computed<PlanActionItem[]>(() => report.value?.planOfAction ?? [])
-const totalPlanCount = computed(() => planItems.value.length)
-const completedPlanCount = computed(() => planItems.value.filter((item) => item.completed).length)
-const planProgress = computed(() => {
-  if (!totalPlanCount.value) return 0
-  return Math.round((completedPlanCount.value / totalPlanCount.value) * 100)
-})
-
-const requiredParts = computed<RequiredPartItem[]>(() => report.value?.requiredParts ?? [])
-const totalRequiredParts = computed(() => requiredParts.value.length)
-const completedRequiredParts = computed(
-  () => requiredParts.value.filter((item) => item.completed).length,
-)
-const requiredPartsProgress = computed(() => {
-  if (!totalRequiredParts.value) return 0
-  return Math.round((completedRequiredParts.value / totalRequiredParts.value) * 100)
-})
-
-const initialAssessmentText = computed(() => report.value?.initialAssessment?.trim() ?? '')
-const recommendedServiceText = computed(() => report.value?.recommendedService?.trim() ?? '')
-const summaryOfWorkCompletedText = computed(
-  () => report.value?.summaryOfWorkPerformed?.trim() ?? '',
-)
-const initialAssessmentPhotos = computed<TicketPhotoAttachment[]>(
-  () => report.value?.initialAssessmentPhotos ?? [],
-)
-const summaryOfWorkCompletedPhotos = computed<TicketPhotoAttachment[]>(
-  () => report.value?.summaryOfWorkPerformedPhotos ?? [],
-)
+const diagnostics = ref<TicketDiagnostics>(createMonthlyReportDiagnostics())
 const noteEntries = computed(() => splitNoteHistory(report.value?.notes))
-const normalizedLaborCost = computed(() => {
-  const value = Number(report.value?.laborCost ?? 0)
-  if (!Number.isFinite(value) || value < 0) return 0
-  return value
-})
-const selectedPartsTotal = computed(() =>
-  requiredParts.value.reduce((total, item) => {
-    if (!item.completed) return total
-    const cost = Number(item.cost ?? 0)
-    if (!Number.isFinite(cost) || cost <= 0) return total
-    return total + cost
-  }, 0),
-)
-const invoiceTotal = computed(() => selectedPartsTotal.value + normalizedLaborCost.value)
 
-function formatReportMonth(value?: string) {
+function formatReportDate(value?: string) {
   if (!value) return '—'
-  const [year, month] = value.split('-')
-  if (!year || !month) return value
-  const date = new Date(Number(year), Number(month) - 1, 1)
-  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
+  const [year, month, day] = value.slice(0, 10).split('-').map(Number)
+  if (!year || !month || !day) return value
+  return new Date(year, month - 1, day).toLocaleDateString()
 }
 
 async function load() {
@@ -372,41 +184,7 @@ async function load() {
 }
 
 function hydrateDiagnostics() {
-  const current = report.value?.diagnostics ?? {}
-  diagnosticFields.forEach((field) => {
-    diagnostics[field] = current[field] ?? 'N/A'
-  })
-  showDiagnostics.value = false
-}
-
-function updateDiagnosticField(payload: { key: string; value: DiagnosticLevel }) {
-  const field = payload.key as (typeof diagnosticFields)[number]
-  if (!diagnosticFields.includes(field)) return
-  diagnostics[field] = payload.value
-}
-
-async function saveDiagnostics() {
-  if (!report.value) return
-  savingDiagnostics.value = true
-  diagnosticsSuccess.value = false
-  diagnosticsError.value = null
-  try {
-    const payload = {
-      diagnostics: Object.fromEntries(diagnosticFields.map((field) => [field, diagnostics[field]])),
-    }
-    const saved = await apiFetch<MonthlyReport>(`/updateMonthlyReport/${report.value.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-    report.value = saved
-    reportStore.addReport(saved)
-    diagnosticsSuccess.value = true
-  } catch (err) {
-    diagnosticsError.value = err instanceof Error ? err.message : String(err)
-  } finally {
-    savingDiagnostics.value = false
-  }
+  diagnostics.value = createMonthlyReportDiagnostics(report.value?.diagnostics)
 }
 
 function editReport() {
@@ -489,7 +267,7 @@ function savePreview() {
   previewActionSuccess.value = 'Download started'
   previewActionError.value = null
   const safeName =
-    (report.value?.service_title || report.value?.id || 'report')
+    (report.value?.vesselName || report.value?.reportDate || report.value?.id || 'report')
       .trim()
       .toLowerCase()
       .replace(/[^a-z0-9-_]+/g, '-')

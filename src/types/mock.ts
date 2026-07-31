@@ -172,20 +172,8 @@ export interface MonthlyReport {
   vesselId: string
   customerName?: string
   vesselName?: string
-  reportMonth: string
-  service_title: string
-  status: TicketStatus
-  priority: TicketPriority
+  reportDate: string
   createdAt: string
   notes: string
-  initialAssessment?: string
-  initialAssessmentPhotos?: TicketPhotoAttachment[]
-  recommendedService?: string
-  summaryOfWorkPerformed?: string
-  summaryOfWorkPerformedPhotos?: TicketPhotoAttachment[]
-  laborCost?: number
-  summaryOfFurtherRecommendations?: string
-  planOfAction?: PlanActionItem[]
-  requiredParts?: RequiredPartItem[]
   diagnostics?: TicketDiagnostics
 }

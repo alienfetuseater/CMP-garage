@@ -20,10 +20,7 @@
           :created-at="formatLocalDateTime(customer.createdAt)"
         />
 
-        <CustomerVesselGrid
-          :vessels="vesselCards"
-          @view-vessel="openVesselById"
-        />
+        <CustomerVesselGrid :vessels="vesselCards" @view-vessel="openVesselById" />
       </section>
 
       <div v-else class="status-card">No customer found.</div>

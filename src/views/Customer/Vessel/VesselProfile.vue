@@ -30,8 +30,6 @@
             <h3>Service History</h3>
           </div>
 
-
-          
           <VesselHistoryGroup
             title="Repair History"
             :items="repairHistory"
@@ -39,7 +37,6 @@
             empty-message="No repairs for this vessel."
             @open-item="openTicket"
           />
-
 
           <section class="history-block modifications-block">
             <div class="history-header">
@@ -62,8 +59,13 @@
                 placeholder="Document vessel modifications, upgrades, and custom work here..."
               />
               <div class="modifications-actions">
-                <button type="button" class="primary" :disabled="savingModifications" @click="saveModifications">
-                  {{ savingModifications ? "Saving..." : "Save" }}
+                <button
+                  type="button"
+                  class="primary"
+                  :disabled="savingModifications"
+                  @click="saveModifications"
+                >
+                  {{ savingModifications ? 'Saving...' : 'Save' }}
                 </button>
                 <button type="button" class="secondary-btn" @click="cancelEditingModifications">
                   Cancel
@@ -97,12 +99,11 @@
                 @click="openMonthlyReport(mr.id)"
               >
                 <div class="history-item-top">
-                  <strong>{{ mr.service_title }}</strong>
-                  <span class="history-status">{{ mr.status }}</span>
+                  <strong>Monthly Report</strong>
                 </div>
                 <div class="history-item-bottom">
-                  <span>{{ mr.priority }}</span>
-                  <span>{{ formatReportMonth(mr.reportMonth) }}</span>
+                  <span>{{ mr.customerName ?? vessel.customerName }}</span>
+                  <span>{{ formatReportDate(mr.reportDate) }}</span>
                 </div>
               </button>
             </div>
@@ -145,7 +146,6 @@ import { useTicketStore } from '@/stores/tickets'
 import { useMonthlyReportStore } from '@/stores/monthlyReports'
 import { API_BASE, apiFetch } from '@/services/http/client'
 import type { MonthlyReport, Vessel, Ticket } from '@/types/mock'
-import { formatLocalDateTime } from '@/shared/datetime/format'
 import VesselProfileHeader from '@/components/Vessel/VesselProfileHeader.vue'
 import VesselOwnerSummary from '@/components/Vessel/VesselOwnerSummary.vue'
 import VesselKeyFacts from '@/components/Vessel/VesselKeyFacts.vue'
@@ -194,7 +194,6 @@ const ownerPhone = computed(() => formatPhone(ownerPhoneRaw.value))
 
 const ownerAddress = computed(() => ownerCustomer.value?.address ?? 'No address available')
 
-
 const repairHistory = computed(() =>
   ticketsForVessel.value.filter((ticket) => ticket.service_category === 'repair'),
 )
@@ -225,7 +224,10 @@ async function saveModifications() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ modificationNotes: modificationsEdit.value }),
     })
-    vessel.value = { ...vessel.value, modificationNotes: updated.modificationNotes ?? modificationsEdit.value }
+    vessel.value = {
+      ...vessel.value,
+      modificationNotes: updated.modificationNotes ?? modificationsEdit.value,
+    }
     vesselStore.addVessel(vessel.value)
     editingModifications.value = false
   } catch (err) {
@@ -234,8 +236,6 @@ async function saveModifications() {
     savingModifications.value = false
   }
 }
-
-
 
 function formatPhone(value?: string) {
   if (!value) return ''
@@ -332,12 +332,11 @@ function createMonthlyReport() {
   })
 }
 
-function formatReportMonth(value?: string) {
+function formatReportDate(value?: string) {
   if (!value) return '—'
-  const [year, month] = value.split('-')
-  if (!year || !month) return value
-  const date = new Date(Number(year), Number(month) - 1, 1)
-  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
+  const [year, month, day] = value.slice(0, 10).split('-').map(Number)
+  if (!year || !month || !day) return value
+  return new Date(year, month - 1, day).toLocaleDateString()
 }
 
 function editVessel() {

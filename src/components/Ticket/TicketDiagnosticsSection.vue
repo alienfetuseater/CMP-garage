@@ -3,10 +3,10 @@
     <div class="section-heading profile-section-heading diagnostics-heading">
       <div>
         <h3>Diagnostics</h3>
-        <p>Fill out the inspection details here after the ticket has been created.</p>
+        <p>{{ description }}</p>
       </div>
 
-      <fieldset class="diagnostics-toggle">
+      <fieldset v-if="!embedded" class="diagnostics-toggle">
         <legend>Show diagnostics form</legend>
         <label>
           <input
@@ -38,6 +38,7 @@
             {{ field.label }}
             <select
               :value="diagnostics[field.key]"
+              :disabled="readonly"
               @change="
                 $emit('update-diagnostic', {
                   key: field.key,
@@ -54,7 +55,7 @@
         </div>
       </div>
 
-      <div class="diagnostics-footer">
+      <div v-if="!embedded" class="diagnostics-footer">
         <button
           type="button"
           class="primary diagnostics-save"
@@ -84,14 +85,27 @@ type DiagnosticSection = {
   fields: ReadonlyArray<DiagnosticField>
 }
 
-defineProps<{
-  diagnosticSections: ReadonlyArray<DiagnosticSection>
-  diagnostics: Record<string, DiagnosticLevel>
-  showDiagnostics: boolean
-  savingDiagnostics: boolean
-  diagnosticsSuccess: boolean
-  diagnosticsError: string | null
-}>()
+withDefaults(
+  defineProps<{
+    diagnosticSections: ReadonlyArray<DiagnosticSection>
+    diagnostics: Record<string, DiagnosticLevel>
+    showDiagnostics: boolean
+    savingDiagnostics?: boolean
+    diagnosticsSuccess?: boolean
+    diagnosticsError?: string | null
+    embedded?: boolean
+    readonly?: boolean
+    description?: string
+  }>(),
+  {
+    savingDiagnostics: false,
+    diagnosticsSuccess: false,
+    diagnosticsError: null,
+    embedded: false,
+    readonly: false,
+    description: 'Fill out the inspection details here after the ticket has been created.',
+  },
+)
 
 defineEmits<{
   (event: 'update:showDiagnostics', value: boolean): void

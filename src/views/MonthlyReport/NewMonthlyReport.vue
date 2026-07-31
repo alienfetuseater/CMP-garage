@@ -34,41 +34,11 @@
                 />
               </label>
 
-              <label>
-                Status
-                <select v-model="form.status" required>
-                  <option value="open">open</option>
-                  <option value="in progress">in progress</option>
-                  <option value="completed">completed</option>
-                  <option value="closed">closed</option>
-                  <option value="cancelled">cancelled</option>
-                  <option value="on hold">on hold</option>
-                </select>
-              </label>
-
-              <label>
-                Priority
-                <select v-model="form.priority" required>
-                  <option value="low">low</option>
-                  <option value="medium">medium</option>
-                  <option value="high">high</option>
-                </select>
-              </label>
-
               <label class="full-width">
-                Report Month
-                <input v-model="form.reportMonth" type="month" required />
+                Report Date
+                <input v-model="form.reportDate" type="date" required />
               </label>
             </div>
-
-            <label>
-              Report Title
-              <input
-                v-model="form.service_title"
-                required
-                placeholder="e.g. July Monthly Service Report"
-              />
-            </label>
 
             <label v-if="!isEditMode">
               Notes
@@ -103,12 +73,13 @@
             </section>
           </section>
 
-          <TicketAssessmentSection :form="form" @error="error = $event" />
-
-          <TicketExecutionSection
-            :form="form"
-            :show-close-out-sections="true"
-            @error="error = $event"
+          <TicketDiagnosticsSection
+            :diagnostic-sections="monthlyReportDiagnosticSections"
+            :diagnostics="form.diagnostics"
+            :show-diagnostics="true"
+            :embedded="true"
+            description="Complete the vessel inspection details for this monthly report."
+            @update-diagnostic="updateDiagnosticField"
           />
 
           <div class="actions">
@@ -128,20 +99,18 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import TicketAssessmentSection from '@/components/Ticket/TicketAssessmentSection.vue'
-import TicketExecutionSection from '@/components/Ticket/TicketExecutionSection.vue'
+import TicketDiagnosticsSection from '@/components/Ticket/TicketDiagnosticsSection.vue'
 import { apiFetch } from '@/services/http/client'
 import { useMonthlyReportStore } from '@/stores/monthlyReports'
 import { useUiStore } from '@/stores/ui'
-import type {
-  MonthlyReport,
-  PlanActionItem,
-  RequiredPartItem,
-  TicketPhotoAttachment,
-} from '@/types/mock'
+import type { DiagnosticLevel, MonthlyReport } from '@/types/mock'
 import { formatLocalDateTime } from '@/shared/datetime/format'
 import { splitNoteHistory } from '@/domain/notes/history'
-import { estimateDataUrlBytes } from '@/domain/tickets/photos'
+import {
+  createMonthlyReportDiagnostics,
+  isMonthlyReportDiagnosticField,
+  monthlyReportDiagnosticSections,
+} from '@/domain/monthlyReports/diagnostics'
 
 const route = useRoute()
 const router = useRouter()
@@ -156,42 +125,15 @@ const isEditMode = computed(() => Boolean(editReportId.value))
 const existingNotes = ref('')
 const newUpdateNote = ref('')
 const existingNoteEntries = computed(() => splitNoteHistory(existingNotes.value))
-const MAX_PHOTO_PAYLOAD_BYTES = 12 * 1024 * 1024
-
-const makePlanItem = (text = '', completed = false): PlanActionItem => ({
-  id: globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`,
-  text,
-  completed,
-})
-
-const makeRequiredPartItem = (text = '', completed = false): RequiredPartItem => ({
-  id: globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`,
-  text,
-  completed,
-  cost: 0,
-})
 
 const form = reactive({
   customerName: '',
   vesselName: '',
   customerId: '',
   vesselId: '',
-  service_title: '',
-  service_category: 'maintenance',
-  status: 'open',
-  priority: 'medium',
-  reportMonth: '',
-  scheduledDate: '',
+  reportDate: '',
   notes: '',
-  initialAssessment: '',
-  initialAssessmentPhotos: [] as TicketPhotoAttachment[],
-  recommendedService: '',
-  summaryOfWorkPerformed: '',
-  summaryOfWorkPerformedPhotos: [] as TicketPhotoAttachment[],
-  laborCost: 0,
-  summaryOfFurtherRecommendations: '',
-  planOfAction: [] as PlanActionItem[],
-  requiredParts: [] as RequiredPartItem[],
+  diagnostics: createMonthlyReportDiagnostics(),
 })
 
 function hydrateFromQuery() {
@@ -210,29 +152,11 @@ function hydrateFromReport(report: MonthlyReport) {
   form.vesselName = report.vesselName ?? ''
   form.customerId = String(report.customerId ?? '')
   form.vesselId = String(report.vesselId ?? '')
-  form.service_title = report.service_title
-  form.status = report.status
-  form.priority = report.priority
-  form.reportMonth = report.reportMonth ?? ''
+  form.reportDate = report.reportDate ?? ''
   existingNotes.value = report.notes ?? ''
   newUpdateNote.value = ''
   form.notes = ''
-  form.initialAssessment = report.initialAssessment ?? ''
-  form.initialAssessmentPhotos = (report.initialAssessmentPhotos ?? []).map((p) => ({ ...p }))
-  form.recommendedService = report.recommendedService ?? ''
-  form.summaryOfWorkPerformed = report.summaryOfWorkPerformed ?? ''
-  form.summaryOfWorkPerformedPhotos = (report.summaryOfWorkPerformedPhotos ?? []).map((p) => ({
-    ...p,
-  }))
-  form.laborCost = Number(report.laborCost ?? 0)
-  form.summaryOfFurtherRecommendations = report.summaryOfFurtherRecommendations ?? ''
-  form.planOfAction = (report.planOfAction ?? []).map((item) =>
-    makePlanItem(item.text ?? '', Boolean(item.completed)),
-  )
-  form.requiredParts = (report.requiredParts ?? []).map((item) => ({
-    ...makeRequiredPartItem(item.text ?? '', Boolean(item.completed)),
-    cost: Number(item.cost ?? 0),
-  }))
+  Object.assign(form.diagnostics, createMonthlyReportDiagnostics(report.diagnostics))
 }
 
 async function loadForEdit() {
@@ -267,11 +191,9 @@ function buildInitialNote(note: string): string {
   return `[${formatLocalDateTime(new Date())}] ${trimmed}`
 }
 
-function estimatePhotoPayloadBytes(): number {
-  return [...form.initialAssessmentPhotos, ...form.summaryOfWorkPerformedPhotos].reduce(
-    (total, photo) => total + estimateDataUrlBytes(photo.dataUrl),
-    0,
-  )
+function updateDiagnosticField(payload: { key: string; value: DiagnosticLevel }) {
+  if (!isMonthlyReportDiagnosticField(payload.key)) return
+  form.diagnostics[payload.key] = payload.value
 }
 
 async function submit() {
@@ -280,37 +202,13 @@ async function submit() {
   error.value = null
 
   try {
-    if (estimatePhotoPayloadBytes() > MAX_PHOTO_PAYLOAD_BYTES) {
-      throw new Error('Photos are too large. Please remove some photos or use smaller images.')
-    }
-
     const payload = {
       customerName: form.customerName,
       vesselName: form.vesselName,
       customerId: form.customerId,
       vesselId: form.vesselId,
-      service_title: form.service_title,
-      service_category: form.service_category,
-      status: form.status,
-      priority: form.priority,
-      reportMonth: form.reportMonth,
-      initialAssessment: form.initialAssessment.trim(),
-      initialAssessmentPhotos: form.initialAssessmentPhotos.map((p) => ({ ...p })),
-      recommendedService: form.recommendedService.trim(),
-      summaryOfWorkPerformed: form.summaryOfWorkPerformed.trim(),
-      summaryOfWorkPerformedPhotos: form.summaryOfWorkPerformedPhotos.map((p) => ({ ...p })),
-      laborCost: Number(form.laborCost ?? 0),
-      summaryOfFurtherRecommendations: form.summaryOfFurtherRecommendations.trim(),
-      planOfAction: form.planOfAction
-        .map((item) => ({ ...item, text: item.text.trim() }))
-        .filter((item) => item.text.length > 0),
-      requiredParts: form.requiredParts
-        .map((item) => ({
-          ...item,
-          text: item.text.trim(),
-          cost: Number.isFinite(Number(item.cost)) && Number(item.cost) > 0 ? Number(item.cost) : 0,
-        }))
-        .filter((item) => item.text.length > 0),
+      reportDate: form.reportDate,
+      diagnostics: { ...form.diagnostics },
       notes: isEditMode.value
         ? appendUpdateNote(existingNotes.value, newUpdateNote.value)
         : buildInitialNote(form.notes),

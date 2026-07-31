@@ -9,7 +9,9 @@
       <article v-for="vessel in vessels" :key="vessel.id" class="vessel-card">
         <div class="vessel-card__top">
           <h4>{{ vessel.name }}</h4>
-          <p class="vessel-meta">{{ vessel.type || 'Unspecified model' }} • {{ vessel.year || '—' }}</p>
+          <p class="vessel-meta">
+            {{ vessel.type || 'Unspecified model' }} • {{ vessel.year || '—' }}
+          </p>
         </div>
 
         <dl class="vessel-details">
