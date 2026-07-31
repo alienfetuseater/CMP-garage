@@ -51,9 +51,16 @@
           </div>
         </div>
 
+        <MonthlyReportDiagnosticsSection
+          :diagnostic-sections="monthlyReportDiagnosticSections"
+          :diagnostics="diagnostics"
+          :readonly="true"
+          description="Inspection findings recorded for this monthly report."
+        />
+
         <section class="notes-block">
           <div class="section-heading profile-section-heading">
-            <h3>Notes</h3>
+            <h3>Summary of Monthly Report</h3>
           </div>
 
           <div v-if="noteEntries.length" class="notes-stack">
@@ -61,17 +68,8 @@
               {{ entry }}
             </div>
           </div>
-          <div v-else class="empty-state">No notes provided for this report.</div>
+          <div v-else class="empty-state">No summary provided for this report.</div>
         </section>
-
-        <TicketDiagnosticsSection
-          :diagnostic-sections="monthlyReportDiagnosticSections"
-          :diagnostics="diagnostics"
-          :show-diagnostics="true"
-          :embedded="true"
-          :readonly="true"
-          description="Inspection findings recorded for this monthly report."
-        />
 
         <DocumentPreviewModal
           v-model="showPreview"
@@ -105,9 +103,9 @@ import { useMonthlyReportStore } from '@/stores/monthlyReports'
 import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
 import { API_BASE, apiFetch } from '@/services/http/client'
-import TicketDiagnosticsSection from '@/components/Ticket/TicketDiagnosticsSection.vue'
+import MonthlyReportDiagnosticsSection from '@/components/MonthlyReport/MonthlyReportDiagnosticsSection.vue'
 import DocumentPreviewModal from '@/components/Shared/DocumentPreviewModal.vue'
-import type { MonthlyReport, TicketDiagnostics } from '@/types/mock'
+import type { MonthlyReport, MonthlyReportDiagnostics } from '@/types/mock'
 import { formatLocalDateTime } from '@/shared/datetime/format'
 import { splitNoteHistory } from '@/domain/notes/history'
 import {
@@ -134,7 +132,7 @@ const previewActionBusy = ref(false)
 const previewActionSuccess = ref<string | null>(null)
 const previewActionError = ref<string | null>(null)
 
-const diagnostics = ref<TicketDiagnostics>(createMonthlyReportDiagnostics())
+const diagnostics = ref<MonthlyReportDiagnostics>(createMonthlyReportDiagnostics())
 const noteEntries = computed(() => splitNoteHistory(report.value?.notes))
 
 function formatReportDate(value?: string) {

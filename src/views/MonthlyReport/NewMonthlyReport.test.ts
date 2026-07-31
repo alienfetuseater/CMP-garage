@@ -42,7 +42,7 @@ describe('views/MonthlyReport/NewMonthlyReport.vue', () => {
     mockedApiFetch.mockReset()
   })
 
-  it('renders only demographics, report date, notes, and diagnostics', async () => {
+  it('renders diagnostic attachment controls before the monthly summary', async () => {
     const wrapper = mount(NewMonthlyReport)
     await flushPromises()
 
@@ -50,6 +50,12 @@ describe('views/MonthlyReport/NewMonthlyReport.vue', () => {
     expect(wrapper.text()).toContain('Vessel Name')
     expect(wrapper.text()).toContain('Report Date')
     expect(wrapper.text()).toContain('Diagnostics')
+    expect(wrapper.text()).toContain('Add Comment')
+    expect(wrapper.text()).toContain('Add Photo')
+    expect(wrapper.text()).toContain('Summary of Monthly Report')
+    expect(wrapper.text().indexOf('Diagnostics')).toBeLessThan(
+      wrapper.text().indexOf('Summary of Monthly Report'),
+    )
     expect(wrapper.text()).not.toContain('Priority')
     expect(wrapper.text()).not.toContain('Report Title')
     expect(wrapper.text()).not.toContain('Initial Assessment')
@@ -95,7 +101,7 @@ describe('views/MonthlyReport/NewMonthlyReport.vue', () => {
     )
     expect(payload.reportDate).toBe('2026-07-31')
     expect(payload.notes).toContain('Monthly inspection completed')
-    expect(payload.diagnostics.engine_oil).toBe('N/A')
+    expect(payload.diagnostics.engine_oil).toEqual({ value: 'N/A', comment: '', photos: [] })
     expect(routerPush).toHaveBeenCalledWith({ name: 'MonthlyReport', query: { id: 'mr-1' } })
   })
 })

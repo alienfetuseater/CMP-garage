@@ -1,4 +1,9 @@
-import type { DiagnosticLevel, TicketDiagnostics } from '@/types/mock'
+import type {
+  DiagnosticLevel,
+  MonthlyReportDiagnosticEntry,
+  MonthlyReportDiagnostics,
+  TicketDiagnostics,
+} from '@/types/mock'
 
 export const monthlyReportDiagnosticSections = [
   {
@@ -67,10 +72,28 @@ export const monthlyReportDiagnosticFields = monthlyReportDiagnosticSections.fla
   section.fields.map((field) => field.key),
 )
 
-export function createMonthlyReportDiagnostics(current: TicketDiagnostics = {}): TicketDiagnostics {
+type LegacyMonthlyReportDiagnostics = TicketDiagnostics | MonthlyReportDiagnostics
+
+function normalizeDiagnosticEntry(
+  entry: DiagnosticLevel | MonthlyReportDiagnosticEntry | undefined,
+): MonthlyReportDiagnosticEntry {
+  if (!entry || typeof entry === 'string') {
+    return { value: entry ?? 'N/A', comment: '', photos: [] }
+  }
+
+  return {
+    value: entry.value ?? 'N/A',
+    comment: String(entry.comment ?? ''),
+    photos: Array.isArray(entry.photos) ? entry.photos.map((photo) => ({ ...photo })) : [],
+  }
+}
+
+export function createMonthlyReportDiagnostics(
+  current: LegacyMonthlyReportDiagnostics = {},
+): MonthlyReportDiagnostics {
   return Object.fromEntries(
-    monthlyReportDiagnosticFields.map((field) => [field, current[field] ?? 'N/A']),
-  ) as Record<string, DiagnosticLevel>
+    monthlyReportDiagnosticFields.map((field) => [field, normalizeDiagnosticEntry(current[field])]),
+  )
 }
 
 export function isMonthlyReportDiagnosticField(key: string): boolean {

@@ -39,18 +39,28 @@
                 <input v-model="form.reportDate" type="date" required />
               </label>
             </div>
+          </section>
+
+          <MonthlyReportDiagnosticsSection
+            :diagnostic-sections="monthlyReportDiagnosticSections"
+            :diagnostics="form.diagnostics"
+            description="Complete the vessel inspection details for this monthly report."
+            @error="error = $event"
+            @update-diagnostic="updateDiagnosticEntry"
+          />
+
+          <section class="summary-section">
+            <div class="section-heading">
+              <!-- <h3>Summary of Monthly Report</h3>
+              <p>Record the overall summary after completing the diagnostic inspection.</p> -->
+            </div>
 
             <label v-if="!isEditMode">
-              Notes
+              Summary of Monthly Report
               <textarea v-model="form.notes" rows="5" />
             </label>
 
             <section v-else class="notes-history-block">
-              <div class="section-heading">
-                <h3>Notes History</h3>
-                <p>Previous notes are read-only. Add a fresh update note below.</p>
-              </div>
-
               <div v-if="existingNoteEntries.length" class="notes-stack">
                 <div
                   v-for="(entry, index) in existingNoteEntries"
@@ -60,27 +70,18 @@
                   {{ entry }}
                 </div>
               </div>
-              <div v-else class="empty-state">No previous notes yet.</div>
+              <div v-else class="empty-state">No previous summary yet.</div>
 
               <label>
-                New Update Note
+                New Summary Update
                 <textarea
                   v-model="newUpdateNote"
                   rows="4"
-                  placeholder="Add a fresh update note for this report"
+                  placeholder="Add an update to the monthly report summary"
                 />
               </label>
             </section>
           </section>
-
-          <TicketDiagnosticsSection
-            :diagnostic-sections="monthlyReportDiagnosticSections"
-            :diagnostics="form.diagnostics"
-            :show-diagnostics="true"
-            :embedded="true"
-            description="Complete the vessel inspection details for this monthly report."
-            @update-diagnostic="updateDiagnosticField"
-          />
 
           <div class="actions">
             <button type="submit" class="primary" :disabled="submitting">
@@ -99,18 +100,18 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import TicketDiagnosticsSection from '@/components/Ticket/TicketDiagnosticsSection.vue'
+import MonthlyReportDiagnosticsSection from '@/components/MonthlyReport/MonthlyReportDiagnosticsSection.vue'
 import { apiFetch } from '@/services/http/client'
 import { useMonthlyReportStore } from '@/stores/monthlyReports'
 import { useUiStore } from '@/stores/ui'
-import type { DiagnosticLevel, MonthlyReport } from '@/types/mock'
+import type { MonthlyReport, MonthlyReportDiagnosticEntry } from '@/types/mock'
 import { formatLocalDateTime } from '@/shared/datetime/format'
 import { splitNoteHistory } from '@/domain/notes/history'
 import {
   createMonthlyReportDiagnostics,
-  isMonthlyReportDiagnosticField,
   monthlyReportDiagnosticSections,
 } from '@/domain/monthlyReports/diagnostics'
+import { estimateDataUrlBytes } from '@/domain/tickets/photos'
 
 const route = useRoute()
 const router = useRouter()
@@ -191,9 +192,20 @@ function buildInitialNote(note: string): string {
   return `[${formatLocalDateTime(new Date())}] ${trimmed}`
 }
 
-function updateDiagnosticField(payload: { key: string; value: DiagnosticLevel }) {
-  if (!isMonthlyReportDiagnosticField(payload.key)) return
-  form.diagnostics[payload.key] = payload.value
+function estimateDiagnosticPhotoBytes(): number {
+  return Object.values(form.diagnostics).reduce(
+    (total, entry) =>
+      total +
+      entry.photos.reduce(
+        (photoTotal, photo) => photoTotal + estimateDataUrlBytes(photo.dataUrl),
+        0,
+      ),
+    0,
+  )
+}
+
+function updateDiagnosticEntry(payload: { key: string; entry: MonthlyReportDiagnosticEntry }) {
+  form.diagnostics[payload.key] = payload.entry
 }
 
 async function submit() {
@@ -202,6 +214,10 @@ async function submit() {
   error.value = null
 
   try {
+    if (estimateDiagnosticPhotoBytes() > 12 * 1024 * 1024) {
+      throw new Error('Photos are too large. Please remove some photos or use smaller images.')
+    }
+
     const payload = {
       customerName: form.customerName,
       vesselName: form.vesselName,
@@ -340,9 +356,13 @@ onMounted(async () => {
   grid-column: 1 / -1;
 }
 
+.summary-section,
 .notes-history-block {
   display: grid;
   gap: 12px;
+}
+
+.summary-section {
   padding: 16px;
   border: 1px solid #dbeafe;
   border-radius: 16px;

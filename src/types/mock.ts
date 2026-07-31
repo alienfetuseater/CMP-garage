@@ -88,6 +88,14 @@ export interface TicketPhotoAttachment {
   dataUrl: string
 }
 
+export interface MonthlyReportDiagnosticEntry {
+  value: DiagnosticLevel
+  comment: string
+  photos: TicketPhotoAttachment[]
+}
+
+export type MonthlyReportDiagnostics = Record<string, MonthlyReportDiagnosticEntry>
+
 export interface Ticket {
   id: string
   customerId: string
@@ -175,5 +183,5 @@ export interface MonthlyReport {
   reportDate: string
   createdAt: string
   notes: string
-  diagnostics?: TicketDiagnostics
+  diagnostics?: MonthlyReportDiagnostics
 }
