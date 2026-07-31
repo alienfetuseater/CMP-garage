@@ -71,7 +71,7 @@ describe('stores/auth/session', () => {
         id: 'u-1',
         name: 'Test User',
         email: 'test@example.com',
-        role: 'user',
+        role: 'serviceManager',
       },
     }
 
@@ -93,7 +93,7 @@ describe('stores/auth/session', () => {
       id: 'u-1',
       name: 'Test User',
       email: 'test@example.com',
-      role: 'user',
+      role: 'serviceManager',
     }
 
     clearAuthSession(state, storage)

@@ -77,6 +77,26 @@ Current tests cover:
 - Notes history splitting
 - Ticket display helper logic
 
+## User Roles and Privileges
+
+CMP Garage supports multiple administrators. The `admin` role is assigned per user, and there is no single-administrator restriction.
+
+| Role | Privileges |
+| --- | --- |
+| Administrator | Full operational access; view the calendar; create and manage users; assign roles; add or manage other administrators; manage system settings; delete records; send documents. |
+| Service Manager | Full day-to-day operational access, including the calendar, customers, vessels, tickets, reports, reminders, messages, record deletion, and document sending. Cannot manage users, roles, administrators, or system settings. |
+| Technician | Read operational records; update assigned technical work and tickets; create and update reports; use team messages. Cannot view the calendar or manage users and system settings. |
+| Coordinator | View the calendar and operational records; manage customer and vessel intake; create tickets; manage reminders and messages; send documents. Cannot administer users, roles, or system settings. |
+| Viewer | Read-only access to operational records. Cannot modify records or view the calendar. |
+
+Role and permission definitions are maintained in `src/domain/auth/permissions.ts` and mirrored by the server authorization model.
+
+### Registration Bootstrap
+
+The user registration page and endpoint require an authenticated session. During initial setup, any authenticated user can create an employee account and select its role, including `admin`. This permits the first administrator and additional administrators to be established without a pre-existing administrator.
+
+After administrators are designated, registration should be restricted to users with the administrator-only `users:create` permission. Creating an account does not replace or log out the current user's session.
+
 ## Notes
 
 - Type-check and tests are expected to pass before merge.

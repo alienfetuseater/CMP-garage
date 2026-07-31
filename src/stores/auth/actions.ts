@@ -1,5 +1,6 @@
 import { computed } from 'vue'
 import { apiFetch } from '@/services/http/client'
+import type { UserRole } from '@/domain/auth/permissions'
 import type { AuthState, AuthUser } from './state'
 import {
   type AuthResponse,
@@ -23,18 +24,17 @@ export const isAuthenticated = (state: AuthState) =>
 
 export const register = async (
   state: AuthState,
-  payload: { name: string; email: string; password: string },
+  payload: { name: string; email: string; password: string; role: UserRole },
 ) => {
   beginAuthRequest(state)
 
   try {
-    const result = await apiFetch<AuthResponse>('/auth/register', {
+    const result = await apiFetch<{ user: AuthUser }>('/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     })
 
-    applyAuthSession(state, result, localStorage)
     return result.user
   } catch (error) {
     state.error = parseAuthErrorMessage(error)

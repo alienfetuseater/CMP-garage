@@ -47,16 +47,24 @@ describe('stores/auth/actions', () => {
     })
   })
 
-  it('register applies session state and persists token', async () => {
-    const state = createAuthState()
+  it('register creates a user without replacing the creator session', async () => {
+    const state = createAuthState({
+      token: 'creator-token',
+      user: {
+        id: 'creator-1',
+        name: 'Existing User',
+        email: 'existing@example.com',
+        role: 'serviceManager',
+      },
+    })
+    localStorage.setItem(AUTH_TOKEN_KEY, 'creator-token')
 
     mockedApiFetch.mockResolvedValue({
-      token: 'token-1',
       user: {
         id: 'u-1',
         name: 'User One',
         email: 'user.one@example.com',
-        role: 'user',
+        role: 'technician',
       },
     })
 
@@ -64,14 +72,15 @@ describe('stores/auth/actions', () => {
       name: 'User One',
       email: 'user.one@example.com',
       password: 'password123',
+      role: 'technician',
     })
 
     expect(user.id).toBe('u-1')
-    expect(state.token).toBe('token-1')
-    expect(state.user?.id).toBe('u-1')
+    expect(state.token).toBe('creator-token')
+    expect(state.user?.id).toBe('creator-1')
     expect(state.loading).toBe(false)
     expect(state.initialized).toBe(true)
-    expect(localStorage.getItem(AUTH_TOKEN_KEY)).toBe('token-1')
+    expect(localStorage.getItem(AUTH_TOKEN_KEY)).toBe('creator-token')
   })
 
   it('login surfaces API errors and marks state initialized', async () => {
@@ -106,7 +115,7 @@ describe('stores/auth/actions', () => {
         id: 'u-1',
         name: 'User One',
         email: 'user.one@example.com',
-        role: 'user',
+        role: 'serviceManager',
       },
     })
 
@@ -129,7 +138,7 @@ describe('stores/auth/actions', () => {
         id: 'u-1',
         name: 'User One',
         email: 'user.one@example.com',
-        role: 'user',
+        role: 'serviceManager',
       },
     })
 
@@ -149,7 +158,7 @@ describe('stores/auth/actions', () => {
         id: 'u-1',
         name: 'User One',
         email: 'user.one@example.com',
-        role: 'user',
+        role: 'serviceManager',
       },
       error: 'stale',
       initialized: false,

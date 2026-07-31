@@ -133,7 +133,7 @@ defineProps<{
 const emit = defineEmits<{
   (event: 'toggle-mobile-menu'): void
   (event: 'set-mobile-menu-view', view: string): void
-  (event: 'go-to-route', routeName: 'CustomerRegistration' | 'CustomerDirectory'): void
+  (event: 'go-to-route', routeName: 'CustomerRegistration' | 'CustomerDirectory' | 'Register'): void
   (event: 'open-mobile-menu-panel', view: 'messages' | 'reminders' | 'tickets'): void
   (event: 'open-archived-conversations'): void
   (event: 'open-messages-page'): void

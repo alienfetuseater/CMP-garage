@@ -53,6 +53,15 @@
         </div>
 
         <div class="action-icons">
+          <NavActionControl to="/register" :ariaLabel="'User Registration'" title="User Registration">
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M15 19.5a6.5 6.5 0 0 0-13 0" />
+              <path d="M8.5 12.2a3.6 3.6 0 1 0 0-7.2 3.6 3.6 0 0 0 0 7.2Z" />
+              <path d="M18 8v7" />
+              <path d="M14.5 11.5h7" />
+            </svg>
+          </NavActionControl>
+
           <NavActionControl :ariaLabel="'Logout'" title="Logout" @click="handleLogout">
             <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path
@@ -453,7 +462,7 @@ function openTicketFromMobileMenu(id: string) {
   router.push({ name: 'Ticket', query: { id } })
 }
 
-function goToRoute(name: 'CustomerRegistration' | 'CustomerDirectory') {
+function goToRoute(name: 'CustomerRegistration' | 'CustomerDirectory' | 'Register') {
   closeMobileMenu()
   router.push({ name })
 }

@@ -1,11 +1,12 @@
 import { reactive } from 'vue'
 import { readPersistedAuthToken } from './session'
+import type { UserRole } from '@/domain/auth/permissions'
 
 export type AuthUser = {
   id: string
   name: string
   email: string
-  role: string
+  role: UserRole
   createdAt?: string
 }
 

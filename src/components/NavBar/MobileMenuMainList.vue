@@ -6,6 +6,9 @@
     <button type="button" class="mobile-menu-item" @click="emit('go-to-route', 'CustomerDirectory')">
       Directory
     </button>
+    <button type="button" class="mobile-menu-item" @click="emit('go-to-route', 'Register')">
+      User Registration
+    </button>
     <button type="button" class="mobile-menu-item" @click="emit('open-mobile-menu-panel', 'messages')">
       Team Messages
       <span class="mobile-menu-count">{{ messageBadgeCountLabel }}</span>
@@ -33,7 +36,7 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (event: 'go-to-route', routeName: 'CustomerRegistration' | 'CustomerDirectory'): void
+  (event: 'go-to-route', routeName: 'CustomerRegistration' | 'CustomerDirectory' | 'Register'): void
   (event: 'open-mobile-menu-panel', view: 'messages' | 'reminders' | 'tickets'): void
   (event: 'open-archived-conversations'): void
   (event: 'logout'): void

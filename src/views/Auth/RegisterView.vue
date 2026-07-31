@@ -2,7 +2,7 @@
   <main class="auth-page">
     <section class="auth-card">
       <h1>Create Account</h1>
-      <p class="auth-subtitle">Register to access Coastal Marine Pro.</p>
+      <p class="auth-subtitle">Create an employee account and assign its access level.</p>
 
       <form class="auth-form" @submit.prevent="onSubmit">
         <label>
@@ -26,26 +26,36 @@
           />
         </label>
 
+        <label>
+          Role
+          <select v-model="role" required>
+            <option v-for="option in userRoles" :key="option" :value="option">
+              {{ roleLabels[option] }}
+            </option>
+          </select>
+        </label>
+
         <p class="hint">Use at least 8 characters.</p>
         <p v-if="errorText" class="auth-error">{{ errorText }}</p>
+        <p v-if="successText" class="auth-success">{{ successText }}</p>
 
         <button type="submit" :disabled="authStore.loading">
           {{ authStore.loading ? 'Creating account...' : 'Create Account' }}
         </button>
       </form>
 
-      <p class="auth-footer">
-        Already have an account?
-        <RouterLink :to="{ name: 'Login' }">Sign in</RouterLink>
-      </p>
+      <button type="button" class="secondary" @click="router.push({ name: 'CMPHome' })">
+        Return Home
+      </button>
     </section>
   </main>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { roleLabels, userRoles, type UserRole } from '@/domain/auth/permissions'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -53,21 +63,29 @@ const authStore = useAuthStore()
 const name = ref('')
 const email = ref('')
 const password = ref('')
+const role = ref<UserRole>('technician')
 const formError = ref('')
+const successText = ref('')
 
 const errorText = computed(() => formError.value || authStore.error || '')
 
 async function onSubmit() {
   formError.value = ''
+  successText.value = ''
 
   try {
     await authStore.register({
       name: name.value,
       email: email.value,
       password: password.value,
+      role: role.value,
     })
 
-    await router.push({ name: 'CMPHome' })
+    successText.value = `${name.value} was created as ${roleLabels[role.value]}.`
+    name.value = ''
+    email.value = ''
+    password.value = ''
+    role.value = 'technician'
   } catch (error) {
     formError.value = error instanceof Error ? error.message : String(error)
   }
@@ -116,14 +134,16 @@ label {
   font-size: 0.92rem;
 }
 
-input {
+input,
+select {
   border: 1px solid #cbd5e1;
   border-radius: 10px;
   padding: 0.65rem 0.75rem;
   font: inherit;
 }
 
-input:focus {
+input:focus,
+select:focus {
   border-color: #16a34a;
   outline: none;
   box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.16);
@@ -156,6 +176,23 @@ button:disabled {
   color: #b91c1c;
   border: 1px solid #fecaca;
   white-space: pre-wrap;
+}
+
+.auth-success {
+  margin: 0;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.secondary {
+  width: 100%;
+  margin-top: 0.8rem;
+  border-color: #94a3b8;
+  background: #ffffff;
+  color: #334155;
 }
 
 .auth-footer {
