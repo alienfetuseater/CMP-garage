@@ -14,7 +14,9 @@ const getResetToken = (route: RouteLocationNormalized): string => {
   const hashValue = route.hash.replace(/^#/, '')
   if (!hashValue) return ''
 
-  const hashQuery = hashValue.includes('?') ? hashValue.slice(hashValue.indexOf('?') + 1) : hashValue
+  const hashQuery = hashValue.includes('?')
+    ? hashValue.slice(hashValue.indexOf('?') + 1)
+    : hashValue
   const hashParams = new URLSearchParams(hashQuery)
   const tokenFromHashParams =
     hashParams.get('token')?.trim() ||
