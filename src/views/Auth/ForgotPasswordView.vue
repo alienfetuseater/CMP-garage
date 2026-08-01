@@ -1,8 +1,8 @@
 <template>
   <main class="auth-page">
     <section class="auth-card">
-      <h1>Sign In</h1>
-      <p class="auth-subtitle">Access your Coastal Marine Pro dashboard.</p>
+      <h1>Forgot Password</h1>
+      <p class="auth-subtitle">Enter your email and we will send you a reset link.</p>
 
       <form class="auth-form" @submit.prevent="onSubmit">
         <label>
@@ -10,59 +10,59 @@
           <input v-model.trim="email" type="email" autocomplete="email" required />
         </label>
 
-        <label>
-          Password
-          <input v-model="password" type="password" autocomplete="current-password" required />
-        </label>
-
+        <p v-if="successMessage" class="auth-success">{{ successMessage }}</p>
+        <p v-if="debugResetUrl" class="auth-debug">
+          Dev reset link:
+          <a :href="debugResetUrl">{{ debugResetUrl }}</a>
+        </p>
         <p v-if="errorText" class="auth-error">{{ errorText }}</p>
 
-        <button type="submit" :disabled="authStore.loading">
-          {{ authStore.loading ? 'Signing in...' : 'Sign In' }}
+        <button type="submit" :disabled="submitting">
+          {{ submitting ? 'Sending...' : 'Send Reset Link' }}
         </button>
       </form>
 
-      <p class="auth-footer auth-forgot-row">
-        <RouterLink :to="{ name: 'ForgotPassword' }">Forgot password?</RouterLink>
+      <p class="auth-footer">
+        Remembered your password?
+        <RouterLink :to="{ name: 'Login' }">Back to sign in</RouterLink>
       </p>
-
-      <!-- <p class="auth-footer">
-        Need an account?
-        <RouterLink :to="{ name: 'Register' }">Create one</RouterLink>
-      </p> -->
     </section>
   </main>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { RouterLink, useRoute, useRouter } from 'vue-router'
-// import { RouterLink, useRoute, useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
-
-const router = useRouter()
-const route = useRoute()
-const authStore = useAuthStore()
+import { ref } from 'vue'
+import { RouterLink } from 'vue-router'
+import { apiFetch } from '@/services/http/client'
 
 const email = ref('')
-const password = ref('')
-const formError = ref('')
-
-const errorText = computed(() => formError.value || authStore.error || '')
+const submitting = ref(false)
+const successMessage = ref('')
+const errorText = ref('')
+const debugResetUrl = ref('')
 
 async function onSubmit() {
-  formError.value = ''
+  submitting.value = true
+  successMessage.value = ''
+  errorText.value = ''
+  debugResetUrl.value = ''
 
   try {
-    await authStore.login({
-      email: email.value,
-      password: password.value,
-    })
+    const result = await apiFetch<{ message: string; debugResetUrl?: string }>(
+      '/auth/forgot-password',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.value }),
+      },
+    )
 
-    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
-    await router.push(redirect)
+    successMessage.value = result.message
+    debugResetUrl.value = result.debugResetUrl ?? ''
   } catch (error) {
-    formError.value = error instanceof Error ? error.message : String(error)
+    errorText.value = error instanceof Error ? error.message : String(error)
+  } finally {
+    submitting.value = false
   }
 }
 </script>
@@ -77,7 +77,7 @@ async function onSubmit() {
 }
 
 .auth-card {
-  width: min(100%, 440px);
+  width: min(100%, 460px);
   background: #ffffff;
   border: 1px solid #cbd5e1;
   border-radius: 16px;
@@ -145,13 +145,34 @@ button:disabled {
   white-space: pre-wrap;
 }
 
+.auth-success {
+  margin: 0;
+  padding: 0.55rem 0.65rem;
+  border-radius: 8px;
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.auth-debug {
+  margin: 0;
+  padding: 0.55rem 0.65rem;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e3a8a;
+  border: 1px solid #bfdbfe;
+  overflow-wrap: anywhere;
+}
+
+.auth-debug a {
+  color: #1d4ed8;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
 .auth-footer {
   margin-top: 1rem;
   color: #334155;
-}
-
-.auth-forgot-row {
-  margin-top: 0.85rem;
 }
 
 .auth-footer a {

@@ -13,7 +13,7 @@
           </div>
         </header>
 
-        <form class="report-form" @submit.prevent="submit()">
+        <form class="report-form" @submit.prevent="submit('draft')">
           <section class="identity-section">
             <div class="form-grid">
               <label>
@@ -36,7 +36,7 @@
 
               <label class="full-width">
                 Report Date
-                <input v-model="form.reportDate" type="date" required />
+                <input v-model="form.reportDate" type="date" required :disabled="isLockedReport" />
               </label>
             </div>
           </section>
@@ -44,6 +44,7 @@
           <MonthlyReportDiagnosticsSection
             :diagnostic-sections="monthlyReportDiagnosticSections"
             :diagnostics="form.diagnostics"
+            :readonly="isLockedReport"
             description="Complete the vessel inspection details for this monthly report."
             @error="error = $event"
             @update-diagnostic="updateDiagnosticEntry"
@@ -78,14 +79,39 @@
                   v-model="newUpdateNote"
                   rows="4"
                   placeholder="Add an update to the monthly report summary"
+                  :disabled="isLockedReport"
                 />
               </label>
             </section>
           </section>
 
+          <section v-if="!isLockedReport" class="lock-confirmation">
+            <label class="lock-checkbox-row">
+              <input v-model="lockAcknowledge" type="checkbox" />
+              <span>Completed monthly reports can not be reopened.</span>
+            </label>
+            <p class="lock-help">
+              Save Draft keeps this report editable. Complete & Lock makes it immutable until an
+              admin or service manager unlocks it.
+            </p>
+          </section>
+
+          <div v-else class="locked-banner">
+            This monthly report is completed and locked. It cannot be edited here unless unlocked by
+            an admin or service manager.
+          </div>
+
           <div class="actions">
-            <button type="submit" class="primary" :disabled="submitting">
-              {{ isEditMode ? 'Update Report' : 'Create Report' }}
+            <button type="submit" class="secondary" :disabled="submitting || isLockedReport">
+              {{ isEditMode ? 'Save Draft' : 'Create Draft' }}
+            </button>
+            <button
+              type="button"
+              class="primary"
+              :disabled="submitting || isLockedReport"
+              @click="submit('complete')"
+            >
+              {{ isEditMode ? 'Complete & Lock' : 'Create Completed & Lock' }}
             </button>
             <span v-if="submitting">Saving...</span>
             <span v-if="success" class="success">Saved</span>
@@ -126,6 +152,10 @@ const isEditMode = computed(() => Boolean(editReportId.value))
 const existingNotes = ref('')
 const newUpdateNote = ref('')
 const existingNoteEntries = computed(() => splitNoteHistory(existingNotes.value))
+const lockAcknowledge = ref(false)
+const isLockedReport = ref(false)
+
+type SubmitMode = 'draft' | 'complete'
 
 const form = reactive({
   customerName: '',
@@ -154,6 +184,7 @@ function hydrateFromReport(report: MonthlyReport) {
   form.customerId = String(report.customerId ?? '')
   form.vesselId = String(report.vesselId ?? '')
   form.reportDate = report.reportDate ?? ''
+  isLockedReport.value = Boolean(report.isLocked)
   existingNotes.value = report.notes ?? ''
   newUpdateNote.value = ''
   form.notes = ''
@@ -208,12 +239,22 @@ function updateDiagnosticEntry(payload: { key: string; entry: MonthlyReportDiagn
   form.diagnostics[payload.key] = payload.entry
 }
 
-async function submit() {
+async function submit(mode: SubmitMode = 'draft') {
   submitting.value = true
   success.value = false
   error.value = null
 
   try {
+    if (isLockedReport.value) {
+      throw new Error(
+        'This monthly report is completed and locked. Ask an admin or service manager to unlock it before editing.',
+      )
+    }
+
+    if (mode === 'complete' && !lockAcknowledge.value) {
+      throw new Error('Please acknowledge that completed monthly reports can not be reopened.')
+    }
+
     if (estimateDiagnosticPhotoBytes() > 12 * 1024 * 1024) {
       throw new Error('Photos are too large. Please remove some photos or use smaller images.')
     }
@@ -228,6 +269,7 @@ async function submit() {
       notes: isEditMode.value
         ? appendUpdateNote(existingNotes.value, newUpdateNote.value)
         : buildInitialNote(form.notes),
+      ...(mode === 'complete' ? { markCompleted: true } : {}),
     }
 
     const saved = isEditMode.value
@@ -369,6 +411,42 @@ onMounted(async () => {
   background: #f8fbff;
 }
 
+.lock-confirmation {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  background: #fffbeb;
+}
+
+.lock-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #92400e;
+  font-weight: 700;
+}
+
+.lock-checkbox-row input {
+  width: 16px;
+  height: 16px;
+}
+
+.lock-help {
+  margin: 0;
+  color: #78350f;
+  font-size: 0.92rem;
+}
+
+.locked-banner {
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  background: #fef2f2;
+  color: #991b1b;
+  padding: 12px 14px;
+}
+
 .section-heading h3 {
   margin: 0;
   color: #0f172a;
@@ -444,6 +522,21 @@ textarea {
   padding: 12px 16px;
   font-weight: 700;
   cursor: pointer;
+}
+
+.secondary {
+  border: 1px solid #94a3b8;
+  background: #f8fafc;
+  color: #0f172a;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .primary:disabled {

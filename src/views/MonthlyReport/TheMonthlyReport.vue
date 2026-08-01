@@ -11,11 +11,33 @@
           <div>
             <p class="eyebrow">Monthly report</p>
             <h2>{{ vesselName ?? report.vesselName ?? 'Monthly Report' }}</h2>
+            <div class="status-row">
+              <span
+                class="profile-status-badge"
+                :class="report.isLocked ? 'is-locked' : 'is-draft'"
+              >
+                {{ report.isLocked ? 'Completed • Locked' : 'Draft • Editable' }}
+              </span>
+            </div>
           </div>
 
           <div class="header-actions profile-action-group">
-            <button type="button" class="primary profile-action-btn" @click="editReport">
+            <button
+              type="button"
+              class="primary profile-action-btn"
+              :disabled="report.isLocked"
+              @click="editReport"
+            >
               Update
+            </button>
+            <button
+              v-if="canUnlockReport"
+              type="button"
+              class="secondary profile-action-btn"
+              :disabled="unlocking"
+              @click="unlockReport"
+            >
+              {{ unlocking ? 'Unlocking...' : 'Unlock Report' }}
             </button>
             <button
               type="button"
@@ -27,6 +49,13 @@
             </button>
           </div>
         </header>
+
+        <div v-if="report.isLocked" class="lock-notice">
+          This monthly report is immutable while completed and locked.
+          <span v-if="!canUnlockReport">Only admin or service manager users can unlock it.</span>
+        </div>
+        <div v-if="unlockSuccess" class="success">{{ unlockSuccess }}</div>
+        <div v-if="unlockError" class="error">{{ unlockError }}</div>
 
         <div class="summary-strip">
           <div class="summary-item">
@@ -100,6 +129,7 @@ import { computed, ref, onBeforeUnmount, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUiStore } from '@/stores/ui'
 import { useMonthlyReportStore } from '@/stores/monthlyReports'
+import { useAuthStore } from '@/stores/auth'
 import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
 import { API_BASE, apiFetch } from '@/services/http/client'
@@ -112,9 +142,11 @@ import {
   createMonthlyReportDiagnostics,
   monthlyReportDiagnosticSections,
 } from '@/domain/monthlyReports/diagnostics'
+import { normalizeUserRole } from '@/domain/auth/permissions'
 
 const uiStore = useUiStore()
 const reportStore = useMonthlyReportStore()
+const authStore = useAuthStore()
 const customerStore = useCustomerStore()
 const vesselStore = useVesselStore()
 const route = useRoute()
@@ -131,9 +163,16 @@ const previewUrl = ref<string | null>(null)
 const previewActionBusy = ref(false)
 const previewActionSuccess = ref<string | null>(null)
 const previewActionError = ref<string | null>(null)
+const unlocking = ref(false)
+const unlockSuccess = ref<string | null>(null)
+const unlockError = ref<string | null>(null)
 
 const diagnostics = ref<MonthlyReportDiagnostics>(createMonthlyReportDiagnostics())
 const noteEntries = computed(() => splitNoteHistory(report.value?.notes))
+const canUnlockReport = computed(() => {
+  const role = normalizeUserRole(authStore.user?.role ?? '')
+  return Boolean(report.value?.isLocked) && (role === 'admin' || role === 'serviceManager')
+})
 
 function formatReportDate(value?: string) {
   if (!value) return '—'
@@ -187,7 +226,43 @@ function hydrateDiagnostics() {
 
 function editReport() {
   const id = report.value?.id
+  if (report.value?.isLocked) return
   if (id) router.push({ name: 'NewMonthlyReport', query: { id } })
+}
+
+async function unlockReport() {
+  if (!report.value?.id || !canUnlockReport.value) return
+
+  unlocking.value = true
+  unlockSuccess.value = null
+  unlockError.value = null
+
+  try {
+    const unlocked = await apiFetch<MonthlyReport>(
+      `/unlockMonthlyReport/${encodeURIComponent(report.value.id)}`,
+      {
+        method: 'PUT',
+      },
+    )
+
+    const normalized = {
+      ...unlocked,
+      id: String(
+        (unlocked as MonthlyReport & { _id?: string }).id ??
+          (unlocked as MonthlyReport & { _id?: string })._id ??
+          report.value.id,
+      ),
+    }
+
+    reportStore.addReport(normalized)
+    report.value = normalized
+    hydrateDiagnostics()
+    unlockSuccess.value = 'Report unlocked. It can now be edited as a draft.'
+  } catch (err) {
+    unlockError.value = err instanceof Error ? err.message : String(err)
+  } finally {
+    unlocking.value = false
+  }
 }
 
 function openCustomer() {
@@ -407,6 +482,41 @@ onBeforeUnmount(() => {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+}
+
+.status-row {
+  margin-top: 8px;
+}
+
+.profile-status-badge.is-locked {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.profile-status-badge.is-draft {
+  background: #ecfeff;
+  color: #0f766e;
+}
+
+.secondary {
+  border: 1px solid #94a3b8;
+  background: #f8fafc;
+  color: #0f172a;
+  border-radius: 999px;
+  min-height: 42px;
+  padding: 0.7rem 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.lock-notice {
+  margin-bottom: 14px;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  background: #fef2f2;
+  color: #991b1b;
+  padding: 10px 12px;
 }
 
 .summary-strip {

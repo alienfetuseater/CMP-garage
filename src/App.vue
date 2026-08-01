@@ -4,14 +4,23 @@ import { RouterView, useRoute, useRouter } from 'vue-router'
 import NavBar from './components/NavBar/nav-bar.vue'
 import { useUiStore } from '@/stores/ui'
 import { useAuthStore } from '@/stores/auth'
-import { connectRealtimeMessaging, disconnectRealtimeMessaging } from '@/services/realtime/messaging'
+import {
+  connectRealtimeMessaging,
+  disconnectRealtimeMessaging,
+} from '@/services/realtime/messaging'
 
 const uiStore = useUiStore()
 const authStore = useAuthStore()
 const route = useRoute()
 const router = useRouter()
 
-const isAuthScreen = computed(() => route.name === 'Login' || route.name === 'Register')
+const isAuthScreen = computed(
+  () =>
+    route.name === 'Login' ||
+    route.name === 'Register' ||
+    route.name === 'ForgotPassword' ||
+    route.name === 'ResetPassword',
+)
 const hasSession = computed(() => Boolean(authStore.token))
 
 const loadAppData = async (force = false) => {

@@ -17,6 +17,8 @@ export default defineConfig({
     include: ['src/**/*.test.ts'],
   },
   server: {
+    port: 5173,
+    strictPort: true,
     proxy: {
       '/api': {
         target: 'http://localhost:8000',

@@ -182,6 +182,13 @@ export interface MonthlyReport {
   vesselName?: string
   reportDate: string
   createdAt: string
+  status?: 'draft' | 'completed'
+  isLocked?: boolean
+  completedAt?: string | null
+  lockedAt?: string | null
+  lockedByUserId?: string
+  unlockedAt?: string | null
+  unlockedByUserId?: string
   notes: string
   diagnostics?: MonthlyReportDiagnostics
 }

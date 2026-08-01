@@ -13,6 +13,21 @@ const router = createRouter({
       meta: { guestOnly: true },
     },
     {
+      path: '/forgot-password',
+      name: 'ForgotPassword',
+      component: () => import('../views/Auth/ForgotPasswordView.vue'),
+    },
+    {
+      path: '/reset-password',
+      name: 'ResetPassword',
+      component: () => import('../views/Auth/ResetPasswordView.vue'),
+    },
+    {
+      path: '/reset-password/:token',
+      name: 'ResetPasswordTokenPath',
+      component: () => import('../views/Auth/ResetPasswordView.vue'),
+    },
+    {
       path: '/register',
       name: 'Register',
       component: () => import('../views/Auth/RegisterView.vue'),
@@ -118,6 +133,18 @@ const router = createRouter({
 })
 
 router.beforeEach((to) => {
+  const tokenFromQuery =
+    (typeof to.query.token === 'string' ? to.query.token.trim() : '') ||
+    (typeof to.query.resetToken === 'string' ? to.query.resetToken.trim() : '') ||
+    (typeof to.query.code === 'string' ? to.query.code.trim() : '')
+
+  if (to.name === 'Login' && tokenFromQuery) {
+    return {
+      name: 'ResetPassword',
+      query: { token: tokenFromQuery },
+    }
+  }
+
   const isAuthed = hasAuthToken()
 
   if (to.meta.requiresAuth && !isAuthed) {
