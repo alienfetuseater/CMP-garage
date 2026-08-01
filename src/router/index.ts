@@ -1,7 +1,30 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import type { RouteLocationNormalized } from 'vue-router'
 import CMPHome from '../views/CMPHome.vue'
 
 const hasAuthToken = () => Boolean(localStorage.getItem('cmp_auth_token'))
+
+const getResetToken = (route: RouteLocationNormalized): string => {
+  const tokenFromQuery =
+    (typeof route.query.token === 'string' ? route.query.token.trim() : '') ||
+    (typeof route.query.resetToken === 'string' ? route.query.resetToken.trim() : '') ||
+    (typeof route.query.code === 'string' ? route.query.code.trim() : '')
+  if (tokenFromQuery) return tokenFromQuery
+
+  const hashValue = route.hash.replace(/^#/, '')
+  if (!hashValue) return ''
+
+  const hashQuery = hashValue.includes('?') ? hashValue.slice(hashValue.indexOf('?') + 1) : hashValue
+  const hashParams = new URLSearchParams(hashQuery)
+  const tokenFromHashParams =
+    hashParams.get('token')?.trim() ||
+    hashParams.get('resetToken')?.trim() ||
+    hashParams.get('code')?.trim() ||
+    ''
+  if (tokenFromHashParams) return tokenFromHashParams
+
+  return /^[a-f0-9]{64}$/i.test(hashValue) ? hashValue : ''
+}
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -10,28 +33,25 @@ const router = createRouter({
       path: '/login',
       name: 'Login',
       component: () => import('../views/Auth/LoginView.vue'),
-      meta: { guestOnly: true },
+      meta: { guestOnly: true, authScreen: true },
     },
     {
       path: '/forgot-password',
       name: 'ForgotPassword',
       component: () => import('../views/Auth/ForgotPasswordView.vue'),
+      meta: { authScreen: true },
     },
     {
-      path: '/reset-password',
+      path: '/reset-password/:token?',
       name: 'ResetPassword',
       component: () => import('../views/Auth/ResetPasswordView.vue'),
-    },
-    {
-      path: '/reset-password/:token',
-      name: 'ResetPasswordTokenPath',
-      component: () => import('../views/Auth/ResetPasswordView.vue'),
+      meta: { authScreen: true },
     },
     {
       path: '/register',
       name: 'Register',
       component: () => import('../views/Auth/RegisterView.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, authScreen: true },
     },
     {
       path: '/',
@@ -133,15 +153,20 @@ const router = createRouter({
 })
 
 router.beforeEach((to) => {
-  const tokenFromQuery =
-    (typeof to.query.token === 'string' ? to.query.token.trim() : '') ||
-    (typeof to.query.resetToken === 'string' ? to.query.resetToken.trim() : '') ||
-    (typeof to.query.code === 'string' ? to.query.code.trim() : '')
+  const resetToken = getResetToken(to)
+  const isHashResetLink = to.hash.replace(/^#/, '').startsWith('/reset-password')
+  const isLegacyResetLink = to.path === '/reset-password-token'
 
-  if (to.name === 'Login' && tokenFromQuery) {
+  if (
+    resetToken &&
+    (to.name === 'Login' ||
+      isHashResetLink ||
+      isLegacyResetLink ||
+      (to.name === 'ResetPassword' && Boolean(to.hash)))
+  ) {
     return {
       name: 'ResetPassword',
-      query: { token: tokenFromQuery },
+      query: { token: resetToken },
     }
   }
 

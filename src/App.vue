@@ -14,13 +14,7 @@ const authStore = useAuthStore()
 const route = useRoute()
 const router = useRouter()
 
-const isAuthScreen = computed(
-  () =>
-    route.name === 'Login' ||
-    route.name === 'Register' ||
-    route.name === 'ForgotPassword' ||
-    route.name === 'ResetPassword',
-)
+const isAuthScreen = computed(() => route.meta.authScreen === true)
 const hasSession = computed(() => Boolean(authStore.token))
 
 const loadAppData = async (force = false) => {
