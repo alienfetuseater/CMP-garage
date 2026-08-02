@@ -169,7 +169,7 @@ function openDayItem(item: DayFeedItem) {
 <style scoped>
 .home-page {
   --page-chrome-height: 72px;
-  min-height: calc(100vh - 24px);
+  min-height: calc(100dvh - 72px);
   padding: clamp(16px, 2.5vw, 24px) clamp(12px, 2vw, 16px) 40px;
   background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
   display: flex;
@@ -181,7 +181,7 @@ function openDayItem(item: DayFeedItem) {
 }
 
 .home-layout {
-  margin-top: 12px;
+  margin-top: 0;
   flex: 1;
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(280px, 360px);
@@ -194,6 +194,7 @@ function openDayItem(item: DayFeedItem) {
   justify-content: center;
   align-items: stretch;
   min-width: 0;
+  transform: translateY(-12px);
 }
 
 .day-feed-panel {

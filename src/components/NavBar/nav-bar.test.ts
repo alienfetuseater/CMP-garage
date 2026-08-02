@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import NavBar from './nav-bar.vue'
 import NavActionControl from './NavActionControl.vue'
+import AdminNavRail from './AdminNavRail.vue'
 import type { Customer, Reminder, Ticket, Vessel } from '@/types/mock'
 
 const {
@@ -101,16 +102,89 @@ describe('components/NavBar/nav-bar.vue', () => {
     reminderStore.reminders = []
   })
 
-  it('shows authorized users an icon-only registered-users link', async () => {
+  it('uses a static logo and a calendar action for home navigation', async () => {
     const wrapper = mount(NavBar)
     await new Promise((resolve) => setTimeout(resolve, 0))
 
-    const usersLink = wrapper.get('[title="Registered Users"]')
+    const logo = wrapper.get('img.nav-logo')
+    const calendarControl = wrapper
+      .findAllComponents(NavActionControl)
+      .find((control) => control.props('title') === 'Calendar')
+
+    expect(logo.element.closest('a, button')).toBeNull()
+    expect(calendarControl?.props('to')).toBe('/')
+
+    await wrapper.get('button[aria-label="Open navigation menu"]').trigger('click')
+    expect(wrapper.text()).toContain('Calendar')
+  })
+
+  it('puts Logout at the far left and management links in the right rail', async () => {
+    const wrapper = mount(NavBar)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    const brandRow = wrapper.get('.top-nav nav li')
+    const adminRail = wrapper.getComponent(AdminNavRail)
+
+    expect(brandRow.element.firstElementChild?.getAttribute('title')).toBe('Logout')
+    expect(wrapper.find('.action-icons [title="Client Registration"]').exists()).toBe(false)
+    expect(wrapper.find('.action-icons [title="Client Directory"]').exists()).toBe(false)
+    expect(wrapper.find('.action-icons [title="Employee Registration"]').exists()).toBe(false)
+    expect(wrapper.find('.action-icons [title="Employee Directory"]').exists()).toBe(false)
+    expect(adminRail.props()).toMatchObject({
+      showCustomerRegistration: true,
+      showDirectory: true,
+      showUserManagement: true,
+    })
+  })
+
+  it('separates navigation actions from right-aligned notification actions', async () => {
+    const wrapper = mount(NavBar)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    const navigationIcons = wrapper.get('.navigation-icons')
+    const notificationIcons = wrapper.get('.notification-icons')
+
+    expect(navigationIcons.find('[title="Calendar"]').exists()).toBe(true)
+    expect(navigationIcons.find('[title="Assignment Board"]').exists()).toBe(true)
+    expect(navigationIcons.find('[title="Team Messages"]').exists()).toBe(false)
+    expect(notificationIcons.find('[title="Team Messages"]').exists()).toBe(true)
+    expect(notificationIcons.find('[title="Open Reminders"]').exists()).toBe(true)
+    expect(notificationIcons.find('[title="Open Tickets"]').exists()).toBe(true)
+  })
+
+  it('shows coordinators only the management links allowed by server capabilities', async () => {
+    authStore.user.role = 'coordinator'
+    fetchUserAccessMock.mockRejectedValue(new Error('403 Forbidden'))
+
+    const wrapper = mount(NavBar)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    const adminRail = wrapper.getComponent(AdminNavRail)
+    expect(adminRail.find('[title="Client Registration"]').exists()).toBe(true)
+    expect(adminRail.find('[title="Client Directory"]').exists()).toBe(true)
+    expect(adminRail.find('[title="Employee Registration"]').exists()).toBe(false)
+    expect(adminRail.find('[title="Employee Directory"]').exists()).toBe(false)
+  })
+
+  it('uses server capabilities rather than the local role label to show the rail', async () => {
+    authStore.user.role = 'viewer'
+
+    const wrapper = mount(NavBar)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(wrapper.findComponent(AdminNavRail).exists()).toBe(true)
+  })
+
+  it('shows authorized users an icon-only employee directory link', async () => {
+    const wrapper = mount(NavBar)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    const usersLink = wrapper.get('[title="Employee Directory"]')
     const usersControl = wrapper
       .findAllComponents(NavActionControl)
-      .find((control) => control.props('title') === 'Registered Users')
+      .find((control) => control.props('title') === 'Employee Directory')
     expect(usersLink.text()).toBe('')
-    expect(usersLink.attributes('aria-label')).toBe('Registered Users')
+    expect(usersLink.attributes('aria-label')).toBe('Employee Directory')
     expect(usersControl?.props('to')).toBe('/users')
   })
 
@@ -141,7 +215,7 @@ describe('components/NavBar/nav-bar.vue', () => {
     const wrapper = mount(NavBar)
     await new Promise((resolve) => setTimeout(resolve, 0))
 
-    expect(wrapper.find('[title="New Client Registration"]').exists()).toBe(false)
+    expect(wrapper.find('[title="Client Registration"]').exists()).toBe(false)
     expect(wrapper.find('[title="Open Reminders"]').exists()).toBe(false)
     expect(wrapper.find('[title="Open Tickets"]').exists()).toBe(false)
     expect(wrapper.find('input.search-input').exists()).toBe(false)

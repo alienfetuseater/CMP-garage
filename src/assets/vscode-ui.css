@@ -1,0 +1,353 @@
+::selection {
+  color: var(--vscode-list-activeSelectionForeground);
+  background: var(--vscode-list-activeSelectionBackground);
+}
+
+* {
+  scrollbar-color: var(--vscode-scrollbarSlider-background) transparent;
+  scrollbar-width: thin;
+}
+
+#app {
+  min-height: 100vh;
+  padding-bottom: 24px;
+  background: var(--vscode-editor-background);
+  color: var(--vscode-editor-foreground);
+}
+
+#app :is(h1, h2, h3, h4, h5, h6) {
+  color: var(--vscode-editor-foreground) !important;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+#app h1 {
+  font-size: 20px;
+}
+
+#app h2 {
+  font-size: 16px;
+}
+
+#app :is(h3, h4, h5, h6) {
+  font-size: 13px;
+}
+
+#app :is(p, strong, label, legend, dt, dd, li, td) {
+  color: var(--vscode-editor-foreground) !important;
+}
+
+#app :is(a, .link, [class*='link']) {
+  color: var(--vscode-link-foreground) !important;
+}
+
+#app :is(a, button, input, select, textarea):focus-visible {
+  outline: 1px solid var(--vscode-focusBorder) !important;
+  outline-offset: -1px;
+}
+
+#app :is(input, select, textarea) {
+  min-height: 28px;
+  padding: 4px 6px !important;
+  border: 1px solid var(--vscode-input-border) !important;
+  border-radius: 2px !important;
+  background: var(--vscode-input-background) !important;
+  color: var(--vscode-input-foreground) !important;
+  box-shadow: none !important;
+}
+
+#app :is(input, select, textarea)::placeholder {
+  color: var(--vscode-input-placeholderForeground) !important;
+  opacity: 1;
+}
+
+#app :is(input, select, textarea):focus {
+  border-color: var(--vscode-focusBorder) !important;
+  outline: 1px solid var(--vscode-focusBorder) !important;
+  outline-offset: -1px;
+}
+
+#app button {
+  min-height: 28px;
+  padding: 4px 10px;
+  border: 1px solid var(--vscode-button-background) !important;
+  border-radius: 2px !important;
+  background: var(--vscode-button-background) !important;
+  color: var(--vscode-button-foreground) !important;
+  box-shadow: none !important;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+#app button:hover:not(:disabled) {
+  border-color: var(--vscode-button-hoverBackground) !important;
+  background: var(--vscode-button-hoverBackground) !important;
+}
+
+#app button.owner-link,
+#app button.owner-link:hover:not(:disabled) {
+  min-height: auto;
+  padding: 0;
+  border-color: transparent !important;
+  background: transparent !important;
+  color: var(--vscode-link-foreground) !important;
+}
+
+#app button:disabled {
+  opacity: 0.5;
+}
+
+#app :is(button.ghost, button.secondary, button.cancel, .popup-close-btn) {
+  border-color: var(--vscode-input-border) !important;
+  background: var(--vscode-button-secondaryBackground) !important;
+  color: var(--vscode-button-secondaryForeground) !important;
+}
+
+#app
+  :is(
+    main[class*='page'],
+    main[class*='profile'],
+    main[class*='directory'],
+    main[class*='registration'],
+    section[class*='page'],
+    .auth-page
+  ) {
+  padding: clamp(12px, 2vw, 24px) !important;
+  background: var(--vscode-editor-background) !important;
+  color: var(--vscode-editor-foreground) !important;
+}
+
+#app
+  :is(
+    [class*='card'],
+    [class*='panel'],
+    [class*='popover'],
+    [class*='modal'],
+    [class*='dialog'],
+    [class*='summary'],
+    [class*='detail'],
+    [class*='section'],
+    [class*='form'],
+    [class*='list']
+  ) {
+  border-color: var(--vscode-panel-border) !important;
+  border-radius: 2px !important;
+  background-color: var(--vscode-sideBar-background) !important;
+  background-image: none !important;
+  color: var(--vscode-sideBar-foreground) !important;
+  box-shadow: none !important;
+}
+
+#app :is(table, thead, tbody, tr, th, td) {
+  border-color: var(--vscode-panel-border) !important;
+  background: var(--vscode-editor-background) !important;
+  color: var(--vscode-editor-foreground) !important;
+}
+
+#app th {
+  border-bottom: 1px solid var(--vscode-panel-border) !important;
+  background: var(--vscode-sideBar-background) !important;
+  font-weight: 600;
+  text-align: left;
+}
+
+#app tbody tr:hover > td {
+  background: var(--vscode-list-hoverBackground) !important;
+}
+
+#app :is(small, .subtitle, .meta, [class*='meta'], [class*='hint'], [class*='description']) {
+  color: var(--vscode-descriptionForeground) !important;
+}
+
+#app :is(.badge, [class*='badge'], [class*='status']) {
+  border-color: transparent !important;
+  border-radius: 2px !important;
+  background: var(--vscode-badge-background) !important;
+  color: var(--vscode-badge-foreground) !important;
+}
+
+#app :is(.error, [class*='error']) {
+  border-color: var(--vscode-errorForeground) !important;
+  background: var(--vscode-errorBackground) !important;
+  color: var(--vscode-errorForeground) !important;
+}
+
+#app :is(.success, [class*='success'], [class*='complete']) {
+  border-color: var(--vscode-successForeground) !important;
+  background: var(--vscode-successBackground) !important;
+  color: var(--vscode-successForeground) !important;
+}
+
+#app :is(.warning, [class*='warning']) {
+  border-color: var(--vscode-warningForeground) !important;
+  background: var(--vscode-warningBackground) !important;
+  color: var(--vscode-warningForeground) !important;
+}
+
+#app .top-nav {
+  min-height: 48px;
+  border-bottom: 1px solid var(--vscode-panel-border) !important;
+  border-radius: 0 !important;
+  background: var(--vscode-titleBar-activeBackground) !important;
+  color: var(--vscode-titleBar-activeForeground) !important;
+  box-shadow: none !important;
+}
+
+#app .nav-shell {
+  min-height: 48px;
+  max-width: none;
+  padding: 4px 8px;
+}
+
+#app .nav-logo {
+  width: 34px;
+  height: 34px;
+}
+
+#app .nav-logo:hover {
+  transform: none;
+}
+
+#app .brand-banner {
+  min-height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--vscode-titleBar-activeForeground);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+#app :is(.nav-icon-link, .notify-btn, .mobile-menu-btn) {
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 6px !important;
+  border: 0 !important;
+  border-radius: 2px !important;
+  background: transparent !important;
+  color: var(--vscode-titleBar-activeForeground) !important;
+}
+
+#app :is(.nav-icon-link, .notify-btn, .mobile-menu-btn):hover {
+  background: var(--vscode-list-hoverBackground) !important;
+  transform: none;
+}
+
+#app .search-input {
+  min-height: 30px;
+  padding: 4px 10px;
+  border-color: var(--vscode-input-border) !important;
+  background: var(--vscode-input-background) !important;
+  color: var(--vscode-input-foreground) !important;
+}
+
+#app :is(.search-results, .notifications-popup, .mobile-menu-dropdown) {
+  border: 1px solid var(--vscode-panel-border) !important;
+  border-radius: 2px !important;
+  background: var(--vscode-sideBar-background) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22) !important;
+}
+
+#app :is(.search-item, .notification-item, .mobile-menu-item) {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--vscode-sideBar-foreground) !important;
+}
+
+#app :is(.search-item, .notification-item, .mobile-menu-item):hover {
+  background: var(--vscode-list-hoverBackground) !important;
+}
+
+#app
+  :is(
+    .calendar,
+    .customer-directory .directory-item,
+    .customer-profile .details li,
+    .customer-profile .vessel-item,
+    .vessel-profile .history-item,
+    .ticket-page .details li,
+    .ticket-page .diagnostic-group,
+    .conversation-page .message-bubble
+  ) {
+  border-color: var(--vscode-panel-border) !important;
+  border-radius: 2px !important;
+  background: var(--vscode-sideBar-background) !important;
+  color: var(--vscode-sideBar-foreground) !important;
+  box-shadow: none !important;
+}
+
+#app :is(.directory-item, .vessel-item, .history-item, .assignment-card):hover {
+  background: var(--vscode-list-hoverBackground) !important;
+}
+
+#app .assignment-board-page .assignment-card {
+  border-color: var(--vscode-panel-border) !important;
+  border-left-color: var(--card-accent) !important;
+  background: var(--vscode-sideBar-background) !important;
+}
+
+#app .assignment-board-page .card-type {
+  border-color: var(--card-accent) !important;
+  background: transparent !important;
+  color: var(--card-accent) !important;
+}
+
+#app .auth-card {
+  width: min(100%, 460px);
+  padding: 20px;
+  border: 1px solid var(--vscode-panel-border) !important;
+  border-radius: 2px !important;
+  background: var(--vscode-sideBar-background) !important;
+  box-shadow: none !important;
+}
+
+#app .auth-form {
+  gap: 10px;
+}
+
+#app .auth-form label {
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+#app .auth-form input {
+  min-height: 30px;
+}
+
+#app .auth-form button {
+  min-height: 30px;
+}
+
+@media (max-width: 640px) {
+  #app
+    :is(
+      main[class*='page'],
+      main[class*='profile'],
+      main[class*='directory'],
+      main[class*='registration'],
+      section[class*='page'],
+      .auth-page
+    ) {
+    padding: 12px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #app *,
+  #app *::before,
+  #app *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+body:has(#app .admin-rail) #app .page-content {
+  padding-right: 48px !important;
+}

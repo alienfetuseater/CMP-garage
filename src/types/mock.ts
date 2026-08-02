@@ -67,7 +67,7 @@ export type TicketStatus = 'open' | 'in progress' | 'completed' | 'closed' | 'ca
 
 export type TicketPriority = 'low' | 'medium' | 'high'
 
-export type ServiceCategory = 'repair' | 'maintenance' | 'modification'
+export type ServiceCategory = 'repair' | 'maintenance' | 'diagnosis'
 
 export type DiagnosticLevel = 'good' | 'monitor' | 'action' | 'N/A'
 export type TicketDiagnostics = Record<string, DiagnosticLevel>

@@ -30,7 +30,7 @@
         >
           <option value="repair">repair</option>
           <option value="maintenance">maintenance</option>
-          <option value="modification">modification</option>
+          <option value="diagnosis">diagnosis</option>
         </select>
       </label>
 

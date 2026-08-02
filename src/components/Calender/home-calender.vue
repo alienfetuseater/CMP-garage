@@ -257,7 +257,7 @@ watch([remindersByDate, ticketsByDate], () => {
 
 <style scoped>
 .calendar {
-  --calendar-max-h: clamp(320px, calc(100dvh - 220px), 900px);
+  --calendar-max-h: max(320px, calc(100dvh - 96px));
   width: min(100%, calc(var(--calendar-max-h) * 4 / 3));
   max-width: 100%;
   max-height: var(--calendar-max-h);

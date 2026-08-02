@@ -4,9 +4,16 @@
       <nav>
         <ul>
           <li>
-            <RouterLink to="/" class="home-link" title="Home">
-              <img class="nav-logo" :src="logoSrc" alt="CMP Garage" />
-            </RouterLink>
+            <NavActionControl :ariaLabel="'Logout'" title="Logout" @click="handleLogout">
+              <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path
+                  d="M14 7V4.5A1.5 1.5 0 0 0 12.5 3h-7A1.5 1.5 0 0 0 4 4.5v15A1.5 1.5 0 0 0 5.5 21h7a1.5 1.5 0 0 0 1.5-1.5V17"
+                />
+                <path d="M10 12h10" />
+                <path d="m16.5 8.5 3.5 3.5-3.5 3.5" />
+              </svg>
+            </NavActionControl>
+            <img class="nav-logo" :src="logoSrc" alt="CMP Garage" />
             <span class="brand-banner">Coastal Marine Pro</span>
           </li>
         </ul>
@@ -60,261 +67,217 @@
         </div>
 
         <div class="action-icons">
-          <NavActionControl
-            v-if="canManageUsers"
-            to="/register"
-            :ariaLabel="'User Registration'"
-            title="User Registration"
-          >
-            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M15 19.5a6.5 6.5 0 0 0-13 0" />
-              <path d="M8.5 12.2a3.6 3.6 0 1 0 0-7.2 3.6 3.6 0 0 0 0 7.2Z" />
-              <path d="M18 8v7" />
-              <path d="M14.5 11.5h7" />
-            </svg>
-          </NavActionControl>
+          <div class="navigation-icons">
+            <NavActionControl to="/" :ariaLabel="'Calendar'" title="Calendar">
+              <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <rect x="3.5" y="5.5" width="17" height="15" rx="1" />
+                <path d="M7.5 3v5M16.5 3v5M3.5 10h17" />
+                <path d="M8 14h2M14 14h2M8 17h2M14 17h2" />
+              </svg>
+            </NavActionControl>
 
-          <NavActionControl
-            v-if="canViewAssignmentBoard"
-            to="/assignments"
-            :ariaLabel="'Assignment Board'"
-            title="Assignment Board"
-          >
-            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M4 5.5h16M4 11.5h16M4 17.5h16" />
-              <path d="M7 3v5M13 9v5M18 15v5" />
-            </svg>
-          </NavActionControl>
-
-          <NavActionControl
-            v-if="canManageUsers"
-            to="/users"
-            :ariaLabel="'Registered Users'"
-            title="Registered Users"
-          >
-            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M8 12a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
-              <path d="M2.5 20a5.5 5.5 0 0 1 11 0" />
-              <path d="M16 7h5M16 11h5M16 15h5" />
-            </svg>
-          </NavActionControl>
-
-          <NavActionControl :ariaLabel="'Logout'" title="Logout" @click="handleLogout">
-            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path
-                d="M14 7V4.5A1.5 1.5 0 0 0 12.5 3h-7A1.5 1.5 0 0 0 4 4.5v15A1.5 1.5 0 0 0 5.5 21h7a1.5 1.5 0 0 0 1.5-1.5V17"
-              />
-              <path d="M10 12h10" />
-              <path d="m16.5 8.5 3.5 3.5-3.5 3.5" />
-            </svg>
-          </NavActionControl>
-
-          <NavActionControl
-            v-if="workspaceAccess.canRegisterCustomers"
-            to="/CustomerRegistration"
-            :ariaLabel="'New Client'"
-            title="New Client Registration"
-          >
-            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M12 12.2a3.6 3.6 0 1 0 0-7.2 3.6 3.6 0 0 0 0 7.2Z" />
-              <path d="M5.5 19.5a6.5 6.5 0 0 1 13 0" />
-            </svg>
-          </NavActionControl>
-
-          <NavActionControl
-            v-if="workspaceAccess.canViewDirectory"
-            to="/CustomerDirectory"
-            :ariaLabel="'Client Directory'"
-            title="Directory"
-          >
-            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path
-                d="M6 4.5h10.5A2.5 2.5 0 0 1 19 7v11.5a2.5 2.5 0 0 0-2.5-2.5H6A2.5 2.5 0 0 1 3.5 13.5V7A2.5 2.5 0 0 1 6 4.5Z"
-              />
-              <path d="M8 7.5h7.5M8 11h7.5" />
-            </svg>
-          </NavActionControl>
-
-          <div ref="messageWrapRef" class="notifications-wrap">
-            <button
-              class="notify-btn"
-              type="button"
-              aria-label="Open team messages"
-              title="Team Messages"
-              @click="toggleMessagePopup"
+            <NavActionControl
+              v-if="canViewAssignmentBoard"
+              to="/assignments"
+              :ariaLabel="'Assignment Board'"
+              title="Assignment Board"
             >
               <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path
-                  d="M4.5 6.5A2.5 2.5 0 0 1 7 4h10a2.5 2.5 0 0 1 2.5 2.5v6A2.5 2.5 0 0 1 17 15H10l-4.5 4v-4H7A2.5 2.5 0 0 1 4.5 12.5Z"
-                />
+                <path d="M4 5.5h16M4 11.5h16M4 17.5h16" />
+                <path d="M7 3v5M13 9v5M18 15v5" />
               </svg>
-              <span v-if="unreadMessageCount > 0" class="notify-count">{{
-                messageBadgeCountLabel
-              }}</span>
-            </button>
+            </NavActionControl>
+          </div>
 
-            <NavbarNotificationPopover
-              v-if="showMessagesPopup"
-              title="Team Messages"
-              :count="unreadConversationCount"
-              close-label="Close messages popup"
-              @close="closeMessagePopup"
-            >
+          <div class="notification-icons">
+            <div ref="messageWrapRef" class="notifications-wrap">
               <button
+                class="notify-btn"
                 type="button"
-                class="notification-item archived-link"
-                @mousedown.prevent
-                @click="openMessagesPage"
+                aria-label="Open team messages"
+                title="Team Messages"
+                @click="toggleMessagePopup"
               >
-                Open All Team Messages
+                <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path
+                    d="M4.5 6.5A2.5 2.5 0 0 1 7 4h10a2.5 2.5 0 0 1 2.5 2.5v6A2.5 2.5 0 0 1 17 15H10l-4.5 4v-4H7A2.5 2.5 0 0 1 4.5 12.5Z"
+                  />
+                </svg>
+                <span v-if="unreadMessageCount > 0" class="notify-count">{{
+                  messageBadgeCountLabel
+                }}</span>
               </button>
 
-              <div v-if="messageConversations.length === 0" class="notifications-empty">
-                No active internal conversations.
-              </div>
-
-              <template v-if="messageConversations.length > 0">
+              <NavbarNotificationPopover
+                v-if="showMessagesPopup"
+                title="Team Messages"
+                :count="unreadConversationCount"
+                close-label="Close messages popup"
+                @close="closeMessagePopup"
+              >
                 <button
-                  v-for="conversation in messageConversations"
-                  :key="conversation.conversationId"
+                  type="button"
+                  class="notification-item archived-link"
+                  @mousedown.prevent
+                  @click="openMessagesPage"
+                >
+                  Open All Team Messages
+                </button>
+
+                <div v-if="messageConversations.length === 0" class="notifications-empty">
+                  No active internal conversations.
+                </div>
+
+                <template v-if="messageConversations.length > 0">
+                  <button
+                    v-for="conversation in messageConversations"
+                    :key="conversation.conversationId"
+                    type="button"
+                    class="notification-item"
+                    :class="{ 'notification-item-unread': conversation.hasUnread }"
+                    @mousedown.prevent
+                    @click="openConversationFromBell(conversation)"
+                  >
+                    <span class="notification-title">
+                      {{ conversation.title }}
+                      <span v-if="conversation.unreadCount > 0" class="conversation-unread-badge">
+                        {{ conversation.unreadCount }}
+                      </span>
+                    </span>
+                    <span class="notification-meta">
+                      {{ conversation.subtitle }} ·
+                      {{ conversation.partnerNames.join(', ') || 'Conversation' }} ·
+                      {{ formatLocalDateTime(conversation.lastMessageAt) }}
+                    </span>
+                  </button>
+                </template>
+
+                <button
+                  type="button"
+                  class="notification-item archived-link"
+                  @mousedown.prevent
+                  @click="openArchivedConversations"
+                >
+                  Open Archived Conversations
+                </button>
+              </NavbarNotificationPopover>
+            </div>
+
+            <div
+              v-if="workspaceAccess.canViewReminders"
+              ref="reminderWrapRef"
+              class="notifications-wrap"
+            >
+              <button
+                class="notify-btn"
+                type="button"
+                aria-label="Open reminders"
+                title="Open Reminders"
+                @click="toggleReminderPopup"
+              >
+                <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path
+                    d="M12 4a4 4 0 0 0-4 4v2.2c0 .8-.2 1.5-.6 2.1L6 13.7V16h12v-2.3l-1.4-1.4c-.4-.6-.6-1.3-.6-2.1V8a4 4 0 0 0-4-4Z"
+                  />
+                  <path d="M9.5 16a2.5 2.5 0 0 0 5 0" />
+                </svg>
+                <span v-if="openReminderCount > 0" class="notify-count">{{ badgeCountLabel }}</span>
+              </button>
+
+              <NavbarNotificationPopover
+                v-if="showNotifications"
+                title="Open Reminders"
+                :count="openReminderCount"
+                close-label="Close reminders popup"
+                @close="closeReminderPopup"
+              >
+                <div v-if="openRemindersList.length === 0" class="notifications-empty">
+                  No open reminders.
+                </div>
+
+                <button
+                  v-for="reminder in openRemindersList"
+                  v-else
+                  :key="reminder.id"
                   type="button"
                   class="notification-item"
-                  :class="{ 'notification-item-unread': conversation.hasUnread }"
                   @mousedown.prevent
-                  @click="openConversationFromBell(conversation)"
+                  @click="openReminderFromBell(reminder.id)"
                 >
-                  <span class="notification-title">
-                    {{ conversation.title }}
-                    <span v-if="conversation.unreadCount > 0" class="conversation-unread-badge">
-                      {{ conversation.unreadCount }}
-                    </span>
-                  </span>
-                  <span class="notification-meta">
-                    {{ conversation.subtitle }} ·
-                    {{ conversation.partnerNames.join(', ') || 'Conversation' }} ·
-                    {{ formatLocalDateTime(conversation.lastMessageAt) }}
-                  </span>
+                  <span class="notification-title">{{ reminder.title }}</span>
+                  <span class="notification-meta">{{ formatLocalDateTime(reminder.dueDate) }}</span>
                 </button>
-              </template>
+              </NavbarNotificationPopover>
+            </div>
 
+            <div
+              v-if="workspaceAccess.canViewOpenTicketList"
+              ref="ticketWrapRef"
+              class="notifications-wrap"
+            >
               <button
+                class="notify-btn"
                 type="button"
-                class="notification-item archived-link"
-                @mousedown.prevent
-                @click="openArchivedConversations"
+                aria-label="Open tickets"
+                title="Open Tickets"
+                @click="toggleTicketPopup"
               >
-                Open Archived Conversations
-              </button>
-            </NavbarNotificationPopover>
-          </div>
-
-          <div
-            v-if="workspaceAccess.canViewReminders"
-            ref="reminderWrapRef"
-            class="notifications-wrap"
-          >
-            <button
-              class="notify-btn"
-              type="button"
-              aria-label="Open reminders"
-              title="Open Reminders"
-              @click="toggleReminderPopup"
-            >
-              <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path
-                  d="M12 4a4 4 0 0 0-4 4v2.2c0 .8-.2 1.5-.6 2.1L6 13.7V16h12v-2.3l-1.4-1.4c-.4-.6-.6-1.3-.6-2.1V8a4 4 0 0 0-4-4Z"
-                />
-                <path d="M9.5 16a2.5 2.5 0 0 0 5 0" />
-              </svg>
-              <span v-if="openReminderCount > 0" class="notify-count">{{ badgeCountLabel }}</span>
-            </button>
-
-            <NavbarNotificationPopover
-              v-if="showNotifications"
-              title="Open Reminders"
-              :count="openReminderCount"
-              close-label="Close reminders popup"
-              @close="closeReminderPopup"
-            >
-              <div v-if="openRemindersList.length === 0" class="notifications-empty">
-                No open reminders.
-              </div>
-
-              <button
-                v-for="reminder in openRemindersList"
-                v-else
-                :key="reminder.id"
-                type="button"
-                class="notification-item"
-                @mousedown.prevent
-                @click="openReminderFromBell(reminder.id)"
-              >
-                <span class="notification-title">{{ reminder.title }}</span>
-                <span class="notification-meta">{{ formatLocalDateTime(reminder.dueDate) }}</span>
-              </button>
-            </NavbarNotificationPopover>
-          </div>
-
-          <div
-            v-if="workspaceAccess.canViewOpenTicketList"
-            ref="ticketWrapRef"
-            class="notifications-wrap"
-          >
-            <button
-              class="notify-btn"
-              type="button"
-              aria-label="Open tickets"
-              title="Open Tickets"
-              @click="toggleTicketPopup"
-            >
-              <svg
-                class="nav-icon ticket-icon"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-                focusable="false"
-              >
-                <path
-                  d="M4.5 7.5h15a1.5 1.5 0 0 1 1.5 1.5v2a1.5 1.5 0 0 0 0 3v2a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 16v-2a1.5 1.5 0 0 0 0-3V9a1.5 1.5 0 0 1 1.5-1.5Z"
-                />
-                <path d="M8 10.5h8M8 13.5h8" />
-              </svg>
-              <span v-if="openTicketCount > 0" class="notify-count">{{
-                ticketBadgeCountLabel
-              }}</span>
-            </button>
-
-            <NavbarNotificationPopover
-              v-if="showTicketsPopup"
-              title="Open Tickets"
-              :count="openTicketCount"
-              close-label="Close tickets popup"
-              @close="closeTicketPopup"
-            >
-              <div v-if="openTicketsList.length === 0" class="notifications-empty">
-                No open tickets.
-              </div>
-
-              <button
-                v-for="ticket in openTicketsList"
-                v-else
-                :key="ticket.id"
-                type="button"
-                class="notification-item"
-                @mousedown.prevent
-                @click="openTicketFromBell(ticket.id)"
-              >
-                <span class="notification-title">{{ ticket.service_title }}</span>
-                <span class="notification-meta"
-                  >{{ ticket.status }} · {{ ticket.priority }} ·
-                  {{ formatLocalDateTime(ticket.scheduledDate) }}</span
+                <svg
+                  class="nav-icon ticket-icon"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  focusable="false"
                 >
+                  <path
+                    d="M4.5 7.5h15a1.5 1.5 0 0 1 1.5 1.5v2a1.5 1.5 0 0 0 0 3v2a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 16v-2a1.5 1.5 0 0 0 0-3V9a1.5 1.5 0 0 1 1.5-1.5Z"
+                  />
+                  <path d="M8 10.5h8M8 13.5h8" />
+                </svg>
+                <span v-if="openTicketCount > 0" class="notify-count">{{
+                  ticketBadgeCountLabel
+                }}</span>
               </button>
-            </NavbarNotificationPopover>
+
+              <NavbarNotificationPopover
+                v-if="showTicketsPopup"
+                title="Open Tickets"
+                :count="openTicketCount"
+                close-label="Close tickets popup"
+                @close="closeTicketPopup"
+              >
+                <div v-if="openTicketsList.length === 0" class="notifications-empty">
+                  No open tickets.
+                </div>
+
+                <button
+                  v-for="ticket in openTicketsList"
+                  v-else
+                  :key="ticket.id"
+                  type="button"
+                  class="notification-item"
+                  @mousedown.prevent
+                  @click="openTicketFromBell(ticket.id)"
+                >
+                  <span class="notification-title">{{ ticket.service_title }}</span>
+                  <span class="notification-meta"
+                    >{{ ticket.status }} · {{ ticket.priority }} ·
+                    {{ formatLocalDateTime(ticket.scheduledDate) }}</span
+                  >
+                </button>
+              </NavbarNotificationPopover>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </header>
+
+  <AdminNavRail
+    v-if="showAdminRail"
+    :show-customer-registration="workspaceAccess.canRegisterCustomers"
+    :show-directory="workspaceAccess.canViewDirectory"
+    :show-user-management="canManageUsers"
+  />
 </template>
 
 <script setup lang="ts">
@@ -338,6 +301,7 @@ import NavSearchPanel from '@/components/NavBar/NavSearchPanel.vue'
 import MobileNavMenu from '@/components/NavBar/MobileNavMenu.vue'
 import NavbarNotificationPopover from '@/components/NavBar/NavbarNotificationPopover.vue'
 import NavActionControl from '@/components/NavBar/NavActionControl.vue'
+import AdminNavRail from '@/components/NavBar/AdminNavRail.vue'
 
 type MobileMenuView = 'menu' | 'messages' | 'reminders' | 'tickets'
 
@@ -515,6 +479,13 @@ const ticketBadgeCountLabel = computed(() => toBadgeCountLabel(openTicketCount.v
 
 const messageBadgeCountLabel = computed(() => toBadgeCountLabel(unreadMessageCount.value))
 
+const showAdminRail = computed(
+  () =>
+    workspaceAccess.value.canRegisterCustomers ||
+    workspaceAccess.value.canViewDirectory ||
+    canManageUsers.value,
+)
+
 function handleMobileMenuViewChange(nextView: string) {
   mobileMenuView.value = nextView as MobileMenuView
 }
@@ -584,6 +555,7 @@ function openTicketFromMobileMenu(id: string) {
 
 function goToRoute(
   name:
+    | 'CMPHome'
     | 'CustomerRegistration'
     | 'CustomerDirectory'
     | 'Register'
@@ -620,13 +592,14 @@ function handleLogout() {
   margin: 0 auto;
   padding: 0.4rem 1.15rem 0.3rem 0.85rem;
   display: grid;
-  grid-template-columns: auto minmax(340px, 560px);
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 0.85rem;
 }
 
 .nav-tools {
   width: 100%;
+  min-width: 0;
   max-width: 100%;
   justify-self: end;
   display: flex;
@@ -636,18 +609,29 @@ function handleLogout() {
 
 .search-wrap {
   flex: 1 1 340px;
-  min-width: 280px;
+  min-width: 180px;
   max-width: 500px;
 }
 
 .action-icons {
-  display: inline-flex;
-  flex: 0 0 auto;
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
   align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
   gap: 16px;
   margin-right: 0;
+}
+
+.navigation-icons,
+.notification-icons {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.notification-icons {
+  margin-left: auto;
 }
 
 nav {
@@ -672,14 +656,6 @@ li {
   display: flex;
   align-items: center;
   gap: 0.55rem;
-}
-
-.home-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-start;
-  margin-left: 0;
-  padding: 0;
 }
 
 .nav-logo {
@@ -735,11 +711,12 @@ li {
 }
 
 .nav-icon {
-  width: 1.05rem;
-  height: 1.05rem;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
   stroke: currentColor;
   fill: none;
-  stroke-width: 1.9;
+  stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
   line-height: 1;
@@ -785,22 +762,6 @@ a.router-link-active,
 :deep(a.router-link-active) {
   background-color: var(--color-link-hover);
   color: var(--color-surface);
-}
-
-.home-link,
-:deep(.home-link) {
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 0;
-  position: relative;
-  top: 4px;
-}
-
-.home-link.router-link-active,
-:deep(.home-link.router-link-active) {
-  background-color: transparent;
-  color: inherit;
 }
 
 .search-wrap,
@@ -1145,11 +1106,6 @@ a.router-link-active,
 
   .action-icons {
     display: none;
-  }
-
-  .home-link {
-    padding: 0;
-    top: 0;
   }
 
   .nav-logo {

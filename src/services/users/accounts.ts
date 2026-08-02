@@ -15,7 +15,7 @@ export function fetchUsers(): Promise<AuthUser[]> {
 export type UserAssignedTicket = {
   id: string
   title: string
-  category: 'repair' | 'maintenance' | 'modification'
+  category: 'repair' | 'maintenance' | 'diagnosis'
   status: string
   priority: string
   scheduledDate: string

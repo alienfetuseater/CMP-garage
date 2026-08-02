@@ -2,11 +2,15 @@
   <section class="assignment-board-page">
     <header class="board-header">
       <div>
-        <p class="board-kicker">Work queue</p>
+        <!-- <p class="board-kicker">Work queue</p> -->
         <h1>Assignment Board</h1>
-        <p class="board-scope">
-          {{ scope === 'assigned' ? 'Your open assignments' : 'All open assignments' }}
-        </p>
+        <!-- <p class="board-scope">
+          {{
+            scope === 'assigned'
+              ? 'Your open assignments and reminders'
+              : 'All open work assignments and your reminders'
+          }}
+        </p> -->
       </div>
       <button type="button" class="refresh-button" :disabled="loading" @click="loadBoard">
         Refresh
@@ -28,9 +32,13 @@
             v-for="card in column.cards"
             :key="`${card.kind}-${card.id}`"
             class="assignment-card"
+            :class="`card-${card.category}`"
             :to="cardRoute(card)"
           >
-            <h3>{{ card.title }}</h3>
+            <div class="card-heading">
+              <h3>{{ card.title }}</h3>
+              <span class="card-type">{{ cardTypeLabel(card) }}</span>
+            </div>
             <p>{{ card.synopsis }}</p>
           </RouterLink>
           <p v-if="column.cards.length === 0" class="empty-column">No open assignments</p>
@@ -49,31 +57,55 @@ import {
   type AssignmentCard,
 } from '@/services/assignments/board'
 
-const board = ref<AssignmentBoardResponse>({ scope: 'assigned', tickets: [], monthlyReports: [] })
+const board = ref<AssignmentBoardResponse>({
+  scope: 'assigned',
+  tickets: [],
+  monthlyReports: [],
+  reminders: [],
+})
 const loading = ref(true)
 const error = ref('')
-const scope = computed(() => board.value.scope)
+// const scope = computed(() => board.value.scope)
 
 const columnDefinitions = [
-  { key: 'repair', label: 'Repairs' },
+  { key: 'serviceWork', label: 'Service Work' },
   { key: 'monthlyReport', label: 'Monthly Reports' },
-  { key: 'maintenance', label: 'Maintenance' },
-  { key: 'modification', label: 'Modifications' },
+  { key: 'diagnosis', label: 'Diagnosis' },
+  { key: 'reminder', label: 'Reminders' },
 ] as const
 
-const allCards = computed(() => [...board.value.tickets, ...board.value.monthlyReports])
+const allCards = computed(() => [
+  ...board.value.tickets,
+  ...board.value.monthlyReports,
+  ...board.value.reminders,
+])
 const columns = computed(() =>
   columnDefinitions.map((column) => ({
     ...column,
-    cards: allCards.value.filter((card) => card.category === column.key),
+    cards: allCards.value.filter((card) => {
+      if (column.key === 'serviceWork') {
+        return card.category === 'repair' || card.category === 'maintenance'
+      }
+      return card.category === column.key
+    }),
   })),
 )
 
 function cardRoute(card: AssignmentCard) {
   return {
-    name: card.kind === 'ticket' ? 'Ticket' : 'MonthlyReport',
+    name:
+      card.kind === 'ticket'
+        ? 'Ticket'
+        : card.kind === 'monthlyReport'
+          ? 'MonthlyReport'
+          : 'Reminder',
     query: { id: card.id },
   }
+}
+
+function cardTypeLabel(card: AssignmentCard) {
+  if (card.category === 'monthlyReport') return 'Monthly Report'
+  return `${card.category.charAt(0).toUpperCase()}${card.category.slice(1)}`
 }
 
 async function loadBoard() {
@@ -93,9 +125,9 @@ onMounted(loadBoard)
 
 <style scoped>
 .assignment-board-page {
-  width: min(1600px, calc(100vw - 2rem));
-  margin-left: 50%;
-  transform: translateX(-50%);
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
   padding: 1rem 0 2rem;
 }
 .board-header {
@@ -117,7 +149,7 @@ onMounted(loadBoard)
 h1 {
   margin: 0;
   color: #17252f;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-heading);
   font-size: clamp(1.9rem, 3vw, 2.8rem);
   letter-spacing: 0;
 }
@@ -150,7 +182,7 @@ h1 {
 }
 .board-columns {
   display: grid;
-  grid-template-columns: repeat(4, minmax(230px, 1fr));
+  grid-template-columns: repeat(4, minmax(250px, 1fr));
   gap: 1rem;
   overflow-x: auto;
   padding-bottom: 1rem;
@@ -174,17 +206,17 @@ h1 {
   letter-spacing: 0;
   text-transform: uppercase;
 }
-.column-repair {
+.column-serviceWork {
   border-color: #b44332;
 }
 .column-monthlyReport {
   border-color: #287a78;
 }
-.column-maintenance {
-  border-color: #bd842e;
-}
-.column-modification {
+.column-diagnosis {
   border-color: #6c5b8d;
+}
+.column-reminder {
+  border-color: #3f6f9f;
 }
 .column-count {
   min-width: 1.7rem;
@@ -201,15 +233,58 @@ h1 {
   gap: 0.7rem;
 }
 .assignment-card {
+  --card-accent: #516b78;
+  --card-tint: #f4f6f7;
   display: block;
   min-height: 118px;
   border: 1px solid #d9dee2;
+  border-left: 5px solid var(--card-accent);
   border-radius: 7px;
-  background: #fff;
+  background: var(--card-tint);
   color: inherit;
   padding: 0.9rem;
   box-shadow: 0 4px 12px rgba(24, 37, 45, 0.06);
   text-decoration: none;
+}
+.card-repair {
+  --card-accent: #b44332;
+  --card-tint: #fff4f1;
+}
+.card-maintenance {
+  --card-accent: #bd842e;
+  --card-tint: #fff8e9;
+}
+.card-monthlyReport {
+  --card-accent: #287a78;
+  --card-tint: #edf9f7;
+}
+.card-diagnosis {
+  --card-accent: #6c5b8d;
+  --card-tint: #f7f2fc;
+}
+.card-reminder {
+  --card-accent: #3f6f9f;
+  --card-tint: #eff7ff;
+}
+.card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.65rem;
+  margin-bottom: 0.55rem;
+}
+.card-heading h3 {
+  margin-bottom: 0;
+}
+.card-type {
+  flex: 0 0 auto;
+  border: 1px solid var(--card-accent);
+  color: var(--card-accent);
+  padding: 0.14rem 0.35rem;
+  font-size: 0.66rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-transform: uppercase;
 }
 .assignment-card:hover,
 .assignment-card:focus-visible {
@@ -244,9 +319,6 @@ h1 {
   font-size: 0.82rem;
 }
 @media (max-width: 700px) {
-  .assignment-board-page {
-    width: calc(100vw - 1rem);
-  }
   .board-header {
     align-items: flex-start;
   }

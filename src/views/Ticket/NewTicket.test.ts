@@ -81,7 +81,7 @@ describe('views/Ticket/NewTicket.vue', () => {
       .get('select')
       .findAll('option')
       .map((option) => option.attributes('value'))
-    expect(categoryOptions).toEqual(['repair', 'maintenance', 'modification'])
+    expect(categoryOptions).toEqual(['repair', 'maintenance', 'diagnosis'])
   })
 
   it('hydrates edit mode and shows edit-only sections', async () => {

@@ -160,6 +160,7 @@ const emit = defineEmits<{
   (
     event: 'go-to-route',
     routeName:
+      | 'CMPHome'
       | 'CustomerRegistration'
       | 'CustomerDirectory'
       | 'Register'

@@ -17,9 +17,16 @@ const { fetchAssignmentBoardMock } = vi.hoisted(() => ({
       {
         id: 'ticket-2',
         kind: 'ticket',
-        category: 'modification',
-        title: 'Install trim tabs',
-        synopsis: 'Install and configure the new trim-tab system.',
+        category: 'maintenance',
+        title: 'Annual engine service',
+        synopsis: 'Complete scheduled engine maintenance.',
+      },
+      {
+        id: 'ticket-3',
+        kind: 'ticket',
+        category: 'diagnosis',
+        title: 'Trace intermittent alarm',
+        synopsis: 'Diagnose the intermittent engine alarm.',
       },
     ],
     monthlyReports: [
@@ -29,6 +36,15 @@ const { fetchAssignmentBoardMock } = vi.hoisted(() => ({
         category: 'monthlyReport',
         title: 'Sea Breeze Monthly Report',
         synopsis: 'Complete the monthly report for Sea Breeze.',
+      },
+    ],
+    reminders: [
+      {
+        id: 'reminder-1',
+        kind: 'reminder',
+        category: 'reminder',
+        title: 'Call owner with estimate',
+        synopsis: 'Follow up before ordering parts.',
       },
     ],
   }),
@@ -44,22 +60,31 @@ const RouterLinkStub = {
   template: '<a><slot /></a>',
 }
 
-it('groups open work into five linked assignment columns', async () => {
+it('groups color-coded work and reminders into four linked assignment columns', async () => {
   const wrapper = mount(AssignmentBoard, {
     global: { stubs: { RouterLink: RouterLinkStub } },
   })
   await new Promise((resolve) => setTimeout(resolve, 0))
 
-  expect(wrapper.text()).toContain('All open assignments')
+  expect(wrapper.text()).toContain('All open work assignments and your reminders')
   expect(wrapper.findAll('.board-column')).toHaveLength(4)
-  expect(wrapper.text()).toContain('Repairs')
+  expect(wrapper.text()).toContain('Service Work')
   expect(wrapper.text()).toContain('Monthly Reports')
-  expect(wrapper.text()).toContain('Maintenance')
-  expect(wrapper.text()).toContain('Modifications')
+  expect(wrapper.text()).toContain('Diagnosis')
+  expect(wrapper.text()).toContain('Reminders')
+  expect(wrapper.text()).not.toContain('Modifications')
   expect(wrapper.text()).not.toContain('Inspections')
   expect(wrapper.text()).not.toContain('Upgrades')
   expect(wrapper.text()).toContain('Replace raw-water pump')
+  expect(wrapper.text()).toContain('Annual engine service')
+  expect(wrapper.text()).toContain('Trace intermittent alarm')
   expect(wrapper.text()).toContain('Sea Breeze Monthly Report')
+  expect(wrapper.text()).toContain('Call owner with estimate')
+  expect(wrapper.findAll('.card-repair')).toHaveLength(1)
+  expect(wrapper.findAll('.card-maintenance')).toHaveLength(1)
+  expect(wrapper.findAll('.card-diagnosis')).toHaveLength(1)
+  expect(wrapper.findAll('.card-monthlyReport')).toHaveLength(1)
+  expect(wrapper.findAll('.card-reminder')).toHaveLength(1)
 
   const links = wrapper.findAllComponents(RouterLinkStub)
   expect(links.map((link) => link.props('to'))).toContainEqual({
@@ -69,5 +94,9 @@ it('groups open work into five linked assignment columns', async () => {
   expect(links.map((link) => link.props('to'))).toContainEqual({
     name: 'MonthlyReport',
     query: { id: 'report-1' },
+  })
+  expect(links.map((link) => link.props('to'))).toContainEqual({
+    name: 'Reminder',
+    query: { id: 'reminder-1' },
   })
 })

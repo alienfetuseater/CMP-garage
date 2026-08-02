@@ -1,5 +1,8 @@
 <template>
   <div class="mobile-menu-list">
+    <button type="button" class="mobile-menu-item" @click="emit('go-to-route', 'CMPHome')">
+      Calendar
+    </button>
     <button
       v-if="showCustomerRegistration"
       type="button"
@@ -90,6 +93,7 @@ const emit = defineEmits<{
   (
     event: 'go-to-route',
     routeName:
+      | 'CMPHome'
       | 'CustomerRegistration'
       | 'CustomerDirectory'
       | 'Register'
