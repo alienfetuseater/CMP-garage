@@ -40,7 +40,11 @@
       />
 
       <MobileMenuPanel v-else-if="mobileMenuView === 'messages'">
-        <button type="button" class="notification-item archived-link" @click="emit('open-messages-page')">
+        <button
+          type="button"
+          class="notification-item archived-link"
+          @click="emit('open-messages-page')"
+        >
           Open All Team Messages
         </button>
 
@@ -63,19 +67,26 @@
               </span>
             </span>
             <span class="notification-meta">
-              {{ conversation.subtitle }} · {{ conversation.partnerNames.join(', ') || 'Conversation' }} ·
+              {{ conversation.subtitle }} ·
+              {{ conversation.partnerNames.join(', ') || 'Conversation' }} ·
               {{ formatDate(conversation.lastMessageAt) }}
             </span>
           </button>
         </template>
 
-        <button type="button" class="notification-item archived-link" @click="emit('open-archived-conversations')">
+        <button
+          type="button"
+          class="notification-item archived-link"
+          @click="emit('open-archived-conversations')"
+        >
           Open Archived Conversations
         </button>
       </MobileMenuPanel>
 
       <MobileMenuPanel v-else-if="mobileMenuView === 'reminders'">
-        <div v-if="openRemindersList.length === 0" class="notifications-empty">No open reminders.</div>
+        <div v-if="openRemindersList.length === 0" class="notifications-empty">
+          No open reminders.
+        </div>
 
         <template v-else>
           <button
@@ -104,7 +115,8 @@
           >
             <span class="notification-title">{{ ticket.service_title }}</span>
             <span class="notification-meta"
-              >{{ ticket.status }} · {{ ticket.priority }} · {{ formatDate(ticket.scheduledDate) }}</span
+              >{{ ticket.status }} · {{ ticket.priority }} ·
+              {{ formatDate(ticket.scheduledDate) }}</span
             >
           </button>
         </template>
@@ -135,7 +147,10 @@ defineProps<{
 const emit = defineEmits<{
   (event: 'toggle-mobile-menu'): void
   (event: 'set-mobile-menu-view', view: string): void
-  (event: 'go-to-route', routeName: 'CustomerRegistration' | 'CustomerDirectory' | 'Register' | 'UserDirectory'): void
+  (
+    event: 'go-to-route',
+    routeName: 'CustomerRegistration' | 'CustomerDirectory' | 'Register' | 'UserDirectory',
+  ): void
   (event: 'open-mobile-menu-panel', view: 'messages' | 'reminders' | 'tickets'): void
   (event: 'open-archived-conversations'): void
   (event: 'open-messages-page'): void

@@ -3,20 +3,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import UserDirectoryView from './UserDirectoryView.vue'
 
-const { authStore, fetchUserAccessMock, fetchUsersMock, updateUserMock, routerPush } = vi.hoisted(() => ({
-  authStore: {
-    user: {
-      id: 'current-user',
-      name: 'Current User',
-      email: 'current@example.com',
-      role: 'serviceManager' as 'admin' | 'serviceManager',
+const { authStore, fetchUserAccessMock, fetchUsersMock, updateUserMock, routerPush } = vi.hoisted(
+  () => ({
+    authStore: {
+      user: {
+        id: 'current-user',
+        name: 'Current User',
+        email: 'current@example.com',
+        role: 'serviceManager' as 'admin' | 'serviceManager',
+      },
     },
-  },
-  fetchUserAccessMock: vi.fn(),
-  fetchUsersMock: vi.fn(),
-  updateUserMock: vi.fn(),
-  routerPush: vi.fn(),
-}))
+    fetchUserAccessMock: vi.fn(),
+    fetchUsersMock: vi.fn(),
+    updateUserMock: vi.fn(),
+    routerPush: vi.fn(),
+  }),
+)
 
 vi.mock('@/stores/auth', () => ({ useAuthStore: () => authStore }))
 vi.mock('vue-router', () => ({ useRouter: () => ({ push: routerPush }) }))

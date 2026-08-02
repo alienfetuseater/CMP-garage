@@ -54,7 +54,12 @@
         </div>
 
         <div class="action-icons">
-          <NavActionControl v-if="canManageUsers" to="/register" :ariaLabel="'User Registration'" title="User Registration">
+          <NavActionControl
+            v-if="canManageUsers"
+            to="/register"
+            :ariaLabel="'User Registration'"
+            title="User Registration"
+          >
             <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="M15 19.5a6.5 6.5 0 0 0-13 0" />
               <path d="M8.5 12.2a3.6 3.6 0 1 0 0-7.2 3.6 3.6 0 0 0 0 7.2Z" />
@@ -98,7 +103,11 @@
             </svg>
           </NavActionControl>
 
-          <NavActionControl to="/CustomerDirectory" :ariaLabel="'Client Directory'" title="Directory">
+          <NavActionControl
+            to="/CustomerDirectory"
+            :ariaLabel="'Client Directory'"
+            title="Directory"
+          >
             <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path
                 d="M6 4.5h10.5A2.5 2.5 0 0 1 19 7v11.5a2.5 2.5 0 0 0-2.5-2.5H6A2.5 2.5 0 0 1 3.5 13.5V7A2.5 2.5 0 0 1 6 4.5Z"
@@ -497,7 +506,9 @@ function openTicketFromMobileMenu(id: string) {
   router.push({ name: 'Ticket', query: { id } })
 }
 
-function goToRoute(name: 'CustomerRegistration' | 'CustomerDirectory' | 'Register' | 'UserDirectory') {
+function goToRoute(
+  name: 'CustomerRegistration' | 'CustomerDirectory' | 'Register' | 'UserDirectory',
+) {
   closeMobileMenu()
   router.push({ name })
 }

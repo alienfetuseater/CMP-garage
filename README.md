@@ -81,13 +81,13 @@ Current tests cover:
 
 CMP Garage supports multiple administrators. The `admin` role is assigned per user, and there is no single-administrator restriction.
 
-| Role | Privileges |
-| --- | --- |
-| Administrator | Full operational access; view the calendar; register and edit users; assign roles; add or manage other administrators; manage system settings; delete records; send documents. |
+| Role                         | Privileges                                                                                                                                                                                                                                                                                                                                      |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Administrator                | Full operational access; view the calendar; register and edit users; assign roles; add or manage other administrators; manage system settings; delete records; send documents.                                                                                                                                                                  |
 | Supervisor / Service Manager | Full day-to-day operational access, including the calendar, customers, vessels, tickets, reports, reminders, messages, record deletion, and document sending. Can register ordinary staff and view registered users, but cannot create privileged accounts, edit user profiles, assign roles, manage administrators, or change system settings. |
-| Technician | Read operational records; update assigned technical work and tickets; create and update reports; use team messages. Cannot view the calendar or manage users and system settings. |
-| Coordinator | View the calendar and operational records; manage customer and vessel intake; create tickets; manage reminders and messages; send documents. Cannot administer users, roles, or system settings. |
-| Viewer | Read-only access to operational records. Cannot modify records or view the calendar. |
+| Technician                   | Read operational records; update assigned technical work and tickets; create and update reports; use team messages. Cannot view the calendar or manage users and system settings.                                                                                                                                                               |
+| Coordinator                  | View the calendar and operational records; manage customer and vessel intake; create tickets; manage reminders and messages; send documents. Cannot administer users, roles, or system settings.                                                                                                                                                |
+| Viewer                       | Read-only access to operational records. Cannot modify records or view the calendar.                                                                                                                                                                                                                                                            |
 
 Role and permission definitions are maintained in `src/domain/auth/permissions.ts` and mirrored by the server authorization model.
 

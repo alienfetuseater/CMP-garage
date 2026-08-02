@@ -1,29 +1,59 @@
 <template>
   <div class="mobile-menu-list">
-    <button type="button" class="mobile-menu-item" @click="emit('go-to-route', 'CustomerRegistration')">
+    <button
+      type="button"
+      class="mobile-menu-item"
+      @click="emit('go-to-route', 'CustomerRegistration')"
+    >
       New Customer
     </button>
-    <button type="button" class="mobile-menu-item" @click="emit('go-to-route', 'CustomerDirectory')">
+    <button
+      type="button"
+      class="mobile-menu-item"
+      @click="emit('go-to-route', 'CustomerDirectory')"
+    >
       Directory
     </button>
-    <button v-if="showUserManagement" type="button" class="mobile-menu-item" @click="emit('go-to-route', 'Register')">
+    <button
+      v-if="showUserManagement"
+      type="button"
+      class="mobile-menu-item"
+      @click="emit('go-to-route', 'Register')"
+    >
       User Registration
     </button>
-    <button v-if="showUserManagement" type="button" class="mobile-menu-item" @click="emit('go-to-route', 'UserDirectory')">
+    <button
+      v-if="showUserManagement"
+      type="button"
+      class="mobile-menu-item"
+      @click="emit('go-to-route', 'UserDirectory')"
+    >
       Registered Users
     </button>
-    <button type="button" class="mobile-menu-item" @click="emit('open-mobile-menu-panel', 'messages')">
+    <button
+      type="button"
+      class="mobile-menu-item"
+      @click="emit('open-mobile-menu-panel', 'messages')"
+    >
       Team Messages
       <span class="mobile-menu-count">{{ messageBadgeCountLabel }}</span>
     </button>
     <button type="button" class="mobile-menu-item" @click="emit('open-archived-conversations')">
       Archived Conversations
     </button>
-    <button type="button" class="mobile-menu-item" @click="emit('open-mobile-menu-panel', 'reminders')">
+    <button
+      type="button"
+      class="mobile-menu-item"
+      @click="emit('open-mobile-menu-panel', 'reminders')"
+    >
       Reminders
       <span class="mobile-menu-count">{{ badgeCountLabel }}</span>
     </button>
-    <button type="button" class="mobile-menu-item" @click="emit('open-mobile-menu-panel', 'tickets')">
+    <button
+      type="button"
+      class="mobile-menu-item"
+      @click="emit('open-mobile-menu-panel', 'tickets')"
+    >
       Tickets
       <span class="mobile-menu-count">{{ ticketBadgeCountLabel }}</span>
     </button>
@@ -40,7 +70,10 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (event: 'go-to-route', routeName: 'CustomerRegistration' | 'CustomerDirectory' | 'Register' | 'UserDirectory'): void
+  (
+    event: 'go-to-route',
+    routeName: 'CustomerRegistration' | 'CustomerDirectory' | 'Register' | 'UserDirectory',
+  ): void
   (event: 'open-mobile-menu-panel', view: 'messages' | 'reminders' | 'tickets'): void
   (event: 'open-archived-conversations'): void
   (event: 'logout'): void

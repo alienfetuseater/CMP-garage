@@ -47,9 +47,13 @@
               </td>
             </template>
             <template v-else>
-              <td data-label="Name"><strong>{{ user.name }}</strong></td>
+              <td data-label="Name">
+                <strong>{{ user.name }}</strong>
+              </td>
               <td data-label="Email">{{ user.email }}</td>
-              <td data-label="Role"><span class="role-badge">{{ roleLabels[user.role] }}</span></td>
+              <td data-label="Role">
+                <span class="role-badge">{{ roleLabels[user.role] }}</span>
+              </td>
               <td v-if="canEditUsers" class="actions">
                 <button type="button" class="secondary" @click="startEdit(user)">Edit</button>
               </td>
@@ -147,31 +151,140 @@ async function saveUser(id: string) {
 </script>
 
 <style scoped>
-.user-directory { max-width: 1100px; margin: 0 auto; padding: 1rem; }
-.directory-header { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
-.directory-header h1 { margin: 0.15rem 0; color: #0f172a; }
-.directory-header p { margin: 0; color: #475569; }
-.eyebrow { font-size: 0.78rem; font-weight: 800; text-transform: uppercase; color: #0369a1 !important; }
-.user-table-wrap { overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; }
-.user-table { width: 100%; border-collapse: collapse; }
-th, td { padding: 0.85rem; border-bottom: 1px solid #e2e8f0; text-align: left; vertical-align: middle; }
-th { background: #f8fafc; color: #334155; font-size: 0.78rem; text-transform: uppercase; }
-tbody tr:last-child td { border-bottom: 0; }
-input, select { width: 100%; min-width: 150px; border: 1px solid #94a3b8; border-radius: 6px; padding: 0.55rem; font: inherit; }
-button { border: 1px solid #0369a1; border-radius: 6px; padding: 0.55rem 0.8rem; font-weight: 700; cursor: pointer; }
-.primary, .directory-header button { background: #0369a1; color: #fff; }
-.secondary { background: #fff; color: #334155; border-color: #94a3b8; }
-.actions { display: flex; justify-content: flex-end; gap: 0.45rem; }
-.role-badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 6px; background: #e0f2fe; color: #075985; font-weight: 700; font-size: 0.82rem; }
-.status { padding: 0.8rem; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; color: #334155; }
-.error { border-color: #fecaca; background: #fef2f2; color: #b91c1c; }
-.success { border-color: #bbf7d0; background: #f0fdf4; color: #166534; }
+.user-directory {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+.directory-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+.directory-header h1 {
+  margin: 0.15rem 0;
+  color: #0f172a;
+}
+.directory-header p {
+  margin: 0;
+  color: #475569;
+}
+.eyebrow {
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #0369a1 !important;
+}
+.user-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+}
+.user-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th,
+td {
+  padding: 0.85rem;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+  vertical-align: middle;
+}
+th {
+  background: #f8fafc;
+  color: #334155;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+input,
+select {
+  width: 100%;
+  min-width: 150px;
+  border: 1px solid #94a3b8;
+  border-radius: 6px;
+  padding: 0.55rem;
+  font: inherit;
+}
+button {
+  border: 1px solid #0369a1;
+  border-radius: 6px;
+  padding: 0.55rem 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.primary,
+.directory-header button {
+  background: #0369a1;
+  color: #fff;
+}
+.secondary {
+  background: #fff;
+  color: #334155;
+  border-color: #94a3b8;
+}
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+.role-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  background: #e0f2fe;
+  color: #075985;
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+.status {
+  padding: 0.8rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #334155;
+}
+.error {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+.success {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+}
 @media (max-width: 700px) {
-  .directory-header { align-items: stretch; flex-direction: column; }
-  .user-table thead { display: none; }
-  .user-table, .user-table tbody, .user-table tr, .user-table td { display: block; width: 100%; }
-  .user-table tr { padding: 0.7rem; border-bottom: 1px solid #cbd5e1; }
-  .user-table td { border: 0; padding: 0.35rem 0; }
-  .actions { justify-content: flex-start; }
+  .directory-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .user-table thead {
+    display: none;
+  }
+  .user-table,
+  .user-table tbody,
+  .user-table tr,
+  .user-table td {
+    display: block;
+    width: 100%;
+  }
+  .user-table tr {
+    padding: 0.7rem;
+    border-bottom: 1px solid #cbd5e1;
+  }
+  .user-table td {
+    border: 0;
+    padding: 0.35rem 0;
+  }
+  .actions {
+    justify-content: flex-start;
+  }
 }
 </style>
