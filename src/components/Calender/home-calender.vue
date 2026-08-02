@@ -332,10 +332,10 @@ watch([remindersByDate, ticketsByDate], () => {
   justify-content: flex-start;
   padding: 6px 6px 4px;
   position: relative;
-  border: 1px solid #dbe3ee;
+  border: 1px solid var(--vscode-panel-border);
   border-radius: 6px;
-  background: #ffffff;
-  color: #374151;
+  background: var(--vscode-editor-background);
+  color: var(--vscode-editor-foreground);
   user-select: none;
 }
 .day-number {
@@ -347,24 +347,25 @@ watch([remindersByDate, ticketsByDate], () => {
   user-select: none;
 }
 .day-cell.other-month {
-  background: #f3f4f6;
-  border-color: #e5e7eb;
-  color: #9ca3af;
+  background: var(--vscode-sideBar-background);
+  border-color: var(--vscode-panel-border);
+  color: var(--vscode-descriptionForeground);
   cursor: default;
 }
 .day-cell.other-month .day-number {
-  color: #9ca3af;
+  color: var(--vscode-descriptionForeground);
 }
 .day-cell.today {
-  background: linear-gradient(180deg, var(--color-ocean-mid), var(--color-ocean-dark));
-  color: #ffffff;
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
   font-weight: 600;
-  border-color: rgba(142, 185, 229, 0.45);
-  box-shadow: inset 0 0 0 1px rgba(215, 232, 246, 0.12);
+  border-color: var(--vscode-focusBorder);
+  box-shadow: inset 0 0 0 1px var(--vscode-focusBorder);
 }
 .day-cell.selected {
-  background: linear-gradient(180deg, rgba(142, 185, 229, 0.22), rgba(215, 232, 246, 0.48));
-  border: 1px solid rgba(78, 137, 204, 0.65);
+  background: var(--vscode-list-activeSelectionBackground);
+  border: 1px solid var(--vscode-focusBorder);
+  color: var(--vscode-list-activeSelectionForeground);
 }
 .day-markers {
   display: flex;

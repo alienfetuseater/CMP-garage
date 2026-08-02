@@ -271,14 +271,31 @@
     .customer-profile .vessel-item,
     .vessel-profile .history-item,
     .ticket-page .details li,
-    .ticket-page .diagnostic-group,
-    .conversation-page .message-bubble
+    .ticket-page .diagnostic-group
   ) {
   border-color: var(--vscode-panel-border) !important;
   border-radius: 2px !important;
   background: var(--vscode-sideBar-background) !important;
   color: var(--vscode-sideBar-foreground) !important;
   box-shadow: none !important;
+}
+
+#app .conversation-page .message-bubble {
+  border-color: var(--vscode-panel-border) !important;
+  border-radius: 2px !important;
+  background: var(--vscode-sideBar-background) !important;
+  color: var(--vscode-sideBar-foreground) !important;
+  box-shadow: none !important;
+}
+
+#app .conversation-page .message-bubble.outbound {
+  border-color: var(--vscode-list-activeSelectionBackground) !important;
+  background: var(--vscode-list-activeSelectionBackground) !important;
+  color: var(--vscode-list-activeSelectionForeground) !important;
+}
+
+#app .conversation-page .message-bubble :is(p, strong, .message-meta) {
+  color: inherit !important;
 }
 
 #app :is(.directory-item, .vessel-item, .history-item, .assignment-card):hover {

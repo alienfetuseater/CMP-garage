@@ -7,10 +7,7 @@
         <header class="messages-header">
           <div>
             <p class="eyebrow">Internal Messaging</p>
-            <h2>All Team Messages</h2>
-            <p class="messages-subtitle">
-              All current ticket and reminder conversations in one place.
-            </p>
+            <h1>All Team Messages</h1>
           </div>
 
           <div class="header-actions">

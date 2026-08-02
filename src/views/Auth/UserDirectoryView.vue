@@ -4,7 +4,6 @@
       <div>
         <p class="eyebrow">Access Management</p>
         <h1>Registered Users</h1>
-        <p>Review employee accounts and assigned access levels.</p>
       </div>
       <button v-if="canCreateUsers" type="button" @click="router.push({ name: 'Register' })">
         Add User
