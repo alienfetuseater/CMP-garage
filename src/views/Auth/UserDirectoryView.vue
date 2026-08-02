@@ -26,39 +26,101 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="user in users" :key="user.id">
-            <template v-if="editingId === user.id">
-              <td><input v-model.trim="editName" aria-label="User name" /></td>
-              <td><input v-model.trim="editEmail" type="email" aria-label="User email" /></td>
-              <td>
-                <select v-model="editRole" aria-label="User role">
-                  <option v-for="role in userRoles" :key="role" :value="role">
-                    {{ roleLabels[role] }}
-                  </option>
-                </select>
+          <template v-for="user in users" :key="user.id">
+            <tr :class="{ 'user-row-expanded': expandedUserId === user.id }">
+              <template v-if="editingId === user.id">
+                <td><input v-model.trim="editName" aria-label="User name" /></td>
+                <td><input v-model.trim="editEmail" type="email" aria-label="User email" /></td>
+                <td>
+                  <select v-model="editRole" aria-label="User role">
+                    <option v-for="role in userRoles" :key="role" :value="role">
+                      {{ roleLabels[role] }}
+                    </option>
+                  </select>
+                </td>
+                <td class="actions">
+                  <button
+                    type="button"
+                    class="primary"
+                    :disabled="saving"
+                    @click="saveUser(user.id)"
+                  >
+                    Save
+                  </button>
+                  <button type="button" class="secondary" :disabled="saving" @click="cancelEdit">
+                    Cancel
+                  </button>
+                </td>
+              </template>
+              <template v-else>
+                <td data-label="Name">
+                  <button
+                    type="button"
+                    class="profile-toggle"
+                    :aria-expanded="expandedUserId === user.id"
+                    :aria-controls="`user-tickets-${user.id}`"
+                    @click="toggleUserTickets(user.id)"
+                  >
+                    <strong>{{ user.name }}</strong>
+                    <span aria-hidden="true">{{ expandedUserId === user.id ? '-' : '+' }}</span>
+                  </button>
+                </td>
+                <td data-label="Email">{{ user.email }}</td>
+                <td data-label="Role">
+                  <span class="role-badge">{{ roleLabels[user.role] }}</span>
+                </td>
+                <td v-if="canEditUsers" class="actions">
+                  <button type="button" class="secondary" @click="startEdit(user)">Edit</button>
+                </td>
+              </template>
+            </tr>
+
+            <tr
+              v-if="expandedUserId === user.id"
+              :id="`user-tickets-${user.id}`"
+              class="ticket-detail-row"
+            >
+              <td :colspan="canEditUsers ? 4 : 3">
+                <div class="ticket-detail">
+                  <div class="ticket-detail-heading">
+                    <strong>Assigned Tickets</strong>
+                    <span>{{ assignedTickets[user.id]?.length ?? 0 }}</span>
+                  </div>
+
+                  <p v-if="loadingTicketsUserId === user.id" class="ticket-state">
+                    Loading assigned tickets...
+                  </p>
+                  <p v-else-if="ticketErrors[user.id]" class="ticket-state error">
+                    {{ ticketErrors[user.id] }}
+                  </p>
+                  <p v-else-if="assignedTickets[user.id]?.length === 0" class="ticket-state">
+                    No tickets assigned to {{ user.name }}.
+                  </p>
+                  <div v-else class="assigned-ticket-list">
+                    <button
+                      v-for="ticket in assignedTickets[user.id]"
+                      :key="ticket.id"
+                      type="button"
+                      class="assigned-ticket"
+                      @click="openTicket(ticket.id)"
+                    >
+                      <span class="assigned-ticket-main">
+                        <strong>{{ ticket.title }}</strong>
+                        <small
+                          >{{ categoryLabel(ticket.category) }} ·
+                          {{ ticket.priority }} priority</small
+                        >
+                      </span>
+                      <span class="assigned-ticket-meta">
+                        <span class="ticket-status">{{ ticket.status }}</span>
+                        <small>{{ formatLocalDateTime(ticket.scheduledDate) }}</small>
+                      </span>
+                    </button>
+                  </div>
+                </div>
               </td>
-              <td class="actions">
-                <button type="button" class="primary" :disabled="saving" @click="saveUser(user.id)">
-                  Save
-                </button>
-                <button type="button" class="secondary" :disabled="saving" @click="cancelEdit">
-                  Cancel
-                </button>
-              </td>
-            </template>
-            <template v-else>
-              <td data-label="Name">
-                <strong>{{ user.name }}</strong>
-              </td>
-              <td data-label="Email">{{ user.email }}</td>
-              <td data-label="Role">
-                <span class="role-badge">{{ roleLabels[user.role] }}</span>
-              </td>
-              <td v-if="canEditUsers" class="actions">
-                <button type="button" class="secondary" @click="startEdit(user)">Edit</button>
-              </td>
-            </template>
-          </tr>
+            </tr>
+          </template>
         </tbody>
       </table>
     </div>
@@ -73,7 +135,14 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import type { AuthUser } from '@/stores/auth/state'
 import { roleLabels, userRoles, type UserRole } from '@/domain/auth/permissions'
-import { fetchUserAccess, fetchUsers, updateUser } from '@/services/users/accounts'
+import { formatLocalDateTime } from '@/shared/datetime/format'
+import {
+  fetchUserAccess,
+  fetchUserAssignedTickets,
+  fetchUsers,
+  updateUser,
+  type UserAssignedTicket,
+} from '@/services/users/accounts'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -86,6 +155,10 @@ const editingId = ref('')
 const editName = ref('')
 const editEmail = ref('')
 const editRole = ref<UserRole>('viewer')
+const expandedUserId = ref('')
+const loadingTicketsUserId = ref('')
+const assignedTickets = ref<Record<string, UserAssignedTicket[]>>({})
+const ticketErrors = ref<Record<string, string>>({})
 
 const canCreateUsers = ref(false)
 const canEditUsers = ref(false)
@@ -121,6 +194,34 @@ function startEdit(user: AuthUser) {
 
 function cancelEdit() {
   editingId.value = ''
+}
+
+async function toggleUserTickets(userId: string) {
+  if (expandedUserId.value === userId) {
+    expandedUserId.value = ''
+    return
+  }
+
+  expandedUserId.value = userId
+  if (Object.hasOwn(assignedTickets.value, userId)) return
+
+  loadingTicketsUserId.value = userId
+  ticketErrors.value[userId] = ''
+  try {
+    assignedTickets.value[userId] = await fetchUserAssignedTickets(userId)
+  } catch (error) {
+    ticketErrors.value[userId] = error instanceof Error ? error.message : String(error)
+  } finally {
+    if (loadingTicketsUserId.value === userId) loadingTicketsUserId.value = ''
+  }
+}
+
+function categoryLabel(category: UserAssignedTicket['category']) {
+  return `${category.charAt(0).toUpperCase()}${category.slice(1)}`
+}
+
+function openTicket(ticketId: string) {
+  router.push({ name: 'Ticket', query: { id: ticketId } })
 }
 
 async function saveUser(id: string) {
@@ -229,6 +330,82 @@ button {
   color: #334155;
   border-color: #94a3b8;
 }
+.profile-toggle {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: #0f172a;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  text-align: left;
+}
+.profile-toggle:hover,
+.profile-toggle:focus-visible {
+  color: #0369a1;
+}
+.user-row-expanded td {
+  border-bottom-color: transparent;
+}
+.ticket-detail-row td {
+  padding-top: 0;
+  background: #f8fafc;
+}
+.ticket-detail {
+  display: grid;
+  gap: 0.65rem;
+  border-left: 3px solid #0284c7;
+  padding: 0.85rem 1rem;
+}
+.ticket-detail-heading,
+.assigned-ticket {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.ticket-detail-heading span {
+  color: #64748b;
+  font-weight: 700;
+}
+.ticket-state {
+  margin: 0;
+}
+.assigned-ticket-list {
+  display: grid;
+  gap: 0.5rem;
+}
+.assigned-ticket {
+  width: 100%;
+  border-color: #cbd5e1;
+  background: #fff;
+  color: #0f172a;
+  text-align: left;
+}
+.assigned-ticket:hover,
+.assigned-ticket:focus-visible {
+  border-color: #0284c7;
+  background: #f0f9ff;
+}
+.assigned-ticket-main,
+.assigned-ticket-meta {
+  display: grid;
+  gap: 0.2rem;
+}
+.assigned-ticket-meta {
+  justify-items: end;
+}
+.assigned-ticket small {
+  color: #64748b;
+}
+.ticket-status {
+  color: #075985;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: capitalize;
+}
 .actions {
   display: flex;
   justify-content: flex-end;
@@ -285,6 +462,16 @@ button {
   }
   .actions {
     justify-content: flex-start;
+  }
+  .ticket-detail-row {
+    padding: 0 !important;
+  }
+  .assigned-ticket {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .assigned-ticket-meta {
+    justify-items: start;
   }
 }
 </style>

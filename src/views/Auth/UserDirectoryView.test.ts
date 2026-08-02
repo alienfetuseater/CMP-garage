@@ -3,27 +3,34 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import UserDirectoryView from './UserDirectoryView.vue'
 
-const { authStore, fetchUserAccessMock, fetchUsersMock, updateUserMock, routerPush } = vi.hoisted(
-  () => ({
-    authStore: {
-      user: {
-        id: 'current-user',
-        name: 'Current User',
-        email: 'current@example.com',
-        role: 'serviceManager' as 'admin' | 'serviceManager',
-      },
+const {
+  authStore,
+  fetchUserAccessMock,
+  fetchUserAssignedTicketsMock,
+  fetchUsersMock,
+  updateUserMock,
+  routerPush,
+} = vi.hoisted(() => ({
+  authStore: {
+    user: {
+      id: 'current-user',
+      name: 'Current User',
+      email: 'current@example.com',
+      role: 'serviceManager' as 'admin' | 'serviceManager',
     },
-    fetchUserAccessMock: vi.fn(),
-    fetchUsersMock: vi.fn(),
-    updateUserMock: vi.fn(),
-    routerPush: vi.fn(),
-  }),
-)
+  },
+  fetchUserAccessMock: vi.fn(),
+  fetchUserAssignedTicketsMock: vi.fn(),
+  fetchUsersMock: vi.fn(),
+  updateUserMock: vi.fn(),
+  routerPush: vi.fn(),
+}))
 
 vi.mock('@/stores/auth', () => ({ useAuthStore: () => authStore }))
 vi.mock('vue-router', () => ({ useRouter: () => ({ push: routerPush }) }))
 vi.mock('@/services/users/accounts', () => ({
   fetchUserAccess: fetchUserAccessMock,
+  fetchUserAssignedTickets: fetchUserAssignedTicketsMock,
   fetchUsers: fetchUsersMock,
   updateUser: updateUserMock,
 }))
@@ -48,6 +55,7 @@ describe('views/Auth/UserDirectoryView.vue', () => {
       canEdit: false,
     })
     fetchUsersMock.mockReset().mockResolvedValue([registeredUser])
+    fetchUserAssignedTicketsMock.mockReset().mockResolvedValue([])
     updateUserMock.mockReset()
     routerPush.mockReset()
   })
@@ -89,5 +97,31 @@ describe('views/Auth/UserDirectoryView.vue', () => {
       role: 'coordinator',
     })
     expect(wrapper.text()).toContain("Taylor Marine's profile was updated.")
+  })
+
+  it('expands a user profile to show and open assigned tickets', async () => {
+    fetchUserAssignedTicketsMock.mockResolvedValue([
+      {
+        id: 'ticket-1',
+        title: 'Replace raw-water pump',
+        category: 'repair',
+        status: 'in progress',
+        priority: 'high',
+        scheduledDate: '2026-08-05T12:00:00.000Z',
+      },
+    ])
+
+    const wrapper = mount(UserDirectoryView)
+    await flushPromises()
+    await wrapper.get('.profile-toggle').trigger('click')
+    await flushPromises()
+
+    expect(fetchUserAssignedTicketsMock).toHaveBeenCalledWith('user-2')
+    expect(wrapper.text()).toContain('Assigned Tickets')
+    expect(wrapper.text()).toContain('Replace raw-water pump')
+    expect(wrapper.text()).toContain('Repair · high priority')
+
+    await wrapper.get('.assigned-ticket').trigger('click')
+    expect(routerPush).toHaveBeenCalledWith({ name: 'Ticket', query: { id: 'ticket-1' } })
   })
 })

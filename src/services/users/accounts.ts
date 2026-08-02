@@ -12,6 +12,19 @@ export function fetchUsers(): Promise<AuthUser[]> {
   return apiFetch<AuthUser[]>('/users')
 }
 
+export type UserAssignedTicket = {
+  id: string
+  title: string
+  category: 'repair' | 'maintenance' | 'modification'
+  status: string
+  priority: string
+  scheduledDate: string
+}
+
+export function fetchUserAssignedTickets(userId: string): Promise<UserAssignedTicket[]> {
+  return apiFetch<UserAssignedTicket[]>(`/users/${encodeURIComponent(userId)}/tickets`)
+}
+
 export function fetchAssignableUsers(): Promise<AuthUser[]> {
   return apiFetch<AuthUser[]>('/users/assignable')
 }
