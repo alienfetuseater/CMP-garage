@@ -76,6 +76,12 @@ describe('views/Ticket/NewTicket.vue', () => {
     expect(wrapper.text()).toContain('Create Work Order')
     expect(wrapper.text()).not.toContain('Notes History')
     expect(wrapper.text()).not.toContain('Plan of Action')
+
+    const categoryOptions = wrapper
+      .get('select')
+      .findAll('option')
+      .map((option) => option.attributes('value'))
+    expect(categoryOptions).toEqual(['repair', 'maintenance', 'modification'])
   })
 
   it('hydrates edit mode and shows edit-only sections', async () => {

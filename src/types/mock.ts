@@ -20,7 +20,11 @@ export interface Vessel {
   hullIdNumber: string
   numberOfEngines: number
   engineSerialNumbers: string[]
+  engineFuelType?: 'gasoline' | 'diesel' | ''
+  engineInstallationType?: 'inboard' | 'outboard' | ''
   generator: boolean
+  generatorCount?: number
+  generatorSerialNumbers?: string[]
   boatLocation: 'trailor' | 'slip' | 'dry dock' | ''
   engineMake: string
   engineModel: string
@@ -63,7 +67,7 @@ export type TicketStatus = 'open' | 'in progress' | 'completed' | 'closed' | 'ca
 
 export type TicketPriority = 'low' | 'medium' | 'high'
 
-export type ServiceCategory = 'inspection' | 'repair' | 'maintenance' | 'upgrade'
+export type ServiceCategory = 'repair' | 'maintenance' | 'modification'
 
 export type DiagnosticLevel = 'good' | 'monitor' | 'action' | 'N/A'
 export type TicketDiagnostics = Record<string, DiagnosticLevel>

@@ -60,7 +60,11 @@ type Form = {
   hullIdNumber: string
   numberOfEngines: number | null
   engineSerialNumbers: string[]
+  engineFuelType: 'gasoline' | 'diesel' | ''
+  engineInstallationType: 'inboard' | 'outboard' | ''
   generator: 'yes' | 'no'
+  generatorCount: number | null
+  generatorSerialNumbers: string[]
   boatLocation: 'trailor' | 'slip' | 'dry dock' | ''
   engineMakeSelection: string
   engineMakeOther: string
@@ -138,7 +142,11 @@ const form = ref<Form>({
   hullIdNumber: '',
   numberOfEngines: null,
   engineSerialNumbers: [],
+  engineFuelType: '',
+  engineInstallationType: '',
   generator: 'no',
+  generatorCount: 0,
+  generatorSerialNumbers: [],
   boatLocation: '',
   engineMakeSelection: '',
   engineMakeOther: '',
@@ -209,14 +217,35 @@ watch(
   { immediate: true },
 )
 
-const toggleSerialNotAvailable = (index: number) => {
-  const current = form.value.engineSerialNumbers[index] || ''
-  form.value.engineSerialNumbers[index] = current === 'Not Available' ? '' : 'Not Available'
-}
+watch(
+  [() => form.value.generator, () => form.value.generatorCount],
+  ([generator, value]) => {
+    if (generator === 'no') {
+      form.value.generatorCount = 0
+      form.value.generatorSerialNumbers.splice(0)
+      return
+    }
+
+    const count = Math.max(1, value ?? 1)
+    if (form.value.generatorCount !== count) form.value.generatorCount = count
+    while (form.value.generatorSerialNumbers.length < count) {
+      form.value.generatorSerialNumbers.push('')
+    }
+    while (form.value.generatorSerialNumbers.length > count) {
+      form.value.generatorSerialNumbers.splice(count)
+    }
+  },
+  { immediate: true },
+)
 
 const validateSerialNumbers = () => {
   if (!form.value.numberOfEngines || form.value.numberOfEngines <= 0) return true
   return form.value.engineSerialNumbers.every((serial) => String(serial).trim() !== '')
+}
+
+const validateGeneratorSerialNumbers = () => {
+  if (form.value.generator === 'no') return true
+  return form.value.generatorSerialNumbers.every((serial) => String(serial).trim() !== '')
 }
 
 onMounted(async () => {
@@ -243,7 +272,13 @@ onMounted(async () => {
       form.value.hullIdNumber = existing.hullIdNumber
       form.value.numberOfEngines = existing.numberOfEngines
       form.value.engineSerialNumbers = existing.engineSerialNumbers.slice()
+      form.value.engineFuelType = existing.engineFuelType ?? ''
+      form.value.engineInstallationType = existing.engineInstallationType ?? ''
       form.value.generator = existing.generator ? 'yes' : 'no'
+      form.value.generatorCount = existing.generator
+        ? Math.max(1, existing.generatorCount ?? existing.generatorSerialNumbers?.length ?? 1)
+        : 0
+      form.value.generatorSerialNumbers = existing.generatorSerialNumbers?.slice() ?? []
       form.value.boatLocation = existing.boatLocation
       const engineMakeSelection = resolveEngineMakeSelection(existing.engineMake)
       form.value.engineMakeSelection = engineMakeSelection.selection
@@ -287,6 +322,17 @@ async function submit() {
       throw new Error('Please provide a serial number or mark N/A for every engine')
     }
 
+    if (
+      (form.value.numberOfEngines ?? 0) > 0 &&
+      (!form.value.engineFuelType || !form.value.engineInstallationType)
+    ) {
+      throw new Error('Please select the engine fuel and installation types')
+    }
+
+    if (!validateGeneratorSerialNumbers()) {
+      throw new Error('Please provide a serial number or mark N/A for every generator')
+    }
+
     const horsepower = form.value.engineHorsepower
     if (horsepower !== null && !Number.isInteger(horsepower)) {
       throw new Error('Engine horsepower must be an integer')
@@ -305,7 +351,12 @@ async function submit() {
       hullIdNumber: form.value.hullIdNumber,
       numberOfEngines: form.value.numberOfEngines ?? 0,
       engineSerialNumbers: form.value.engineSerialNumbers.slice(),
+      engineFuelType: form.value.engineFuelType,
+      engineInstallationType: form.value.engineInstallationType,
       generator: form.value.generator === 'yes',
+      generatorCount: form.value.generator === 'yes' ? (form.value.generatorCount ?? 1) : 0,
+      generatorSerialNumbers:
+        form.value.generator === 'yes' ? form.value.generatorSerialNumbers.slice() : [],
       boatLocation: form.value.boatLocation,
       engineMake: finalEngineMake,
       engineModel: form.value.engineModel,

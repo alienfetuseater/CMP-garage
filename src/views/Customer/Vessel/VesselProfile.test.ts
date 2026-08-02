@@ -128,7 +128,11 @@ describe('views/Customer/Vessel/VesselProfile.vue', () => {
       hullIdNumber: 'ABC-123',
       numberOfEngines: 1,
       engineSerialNumbers: ['eng-1'],
-      generator: false,
+      engineFuelType: 'gasoline',
+      engineInstallationType: 'outboard',
+      generator: true,
+      generatorCount: 2,
+      generatorSerialNumbers: ['gen-1', 'gen-2'],
       boatLocation: 'slip',
       engineMake: 'Yamaha',
       engineModel: 'F150',
@@ -171,5 +175,9 @@ describe('views/Customer/Vessel/VesselProfile.vue', () => {
     expect(wrapper.text()).toContain('Jane Doe')
     expect(wrapper.text()).toContain('Repair History')
     expect(wrapper.text()).toContain('Engine fix')
+    expect(wrapper.text()).toContain('Gasoline / Outboard')
+    expect(wrapper.text()).toContain('eng-1')
+    expect(wrapper.text()).toContain('2 generators')
+    expect(wrapper.text()).toContain('gen-1, gen-2')
   })
 })

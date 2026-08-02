@@ -3,7 +3,7 @@ import { apiFetch } from '@/services/http/client'
 export type AssignmentCard = {
   id: string
   kind: 'ticket' | 'monthlyReport'
-  category: 'repair' | 'maintenance' | 'inspection' | 'upgrade' | 'monthlyReport'
+  category: 'repair' | 'maintenance' | 'modification' | 'monthlyReport'
   title: string
   synopsis: string
 }

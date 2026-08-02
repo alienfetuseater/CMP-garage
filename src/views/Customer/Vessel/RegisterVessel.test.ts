@@ -3,21 +3,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import RegisterVessel from './RegisterVessel.vue'
 
-const {
-  routeState,
-  routerPush,
-  customerStore,
-  vesselStore,
-  uiStore,
-  mockedApiFetch,
-} = vi.hoisted(() => ({
-  routeState: { query: {} as Record<string, string> },
-  routerPush: vi.fn(),
-  customerStore: { fetchCustomers: vi.fn() },
-  vesselStore: { addVessel: vi.fn(), vesselById: vi.fn() },
-  uiStore: { fetchAllData: vi.fn().mockResolvedValue(undefined) },
-  mockedApiFetch: vi.fn(),
-}))
+const { routeState, routerPush, customerStore, vesselStore, uiStore, mockedApiFetch } = vi.hoisted(
+  () => ({
+    routeState: { query: {} as Record<string, string> },
+    routerPush: vi.fn(),
+    customerStore: { fetchCustomers: vi.fn() },
+    vesselStore: { addVessel: vi.fn(), vesselById: vi.fn() },
+    uiStore: { fetchAllData: vi.fn().mockResolvedValue(undefined) },
+    mockedApiFetch: vi.fn(),
+  }),
+)
 
 vi.mock('vue-router', () => ({
   useRoute: () => routeState,
@@ -45,6 +40,12 @@ vi.mock('@/stores/vessels', () => ({
 
 function flushPromises() {
   return new Promise((resolve) => setTimeout(resolve, 0))
+}
+
+function fieldByLabel(wrapper: ReturnType<typeof mount>, label: string) {
+  const field = wrapper.findAll('label').find((entry) => entry.text().includes(label))
+  if (!field) throw new Error(`Expected ${label} field to be rendered`)
+  return field
 }
 
 describe('views/Customer/Vessel/RegisterVessel.vue', () => {
@@ -76,32 +77,34 @@ describe('views/Customer/Vessel/RegisterVessel.vue', () => {
     const wrapper = mount(RegisterVessel)
     await flushPromises()
 
-    const visibleInputs = wrapper.findAll('input').filter((entry) => entry.element.type !== 'file')
-    const selects = wrapper.findAll('select')
-    expect(selects.length).toBeGreaterThanOrEqual(4)
+    await fieldByLabel(wrapper, 'Vessel Name').get('input').setValue('Sea Breeze')
+    await fieldByLabel(wrapper, 'Make').get('select').setValue('Boston Whaler')
+    await fieldByLabel(wrapper, 'Number of Engines').get('input').setValue('2')
+    await flushPromises()
+    await fieldByLabel(wrapper, 'Engine Fuel Type').get('select').setValue('diesel')
+    await fieldByLabel(wrapper, 'Engine Installation').get('select').setValue('inboard')
+    await fieldByLabel(wrapper, 'Engine Make').get('select').setValue('Yamaha')
 
-    const vesselNameInput = visibleInputs.at(0)
-    expect(vesselNameInput).toBeTruthy()
-    if (!vesselNameInput) {
-      throw new Error('Expected vessel name input to be rendered')
-    }
+    const engineSerialInputs = wrapper.findAll('input[placeholder="Enter serial number"]')
+    await engineSerialInputs[0]!.setValue('ENGINE-1')
+    await engineSerialInputs[1]!.setValue('ENGINE-2')
 
-    const makeSelect = selects.at(0)
-    const engineSelect = selects.at(3)
-    expect(makeSelect).toBeTruthy()
-    expect(engineSelect).toBeTruthy()
-    if (!makeSelect || !engineSelect) {
-      throw new Error('Expected vessel and engine select inputs to be rendered')
-    }
+    await fieldByLabel(wrapper, 'Generator').get('select').setValue('yes')
+    await flushPromises()
+    await fieldByLabel(wrapper, 'Number of Generators').get('input').setValue('2')
+    await flushPromises()
 
-    await vesselNameInput.setValue('Sea Breeze')
-    await makeSelect.setValue('Boston Whaler')
-    await engineSelect.setValue('Yamaha')
+    const allSerialInputs = wrapper.findAll('input[placeholder="Enter serial number"]')
+    await allSerialInputs[2]!.setValue('GENERATOR-1')
+    await allSerialInputs[3]!.setValue('GENERATOR-2')
 
     await wrapper.get('form').trigger('submit.prevent')
     await flushPromises()
 
-    expect(mockedApiFetch).toHaveBeenCalledWith('/newBoat', expect.objectContaining({ method: 'POST' }))
+    expect(mockedApiFetch).toHaveBeenCalledWith(
+      '/newBoat',
+      expect.objectContaining({ method: 'POST' }),
+    )
     const newBoatCall = mockedApiFetch.mock.calls.find((call) => call[0] === '/newBoat')
     expect(newBoatCall).toBeTruthy()
     if (!newBoatCall) {
@@ -113,11 +116,21 @@ describe('views/Customer/Vessel/RegisterVessel.vue', () => {
       vesselName: string
       vesselMake: string
       engineMake: string
+      engineSerialNumbers: string[]
+      engineFuelType: string
+      engineInstallationType: string
+      generatorCount: number
+      generatorSerialNumbers: string[]
     }
 
     expect(payload.customerId).toBe('c-1')
     expect(payload.vesselName).toBe('Sea Breeze')
     expect(payload.vesselMake).toBe('Boston Whaler')
     expect(payload.engineMake).toBe('Yamaha')
+    expect(payload.engineSerialNumbers).toEqual(['ENGINE-1', 'ENGINE-2'])
+    expect(payload.engineFuelType).toBe('diesel')
+    expect(payload.engineInstallationType).toBe('inboard')
+    expect(payload.generatorCount).toBe(2)
+    expect(payload.generatorSerialNumbers).toEqual(['GENERATOR-1', 'GENERATOR-2'])
   })
 })

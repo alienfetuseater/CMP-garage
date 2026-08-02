@@ -3,12 +3,19 @@
     <div class="form-grid">
       <label>
         Vessel Name
-        <input :value="modelValue.vesselName" required @input="updateField('vesselName', ($event.target as HTMLInputElement).value)" />
+        <input
+          :value="modelValue.vesselName"
+          required
+          @input="updateField('vesselName', ($event.target as HTMLInputElement).value)"
+        />
       </label>
 
       <label>
         Make
-        <select :value="modelValue.vesselMakeSelection" @change="updateField('vesselMakeSelection', ($event.target as HTMLSelectElement).value)">
+        <select
+          :value="modelValue.vesselMakeSelection"
+          @change="updateField('vesselMakeSelection', ($event.target as HTMLSelectElement).value)"
+        >
           <option value="" disabled>Select make</option>
           <option v-for="make in popularBoatMakes" :key="make" :value="make">
             {{ make }}
@@ -19,35 +26,112 @@
 
       <label v-if="modelValue.vesselMakeSelection === 'other'">
         Other Make
-        <input :value="modelValue.vesselMakeOther" required placeholder="Enter vessel make" @input="updateField('vesselMakeOther', ($event.target as HTMLInputElement).value)" />
+        <input
+          :value="modelValue.vesselMakeOther"
+          required
+          placeholder="Enter vessel make"
+          @input="updateField('vesselMakeOther', ($event.target as HTMLInputElement).value)"
+        />
       </label>
 
       <label>
         Year
-        <input :value="modelValue.vesselYear ?? ''" type="number" @input="updateNumberField('vesselYear', ($event.target as HTMLInputElement).value)" />
+        <input
+          :value="modelValue.vesselYear ?? ''"
+          type="number"
+          @input="updateNumberField('vesselYear', ($event.target as HTMLInputElement).value)"
+        />
       </label>
 
       <label>
         Hull ID Number
-        <input :value="modelValue.hullIdNumber" @input="updateField('hullIdNumber', ($event.target as HTMLInputElement).value)" />
+        <input
+          :value="modelValue.hullIdNumber"
+          @input="updateField('hullIdNumber', ($event.target as HTMLInputElement).value)"
+        />
       </label>
 
       <label>
         Number of Engines
-        <input :value="modelValue.numberOfEngines ?? ''" type="number" min="0" @input="updateNumberField('numberOfEngines', ($event.target as HTMLInputElement).value)" />
+        <input
+          :value="modelValue.numberOfEngines ?? ''"
+          type="number"
+          min="0"
+          @input="updateNumberField('numberOfEngines', ($event.target as HTMLInputElement).value)"
+        />
+      </label>
+
+      <label v-if="modelValue.numberOfEngines && modelValue.numberOfEngines > 0">
+        Engine Fuel Type
+        <select
+          :value="modelValue.engineFuelType"
+          required
+          @change="
+            updateField(
+              'engineFuelType',
+              ($event.target as HTMLSelectElement).value as Form['engineFuelType'],
+            )
+          "
+        >
+          <option value="" disabled>Select fuel type</option>
+          <option value="gasoline">Gasoline</option>
+          <option value="diesel">Diesel</option>
+        </select>
+      </label>
+
+      <label v-if="modelValue.numberOfEngines && modelValue.numberOfEngines > 0">
+        Engine Installation
+        <select
+          :value="modelValue.engineInstallationType"
+          required
+          @change="
+            updateField(
+              'engineInstallationType',
+              ($event.target as HTMLSelectElement).value as Form['engineInstallationType'],
+            )
+          "
+        >
+          <option value="" disabled>Select installation</option>
+          <option value="inboard">Inboard</option>
+          <option value="outboard">Outboard</option>
+        </select>
       </label>
 
       <label>
         Generator
-        <select :value="modelValue.generator" @change="updateField('generator', ($event.target as HTMLSelectElement).value as 'yes' | 'no')">
+        <select
+          :value="modelValue.generator"
+          @change="
+            updateField('generator', ($event.target as HTMLSelectElement).value as 'yes' | 'no')
+          "
+        >
           <option value="yes">Yes</option>
           <option value="no">No</option>
         </select>
       </label>
 
+      <label v-if="modelValue.generator === 'yes'">
+        Number of Generators
+        <input
+          :value="modelValue.generatorCount ?? 1"
+          type="number"
+          min="1"
+          required
+          @input="updateNumberField('generatorCount', ($event.target as HTMLInputElement).value)"
+        />
+      </label>
+
       <label>
         Boat Location
-        <select :value="modelValue.boatLocation" @change="updateField('boatLocation', ($event.target as HTMLSelectElement).value as 'trailor' | 'slip' | 'dry dock' | '')">
+        <select
+          :value="modelValue.boatLocation"
+          @change="
+            updateField(
+              'boatLocation',
+              ($event.target as HTMLSelectElement).value as 'trailor' | 'slip' | 'dry dock' | '',
+            )
+          "
+        >
           <option value="" disabled>Select location</option>
           <option value="trailor">trailor</option>
           <option value="slip">slip</option>
@@ -57,7 +141,10 @@
 
       <label>
         Engine Make
-        <select :value="modelValue.engineMakeSelection" @change="updateField('engineMakeSelection', ($event.target as HTMLSelectElement).value)">
+        <select
+          :value="modelValue.engineMakeSelection"
+          @change="updateField('engineMakeSelection', ($event.target as HTMLSelectElement).value)"
+        >
           <option value="" disabled>Select engine make</option>
           <option v-for="make in popularEngineMakes" :key="make" :value="make">
             {{ make }}
@@ -68,28 +155,55 @@
 
       <label v-if="modelValue.engineMakeSelection === 'other'">
         Other Engine Make
-        <input :value="modelValue.engineMakeOther" required placeholder="Enter engine manufacturer" @input="updateField('engineMakeOther', ($event.target as HTMLInputElement).value)" />
+        <input
+          :value="modelValue.engineMakeOther"
+          required
+          placeholder="Enter engine manufacturer"
+          @input="updateField('engineMakeOther', ($event.target as HTMLInputElement).value)"
+        />
       </label>
 
       <label>
         Engine Model
-        <input :value="modelValue.engineModel" @input="updateField('engineModel', ($event.target as HTMLInputElement).value)" />
+        <input
+          :value="modelValue.engineModel"
+          @input="updateField('engineModel', ($event.target as HTMLInputElement).value)"
+        />
       </label>
 
       <label>
         Engine Horsepower
-        <input :value="modelValue.engineHorsepower ?? ''" type="number" min="0" step="1" @input="updateNumberField('engineHorsepower', ($event.target as HTMLInputElement).value)" />
+        <input
+          :value="modelValue.engineHorsepower ?? ''"
+          type="number"
+          min="0"
+          step="1"
+          @input="updateNumberField('engineHorsepower', ($event.target as HTMLInputElement).value)"
+        />
       </label>
 
       <label>
         Engine Hours
-        <input :value="modelValue.engineHours ?? ''" type="number" min="0" step="1" @input="updateNumberField('engineHours', ($event.target as HTMLInputElement).value)" />
+        <input
+          :value="modelValue.engineHours ?? ''"
+          type="number"
+          min="0"
+          step="1"
+          @input="updateNumberField('engineHours', ($event.target as HTMLInputElement).value)"
+        />
       </label>
     </div>
 
-    <fieldset class="engine-serials" v-if="modelValue.numberOfEngines && modelValue.numberOfEngines > 0">
+    <fieldset
+      class="engine-serials"
+      v-if="modelValue.numberOfEngines && modelValue.numberOfEngines > 0"
+    >
       <legend>Engine Serial Numbers</legend>
-      <div v-for="(serial, index) in modelValue.engineSerialNumbers" :key="index" class="engine-serial-row">
+      <div
+        v-for="(serial, index) in modelValue.engineSerialNumbers"
+        :key="index"
+        class="engine-serial-row"
+      >
         <label>
           Engine {{ index + 1 }} Serial Number
           <input
@@ -105,6 +219,28 @@
       </div>
     </fieldset>
     <p v-else class="hint">Add the number of engines above to enter serial numbers.</p>
+
+    <fieldset class="engine-serials" v-if="modelValue.generator === 'yes'">
+      <legend>Generator Serial Numbers</legend>
+      <div
+        v-for="(serial, index) in modelValue.generatorSerialNumbers"
+        :key="index"
+        class="engine-serial-row"
+      >
+        <label>
+          Generator {{ index + 1 }} Serial Number
+          <input
+            :value="serial"
+            :disabled="serial === 'Not Available'"
+            placeholder="Enter serial number"
+            @input="updateGeneratorSerial(index, ($event.target as HTMLInputElement).value)"
+          />
+        </label>
+        <button type="button" class="na-toggle" @click="toggleGeneratorSerialNotAvailable(index)">
+          {{ serial === 'Not Available' ? 'Use serial' : 'Mark N/A' }}
+        </button>
+      </div>
+    </fieldset>
   </div>
 </template>
 
@@ -118,7 +254,11 @@ interface Form {
   hullIdNumber: string
   numberOfEngines: number | null
   engineSerialNumbers: string[]
+  engineFuelType: 'gasoline' | 'diesel' | ''
+  engineInstallationType: 'inboard' | 'outboard' | ''
   generator: 'yes' | 'no'
+  generatorCount: number | null
+  generatorSerialNumbers: string[]
   boatLocation: 'trailor' | 'slip' | 'dry dock' | ''
   engineMakeSelection: string
   engineMakeOther: string
@@ -146,9 +286,25 @@ function updateField<K extends keyof Form>(field: K, value: Form[K]) {
   emitUpdate({ ...props.modelValue, [field]: value })
 }
 
-function updateNumberField(field: 'vesselYear' | 'numberOfEngines' | 'engineHorsepower' | 'engineHours', value: string) {
+function updateNumberField(
+  field: 'vesselYear' | 'numberOfEngines' | 'generatorCount' | 'engineHorsepower' | 'engineHours',
+  value: string,
+) {
   const parsed = value === '' ? null : Number(value)
   updateField(field, parsed as Form[typeof field])
+}
+
+function updateGeneratorSerial(index: number, value: string) {
+  const nextSerials = [...props.modelValue.generatorSerialNumbers]
+  nextSerials[index] = value
+  emitUpdate({ ...props.modelValue, generatorSerialNumbers: nextSerials })
+}
+
+function toggleGeneratorSerialNotAvailable(index: number) {
+  const nextSerials = [...props.modelValue.generatorSerialNumbers]
+  const current = nextSerials[index] || ''
+  nextSerials[index] = current === 'Not Available' ? '' : 'Not Available'
+  emitUpdate({ ...props.modelValue, generatorSerialNumbers: nextSerials })
 }
 
 function updateSerial(index: number, value: string) {

@@ -58,8 +58,7 @@ const columnDefinitions = [
   { key: 'repair', label: 'Repairs' },
   { key: 'monthlyReport', label: 'Monthly Reports' },
   { key: 'maintenance', label: 'Maintenance' },
-  { key: 'inspection', label: 'Inspections' },
-  { key: 'upgrade', label: 'Upgrades' },
+  { key: 'modification', label: 'Modifications' },
 ] as const
 
 const allCards = computed(() => [...board.value.tickets, ...board.value.monthlyReports])
@@ -151,7 +150,7 @@ h1 {
 }
 .board-columns {
   display: grid;
-  grid-template-columns: repeat(5, minmax(230px, 1fr));
+  grid-template-columns: repeat(4, minmax(230px, 1fr));
   gap: 1rem;
   overflow-x: auto;
   padding-bottom: 1rem;
@@ -184,10 +183,7 @@ h1 {
 .column-maintenance {
   border-color: #bd842e;
 }
-.column-inspection {
-  border-color: #3972a4;
-}
-.column-upgrade {
+.column-modification {
   border-color: #6c5b8d;
 }
 .column-count {
@@ -255,7 +251,7 @@ h1 {
     align-items: flex-start;
   }
   .board-columns {
-    grid-template-columns: repeat(5, minmax(82vw, 1fr));
+    grid-template-columns: repeat(4, minmax(82vw, 1fr));
     scroll-snap-type: x proximity;
   }
   .board-column {

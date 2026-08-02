@@ -57,7 +57,7 @@
                 v-model="modificationsEdit"
                 class="modifications-textarea"
                 rows="6"
-                placeholder="Document vessel modifications, upgrades, and custom work here..."
+                placeholder="Document vessel modifications and custom work here..."
               />
               <div class="modifications-actions">
                 <button

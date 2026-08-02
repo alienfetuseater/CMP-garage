@@ -23,17 +23,24 @@
 
       <label>
         Service Category
-        <select :value="form.service_category" required @change="updateTextField('service_category', ($event.target as HTMLSelectElement).value)">
-          <option value="inspection">inspection</option>
+        <select
+          :value="form.service_category"
+          required
+          @change="updateTextField('service_category', ($event.target as HTMLSelectElement).value)"
+        >
           <option value="repair">repair</option>
           <option value="maintenance">maintenance</option>
-          <option value="upgrade">upgrade</option>
+          <option value="modification">modification</option>
         </select>
       </label>
 
       <label>
         Status
-        <select :value="form.status" required @change="updateTextField('status', ($event.target as HTMLSelectElement).value)">
+        <select
+          :value="form.status"
+          required
+          @change="updateTextField('status', ($event.target as HTMLSelectElement).value)"
+        >
           <option value="open">open</option>
           <option value="in progress">in progress</option>
           <option value="completed">completed</option>
@@ -45,7 +52,11 @@
 
       <label>
         Priority
-        <select :value="form.priority" required @change="updateTextField('priority', ($event.target as HTMLSelectElement).value)">
+        <select
+          :value="form.priority"
+          required
+          @change="updateTextField('priority', ($event.target as HTMLSelectElement).value)"
+        >
           <option value="low">low</option>
           <option value="medium">medium</option>
           <option value="high">high</option>
@@ -65,12 +76,20 @@
 
     <label>
       Service Title
-      <input :value="form.service_title" required @input="updateTextField('service_title', ($event.target as HTMLInputElement).value)" />
+      <input
+        :value="form.service_title"
+        required
+        @input="updateTextField('service_title', ($event.target as HTMLInputElement).value)"
+      />
     </label>
 
     <label v-if="!isEditMode">
       Notes
-      <textarea :value="form.notes" rows="5" @input="updateTextField('notes', ($event.target as HTMLTextAreaElement).value)" />
+      <textarea
+        :value="form.notes"
+        rows="5"
+        @input="updateTextField('notes', ($event.target as HTMLTextAreaElement).value)"
+      />
     </label>
 
     <section v-else class="plan-section">

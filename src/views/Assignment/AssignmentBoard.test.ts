@@ -17,9 +17,9 @@ const { fetchAssignmentBoardMock } = vi.hoisted(() => ({
       {
         id: 'ticket-2',
         kind: 'ticket',
-        category: 'inspection',
-        title: 'Pre-launch inspection',
-        synopsis: 'Complete the seasonal safety inspection.',
+        category: 'modification',
+        title: 'Install trim tabs',
+        synopsis: 'Install and configure the new trim-tab system.',
       },
     ],
     monthlyReports: [
@@ -51,12 +51,13 @@ it('groups open work into five linked assignment columns', async () => {
   await new Promise((resolve) => setTimeout(resolve, 0))
 
   expect(wrapper.text()).toContain('All open assignments')
-  expect(wrapper.findAll('.board-column')).toHaveLength(5)
+  expect(wrapper.findAll('.board-column')).toHaveLength(4)
   expect(wrapper.text()).toContain('Repairs')
   expect(wrapper.text()).toContain('Monthly Reports')
   expect(wrapper.text()).toContain('Maintenance')
-  expect(wrapper.text()).toContain('Inspections')
-  expect(wrapper.text()).toContain('Upgrades')
+  expect(wrapper.text()).toContain('Modifications')
+  expect(wrapper.text()).not.toContain('Inspections')
+  expect(wrapper.text()).not.toContain('Upgrades')
   expect(wrapper.text()).toContain('Replace raw-water pump')
   expect(wrapper.text()).toContain('Sea Breeze Monthly Report')
 
