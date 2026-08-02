@@ -3,28 +3,37 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import VesselProfile from './VesselProfile.vue'
 
-const { routeState, routerPush, customerStore, vesselStore, uiStore, ticketStore, mockedApiFetch } =
-  vi.hoisted(() => ({
-    routeState: { query: {} as Record<string, string> },
-    routerPush: vi.fn(),
-    customerStore: {
-      customers: [] as Array<{ id: string; name: string; phone: string; address: string }>,
-      customerById: vi.fn(),
-    },
-    vesselStore: {
-      addVessel: vi.fn(),
-      vesselById: vi.fn(),
-    },
-    uiStore: {
-      loading: false,
-      error: null as string | null,
-      fetchAllData: vi.fn().mockResolvedValue(undefined),
-    },
-    ticketStore: {
-      tickets: [] as Array<Record<string, unknown>>,
-    },
-    mockedApiFetch: vi.fn(),
-  }))
+const {
+  routeState,
+  routerPush,
+  customerStore,
+  vesselStore,
+  uiStore,
+  ticketStore,
+  mockedApiFetch,
+  workspaceAccessMock,
+} = vi.hoisted(() => ({
+  routeState: { query: {} as Record<string, string> },
+  routerPush: vi.fn(),
+  customerStore: {
+    customers: [] as Array<{ id: string; name: string; phone: string; address: string }>,
+    customerById: vi.fn(),
+  },
+  vesselStore: {
+    addVessel: vi.fn(),
+    vesselById: vi.fn(),
+  },
+  uiStore: {
+    loading: false,
+    error: null as string | null,
+    fetchAllData: vi.fn().mockResolvedValue(undefined),
+  },
+  ticketStore: {
+    tickets: [] as Array<Record<string, unknown>>,
+  },
+  mockedApiFetch: vi.fn(),
+  workspaceAccessMock: vi.fn(),
+}))
 
 vi.mock('vue-router', () => ({
   useRoute: () => routeState,
@@ -37,6 +46,10 @@ vi.mock('vue-router', () => ({
 vi.mock('@/services/http/client', () => ({
   API_BASE: 'https://example.test',
   apiFetch: mockedApiFetch,
+}))
+
+vi.mock('@/services/access/workspace', () => ({
+  fetchWorkspaceAccess: workspaceAccessMock,
 }))
 
 vi.mock('@/stores/ui', () => ({
@@ -79,6 +92,18 @@ describe('views/Customer/Vessel/VesselProfile.vue', () => {
     uiStore.error = null
     ticketStore.tickets = []
     mockedApiFetch.mockReset()
+    workspaceAccessMock.mockReset().mockResolvedValue({
+      canRegisterCustomers: true,
+      canViewDirectory: true,
+      canUseSearch: true,
+      canManageCustomers: true,
+      canManageVessels: true,
+      canViewReminders: true,
+      canManageReminders: true,
+      canViewOpenTicketList: true,
+      canCreateTickets: true,
+      canCreateReports: true,
+    })
   })
 
   it('renders the vessel overview and service history sections', async () => {

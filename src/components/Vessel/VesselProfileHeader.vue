@@ -5,7 +5,7 @@
       <h2>{{ vesselName }}</h2>
     </div>
 
-    <div class="header-actions profile-action-group">
+    <div v-if="canManage" class="header-actions profile-action-group">
       <button type="button" class="primary profile-action-btn" @click="$emit('edit')">
         Edit Vessel
       </button>
@@ -31,6 +31,7 @@
 defineProps<{
   vesselName: string
   generatingDossier: boolean
+  canManage: boolean
 }>()
 
 defineEmits<{

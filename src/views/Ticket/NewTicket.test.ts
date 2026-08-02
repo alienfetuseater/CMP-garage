@@ -107,8 +107,39 @@ describe('views/Ticket/NewTicket.vue', () => {
     expect(wrapper.text()).toContain('Plan of Action')
   })
 
+  it('shows technicians the assignee without delegation controls', async () => {
+    routeState.query = { id: 't-1' }
+    const ticket = {
+      id: 't-1',
+      customerId: 'c-1',
+      vesselId: 'v-1',
+      service_category: 'repair',
+      service_title: 'Replace impeller',
+      status: 'open',
+      priority: 'medium',
+      assignedUserId: 'user-1',
+      assignedUserName: 'Taylor Tech',
+      createdAt: '2026-07-01T00:00:00.000Z',
+      scheduledDate: '2026-07-02T00:00:00.000Z',
+      notes: '',
+    }
+    mockedApiFetch.mockImplementation((endpoint) =>
+      endpoint === '/assignments/access'
+        ? Promise.reject(new Error('403 Forbidden'))
+        : Promise.resolve(ticket),
+    )
+
+    const wrapper = mount(NewTicket)
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="assignee-select"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Assigned Technician')
+    expect(wrapper.text()).toContain('Taylor Tech')
+    expect(mockedApiFetch).not.toHaveBeenCalledWith('/users/assignable')
+  })
+
   it('submits create payload with initialized message list and timestamped note', async () => {
-    mockedApiFetch.mockResolvedValue({
+    const savedTicket = {
       id: 't-2',
       customerId: '',
       vesselId: '',
@@ -119,12 +150,27 @@ describe('views/Ticket/NewTicket.vue', () => {
       createdAt: '2026-07-01T00:00:00.000Z',
       scheduledDate: '2026-07-30',
       notes: '',
-    })
+    }
+    mockedApiFetch.mockImplementation((endpoint) =>
+      endpoint === '/assignments/access'
+        ? Promise.resolve({ canDelegate: true })
+        : endpoint === '/users/assignable'
+          ? Promise.resolve([
+              {
+                id: 'user-1',
+                name: 'Taylor Tech',
+                email: 'taylor@example.com',
+                role: 'technician',
+              },
+            ])
+          : Promise.resolve(savedTicket),
+    )
 
     const wrapper = mount(NewTicket)
     await flushPromises()
 
     await wrapper.get('input[type="date"]').setValue('2026-07-30')
+    await wrapper.get('[data-testid="assignee-select"]').setValue('user-1')
     await wrapper.get('textarea').setValue('Checked bilge and battery wiring')
 
     const textInputs = wrapper.findAll('input').filter((entry) => {
@@ -150,9 +196,11 @@ describe('views/Ticket/NewTicket.vue', () => {
       notes: string
       messages: unknown[]
       createdAt: string
+      assignedUserId: string
     }
 
     expect(payload.service_title).toBe('New service')
+    expect(payload.assignedUserId).toBe('user-1')
     expect(payload.notes).toContain('Checked bilge and battery wiring')
     expect(payload.notes.startsWith('[')).toBe(true)
     expect(Array.isArray(payload.messages)).toBe(true)

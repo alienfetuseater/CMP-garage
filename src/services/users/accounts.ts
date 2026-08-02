@@ -12,6 +12,18 @@ export function fetchUsers(): Promise<AuthUser[]> {
   return apiFetch<AuthUser[]>('/users')
 }
 
+export function fetchAssignableUsers(): Promise<AuthUser[]> {
+  return apiFetch<AuthUser[]>('/users/assignable')
+}
+
+export function fetchAssignmentAccess(): Promise<{ canDelegate: boolean }> {
+  return apiFetch<{ canDelegate: boolean }>('/assignments/access')
+}
+
+export function fetchAssignmentBoardAccess(): Promise<{ canView: boolean }> {
+  return apiFetch<{ canView: boolean }>('/assignments/board-access')
+}
+
 export async function updateUser(id: string, payload: UpdateUserPayload): Promise<AuthUser> {
   const result = await apiFetch<{ user: AuthUser }>(`/users/${encodeURIComponent(id)}`, {
     method: 'PUT',

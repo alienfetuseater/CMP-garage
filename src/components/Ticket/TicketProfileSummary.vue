@@ -14,6 +14,7 @@
   <ul class="details">
     <li><strong>Status</strong> {{ ticket.status }}</li>
     <li><strong>Priority</strong> {{ ticket.priority }}</li>
+    <li><strong>Assigned Technician</strong> {{ ticket.assignedUserName || 'Unassigned' }}</li>
     <li><strong>Created</strong> {{ formatDate(ticket.createdAt) }}</li>
     <li><strong>Scheduled</strong> {{ formatDate(ticket.scheduledDate) }}</li>
   </ul>

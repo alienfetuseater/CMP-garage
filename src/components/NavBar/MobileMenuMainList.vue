@@ -1,6 +1,7 @@
 <template>
   <div class="mobile-menu-list">
     <button
+      v-if="showCustomerRegistration"
       type="button"
       class="mobile-menu-item"
       @click="emit('go-to-route', 'CustomerRegistration')"
@@ -8,11 +9,20 @@
       New Customer
     </button>
     <button
+      v-if="showDirectory"
       type="button"
       class="mobile-menu-item"
       @click="emit('go-to-route', 'CustomerDirectory')"
     >
       Directory
+    </button>
+    <button
+      v-if="showAssignmentBoard"
+      type="button"
+      class="mobile-menu-item"
+      @click="emit('go-to-route', 'AssignmentBoard')"
+    >
+      Assignment Board
     </button>
     <button
       v-if="showUserManagement"
@@ -42,6 +52,7 @@
       Archived Conversations
     </button>
     <button
+      v-if="showReminders"
       type="button"
       class="mobile-menu-item"
       @click="emit('open-mobile-menu-panel', 'reminders')"
@@ -50,6 +61,7 @@
       <span class="mobile-menu-count">{{ badgeCountLabel }}</span>
     </button>
     <button
+      v-if="showOpenTickets"
       type="button"
       class="mobile-menu-item"
       @click="emit('open-mobile-menu-panel', 'tickets')"
@@ -64,6 +76,11 @@
 <script setup lang="ts">
 defineProps<{
   showUserManagement: boolean
+  showAssignmentBoard: boolean
+  showCustomerRegistration: boolean
+  showReminders: boolean
+  showOpenTickets: boolean
+  showDirectory: boolean
   messageBadgeCountLabel: string
   badgeCountLabel: string
   ticketBadgeCountLabel: string
@@ -72,7 +89,12 @@ defineProps<{
 const emit = defineEmits<{
   (
     event: 'go-to-route',
-    routeName: 'CustomerRegistration' | 'CustomerDirectory' | 'Register' | 'UserDirectory',
+    routeName:
+      | 'CustomerRegistration'
+      | 'CustomerDirectory'
+      | 'Register'
+      | 'UserDirectory'
+      | 'AssignmentBoard',
   ): void
   (event: 'open-mobile-menu-panel', view: 'messages' | 'reminders' | 'tickets'): void
   (event: 'open-archived-conversations'): void

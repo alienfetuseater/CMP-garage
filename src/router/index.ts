@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import CMPHome from '../views/CMPHome.vue'
-import { fetchUserAccess } from '@/services/users/accounts'
+import { fetchAssignmentBoardAccess, fetchUserAccess } from '@/services/users/accounts'
+import { fetchWorkspaceAccess, type WorkspaceAccess } from '@/services/access/workspace'
 
 const hasAuthToken = () => Boolean(localStorage.getItem('cmp_auth_token'))
 
@@ -47,7 +48,7 @@ const router = createRouter({
       path: '/RegisterVessel',
       name: 'RegisterVessel',
       component: () => import('../views/Customer/Vessel/RegisterVessel.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, workspaceCapability: 'canManageVessels' },
     },
     {
       path: '/VesselProfile',
@@ -65,7 +66,7 @@ const router = createRouter({
       path: '/CustomerDirectory',
       name: 'CustomerDirectory',
       component: () => import('../views/Customer/CustomerDirectory.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, workspaceCapability: 'canViewDirectory' },
     },
     {
       path: '/CustomerProfile',
@@ -77,13 +78,19 @@ const router = createRouter({
       path: '/CustomerRegistration',
       name: 'CustomerRegistration',
       component: () => import('../views/Customer/CustomerRegistration.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, workspaceCapability: 'canRegisterCustomers' },
     },
     {
       path: '/NewTicket',
       name: 'NewTicket',
       component: () => import('../views/Ticket/NewTicket.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, createCapability: 'canCreateTickets' },
+    },
+    {
+      path: '/assignments',
+      name: 'AssignmentBoard',
+      component: () => import('../views/Assignment/AssignmentBoard.vue'),
+      meta: { requiresAuth: true, assignmentBoard: true },
     },
     {
       path: '/Ticket',
@@ -95,7 +102,7 @@ const router = createRouter({
       path: '/NewMonthlyReport',
       name: 'NewMonthlyReport',
       component: () => import('../views/MonthlyReport/NewMonthlyReport.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, createCapability: 'canCreateReports' },
     },
     {
       path: '/MonthlyReport',
@@ -107,13 +114,13 @@ const router = createRouter({
       path: '/Reminder',
       name: 'Reminder',
       component: () => import('../views/Reminder/TheReminder.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, workspaceCapability: 'canViewReminders' },
     },
     {
       path: '/NewReminder',
       name: 'NewReminder',
       component: () => import('../views/Reminder/NewReminder.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, workspaceCapability: 'canManageReminders' },
     },
     {
       path: '/Messages',
@@ -153,6 +160,34 @@ router.beforeEach(async (to) => {
   if (to.meta.userManagement) {
     try {
       await fetchUserAccess()
+    } catch {
+      return { name: hasAuthToken() ? 'CMPHome' : 'Login' }
+    }
+  }
+
+  if (to.meta.assignmentBoard) {
+    try {
+      await fetchAssignmentBoardAccess()
+    } catch {
+      return { name: hasAuthToken() ? 'CMPHome' : 'Login' }
+    }
+  }
+
+  if (to.meta.workspaceCapability) {
+    try {
+      const access = await fetchWorkspaceAccess()
+      const capability = to.meta.workspaceCapability as keyof WorkspaceAccess
+      if (!access[capability]) return { name: 'CMPHome' }
+    } catch {
+      return { name: hasAuthToken() ? 'CMPHome' : 'Login' }
+    }
+  }
+
+  if (to.meta.createCapability && !String(to.query.id || '').trim()) {
+    try {
+      const access = await fetchWorkspaceAccess()
+      const capability = to.meta.createCapability as keyof WorkspaceAccess
+      if (!access[capability]) return { name: 'CMPHome' }
     } catch {
       return { name: hasAuthToken() ? 'CMPHome' : 'Login' }
     }

@@ -63,8 +63,38 @@ describe('views/MonthlyReport/NewMonthlyReport.vue', () => {
     expect(wrapper.text()).not.toContain('Required Parts')
   })
 
+  it('shows technicians the assignee without delegation controls', async () => {
+    routeState.query = { id: 'mr-1' }
+    const report = {
+      id: 'mr-1',
+      customerId: 'c-1',
+      vesselId: 'v-1',
+      customerName: 'Jane Harbor',
+      vesselName: 'Sea Breeze',
+      assignedUserId: 'user-1',
+      assignedUserName: 'Taylor Tech',
+      reportDate: '2026-07-31',
+      createdAt: '2026-07-31T12:00:00.000Z',
+      notes: '',
+      diagnostics: {},
+    }
+    mockedApiFetch.mockImplementation((endpoint) =>
+      endpoint === '/assignments/access'
+        ? Promise.reject(new Error('403 Forbidden'))
+        : Promise.resolve(report),
+    )
+
+    const wrapper = mount(NewMonthlyReport)
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="assignee-select"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Assigned Technician')
+    expect(wrapper.text()).toContain('Taylor Tech')
+    expect(mockedApiFetch).not.toHaveBeenCalledWith('/users/assignable')
+  })
+
   it('submits only retained report fields with N/A diagnostic defaults', async () => {
-    mockedApiFetch.mockResolvedValue({
+    const savedReport = {
       id: 'mr-1',
       customerId: 'c-1',
       vesselId: 'v-1',
@@ -74,11 +104,26 @@ describe('views/MonthlyReport/NewMonthlyReport.vue', () => {
       createdAt: '2026-07-31T12:00:00.000Z',
       notes: '',
       diagnostics: {},
-    })
+    }
+    mockedApiFetch.mockImplementation((endpoint) =>
+      endpoint === '/assignments/access'
+        ? Promise.resolve({ canDelegate: true })
+        : endpoint === '/users/assignable'
+          ? Promise.resolve([
+              {
+                id: 'user-1',
+                name: 'Taylor Tech',
+                email: 'taylor@example.com',
+                role: 'technician',
+              },
+            ])
+          : Promise.resolve(savedReport),
+    )
 
     const wrapper = mount(NewMonthlyReport)
     await flushPromises()
     await wrapper.get('input[type="date"]').setValue('2026-07-31')
+    await wrapper.get('[data-testid="assignee-select"]').setValue('user-1')
     await wrapper.get('textarea').setValue('Monthly inspection completed')
     await wrapper.get('form').trigger('submit.prevent')
     await flushPromises()
@@ -90,6 +135,7 @@ describe('views/MonthlyReport/NewMonthlyReport.vue', () => {
     expect(Object.keys(payload).sort()).toEqual(
       [
         'createdAt',
+        'assignedUserId',
         'customerId',
         'customerName',
         'diagnostics',
@@ -100,6 +146,7 @@ describe('views/MonthlyReport/NewMonthlyReport.vue', () => {
       ].sort(),
     )
     expect(payload.reportDate).toBe('2026-07-31')
+    expect(payload.assignedUserId).toBe('user-1')
     expect(payload.notes).toContain('Monthly inspection completed')
     expect(payload.diagnostics.engine_oil).toEqual({ value: 'N/A', comment: '', photos: [] })
     expect(routerPush).toHaveBeenCalledWith({ name: 'MonthlyReport', query: { id: 'mr-1' } })

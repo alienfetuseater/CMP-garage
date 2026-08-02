@@ -20,6 +20,12 @@
             @update:new-update-note="newUpdateNote = $event"
           />
 
+          <AssigneeSelect v-if="canDelegateAssignments" v-model="form.assignedUserId" />
+          <p v-else class="assignment-summary">
+            <strong>Assigned Technician</strong>
+            {{ assignedUserName || 'Unassigned' }}
+          </p>
+
           <ticket-assessment-section v-if="isEditMode" :form="form" @error="error = $event" />
 
           <ticket-execution-section
@@ -58,11 +64,13 @@ import { useRoute, useRouter } from 'vue-router'
 import TicketAssessmentSection from '@/components/Ticket/TicketAssessmentSection.vue'
 import TicketExecutionSection from '@/components/Ticket/TicketExecutionSection.vue'
 import TicketIdentitySection from '@/components/Ticket/TicketIdentitySection.vue'
+import AssigneeSelect from '@/components/Shared/AssigneeSelect.vue'
 import { apiFetch } from '@/services/http/client'
 import { useTicketStore } from '@/stores/tickets'
 import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
 import { useUiStore } from '@/stores/ui'
+import { fetchAssignmentAccess } from '@/services/users/accounts'
 import type { PlanActionItem, RequiredPartItem, Ticket, TicketPhotoAttachment } from '@/types/mock'
 import { formatLocalDateTime, toLocalDateKey } from '@/shared/datetime/format'
 import { resolveTicketCustomerName, resolveTicketVesselName } from '@/domain/tickets/display'
@@ -83,6 +91,8 @@ const editTicketId = computed(() => String(route.query.id || ''))
 const isEditMode = computed(() => Boolean(editTicketId.value))
 const existingNotes = ref('')
 const newUpdateNote = ref('')
+const assignedUserName = ref('')
+const canDelegateAssignments = ref(false)
 const existingNoteEntries = computed(() => splitNoteHistory(existingNotes.value))
 const showCloseOutSections = ref(false)
 const MAX_TICKET_PHOTO_PAYLOAD_BYTES = 12 * 1024 * 1024
@@ -109,6 +119,7 @@ const form = reactive({
   service_title: '',
   status: 'open',
   priority: 'medium',
+  assignedUserId: '',
   scheduledDate: '',
   notes: '',
   initialAssessment: '',
@@ -155,6 +166,8 @@ function hydrateFromTicket(ticket: Ticket) {
   form.service_title = ticket.service_title
   form.status = ticket.status
   form.priority = ticket.priority
+  form.assignedUserId = ticket.assignedUserId ?? ''
+  assignedUserName.value = ticket.assignedUserName ?? ''
   form.scheduledDate = ticket.scheduledDate ? toLocalDateKey(ticket.scheduledDate) : ''
   existingNotes.value = ticket.notes ?? ''
   newUpdateNote.value = ''
@@ -314,7 +327,11 @@ function goBack() {
 onMounted(hydrateFromQuery)
 onMounted(async () => {
   try {
-    await loadForEdit()
+    const [access] = await Promise.all([
+      fetchAssignmentAccess().catch(() => ({ canDelegate: false })),
+      loadForEdit(),
+    ])
+    canDelegateAssignments.value = access.canDelegate
   } catch (err) {
     error.value = err instanceof Error ? err.message : String(err)
   }

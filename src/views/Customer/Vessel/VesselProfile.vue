@@ -10,6 +10,7 @@
         <VesselProfileHeader
           :vessel-name="vessel.vesselName"
           :generating-dossier="generatingVesselDossier"
+          :can-manage="workspaceAccess.canManageVessels"
           @edit="editVessel"
           @new-ticket="createTicket"
           @generate-dossier="generateVesselDossier"
@@ -42,7 +43,7 @@
             <div class="history-header">
               <h4>Modifications</h4>
               <button
-                v-if="!editingModifications"
+                v-if="workspaceAccess.canManageVessels && !editingModifications"
                 type="button"
                 class="edit-notes-btn"
                 @click="startEditingModifications"
@@ -148,6 +149,7 @@ import { API_BASE, apiFetch } from '@/services/http/client'
 import type { MonthlyReport, Vessel, Ticket } from '@/types/mock'
 import VesselProfileHeader from '@/components/Vessel/VesselProfileHeader.vue'
 import VesselOwnerSummary from '@/components/Vessel/VesselOwnerSummary.vue'
+import { fetchWorkspaceAccess, type WorkspaceAccess } from '@/services/access/workspace'
 import VesselKeyFacts from '@/components/Vessel/VesselKeyFacts.vue'
 import VesselHistoryGroup from '@/components/Vessel/VesselHistoryGroup.vue'
 import DocumentPreviewModal from '@/components/Shared/DocumentPreviewModal.vue'
@@ -170,6 +172,18 @@ const dossierPreviewUrl = ref<string | null>(null)
 const previewActionBusy = ref(false)
 const previewActionSuccess = ref<string | null>(null)
 const previewActionError = ref<string | null>(null)
+const workspaceAccess = ref<WorkspaceAccess>({
+  canRegisterCustomers: false,
+  canViewDirectory: false,
+  canUseSearch: false,
+  canManageCustomers: false,
+  canManageVessels: false,
+  canViewReminders: false,
+  canManageReminders: false,
+  canViewOpenTicketList: false,
+  canCreateTickets: false,
+  canCreateReports: false,
+})
 
 const loading = computed(() => uiStore.loading)
 const error = computed(() => uiStore.error)
@@ -255,6 +269,7 @@ async function load() {
     const id = String(route.query.id || '')
     if (!id) throw new Error('No vessel id provided')
 
+    workspaceAccess.value = await fetchWorkspaceAccess()
     await uiStore.fetchAllData()
     vessel.value = vesselStore.vesselById(id)
 
@@ -286,7 +301,11 @@ async function load() {
 }
 
 function goBack() {
-  router.push({ name: 'CustomerDirectory' })
+  if (workspaceAccess.value.canViewDirectory) {
+    router.push({ name: 'CustomerDirectory' })
+  } else {
+    router.back()
+  }
 }
 
 function openOwner() {

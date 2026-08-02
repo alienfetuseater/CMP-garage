@@ -3,27 +3,23 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import CustomerProfile from './CustomerProfile.vue'
 
-const {
-  routeState,
-  routerPush,
-  customerStore,
-  vesselStore,
-  uiStore,
-} = vi.hoisted(() => ({
-  routeState: { query: {} as Record<string, string> },
-  routerPush: vi.fn(),
-  customerStore: {
-    customerById: vi.fn(),
-  },
-  vesselStore: {
-    vessels: [] as Array<Record<string, unknown>>,
-  },
-  uiStore: {
-    loading: false,
-    error: null as string | null,
-    fetchAllData: vi.fn().mockResolvedValue(undefined),
-  },
-}))
+const { routeState, routerPush, customerStore, vesselStore, uiStore, workspaceAccessMock } =
+  vi.hoisted(() => ({
+    routeState: { query: {} as Record<string, string> },
+    routerPush: vi.fn(),
+    customerStore: {
+      customerById: vi.fn(),
+    },
+    vesselStore: {
+      vessels: [] as Array<Record<string, unknown>>,
+    },
+    uiStore: {
+      loading: false,
+      error: null as string | null,
+      fetchAllData: vi.fn().mockResolvedValue(undefined),
+    },
+    workspaceAccessMock: vi.fn(),
+  }))
 
 vi.mock('vue-router', () => ({
   useRoute: () => routeState,
@@ -44,6 +40,10 @@ vi.mock('@/stores/vessels', () => ({
   useVesselStore: () => vesselStore,
 }))
 
+vi.mock('@/services/access/workspace', () => ({
+  fetchWorkspaceAccess: workspaceAccessMock,
+}))
+
 function flushPromises() {
   return new Promise((resolve) => setTimeout(resolve, 0))
 }
@@ -57,6 +57,18 @@ describe('views/Customer/CustomerProfile.vue', () => {
     uiStore.loading = false
     uiStore.error = null
     vesselStore.vessels = []
+    workspaceAccessMock.mockReset().mockResolvedValue({
+      canRegisterCustomers: true,
+      canViewDirectory: true,
+      canUseSearch: true,
+      canManageCustomers: true,
+      canManageVessels: true,
+      canViewReminders: true,
+      canManageReminders: true,
+      canViewOpenTicketList: true,
+      canCreateTickets: true,
+      canCreateReports: true,
+    })
   })
 
   it('renders customer details and vessels after loading', async () => {

@@ -5,7 +5,7 @@
       <h2>{{ customerName }}</h2>
     </div>
 
-    <div class="header-actions profile-action-group">
+    <div v-if="canManage" class="header-actions profile-action-group">
       <button type="button" class="primary profile-action-btn" @click="$emit('update-profile')">
         Update Customer Profile
       </button>
@@ -19,6 +19,7 @@
 <script setup lang="ts">
 defineProps<{
   customerName: string
+  canManage: boolean
 }>()
 
 defineEmits<{

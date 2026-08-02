@@ -27,9 +27,14 @@ const refreshAuthenticatedUser = async () => {
   await authStore.fetchMe()
 }
 
+const refreshAuthenticatedSession = async () => {
+  await refreshAuthenticatedUser()
+  await loadAppData(true)
+}
+
 onMounted(async () => {
   await refreshAuthenticatedUser()
-  window.addEventListener('focus', refreshAuthenticatedUser)
+  window.addEventListener('focus', refreshAuthenticatedSession)
   if (!hasSession.value && !isAuthScreen.value) {
     await router.replace({ name: 'Login', query: { redirect: route.fullPath } })
     return
@@ -41,7 +46,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener('focus', refreshAuthenticatedUser)
+  window.removeEventListener('focus', refreshAuthenticatedSession)
 })
 
 watch(

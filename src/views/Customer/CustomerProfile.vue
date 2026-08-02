@@ -9,6 +9,7 @@
       <section v-else-if="customer" class="profile-card">
         <CustomerProfileHeader
           :customer-name="customer.name"
+          :can-manage="workspaceAccess.canManageCustomers"
           @update-profile="updateCustomerProfile"
           @add-vessel="addNewVessel"
         />
@@ -39,6 +40,7 @@ import { formatLocalDateTime } from '@/shared/datetime/format'
 import CustomerProfileHeader from '@/components/Customer/CustomerProfileHeader.vue'
 import CustomerProfileDetails from '@/components/Customer/CustomerProfileDetails.vue'
 import CustomerVesselGrid from '@/components/Customer/CustomerVesselGrid.vue'
+import { fetchWorkspaceAccess, type WorkspaceAccess } from '@/services/access/workspace'
 
 const uiStore = useUiStore()
 const customerStore = useCustomerStore()
@@ -48,6 +50,18 @@ const router = useRouter()
 
 const customer = ref<Customer | null>(null)
 const vessels = ref<Vessel[]>([])
+const workspaceAccess = ref<WorkspaceAccess>({
+  canRegisterCustomers: false,
+  canViewDirectory: false,
+  canUseSearch: false,
+  canManageCustomers: false,
+  canManageVessels: false,
+  canViewReminders: false,
+  canManageReminders: false,
+  canViewOpenTicketList: false,
+  canCreateTickets: false,
+  canCreateReports: false,
+})
 
 const loading = computed(() => uiStore.loading)
 const error = computed(() => uiStore.error)
@@ -85,6 +99,7 @@ function formatPhone(value?: string) {
 
 async function load() {
   try {
+    workspaceAccess.value = await fetchWorkspaceAccess()
     await uiStore.fetchAllData()
 
     const id = String(route.query.id || '')
@@ -143,7 +158,11 @@ async function load() {
 }
 
 function goBack() {
-  router.push({ name: 'CustomerDirectory' })
+  if (workspaceAccess.value.canViewDirectory) {
+    router.push({ name: 'CustomerDirectory' })
+  } else {
+    router.back()
+  }
 }
 
 function addNewVessel() {

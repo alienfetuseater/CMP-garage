@@ -14,6 +14,7 @@
 
       <div class="nav-tools">
         <NavSearchPanel
+          v-if="workspaceAccess.canUseSearch"
           :search-query="searchQuery"
           :show-results="showResults"
           :has-any-results="hasAnyResults"
@@ -31,6 +32,11 @@
         <div ref="mobileMenuWrapRef" class="mobile-menu-wrap" @click.stop>
           <MobileNavMenu
             :show-user-management="canManageUsers"
+            :show-assignment-board="canViewAssignmentBoard"
+            :show-customer-registration="workspaceAccess.canRegisterCustomers"
+            :show-reminders="workspaceAccess.canViewReminders"
+            :show-open-tickets="workspaceAccess.canViewOpenTicketList"
+            :show-directory="workspaceAccess.canViewDirectory"
             :show-mobile-menu="showMobileMenu"
             :mobile-menu-title="mobileMenuTitle"
             :mobile-menu-view="mobileMenuView"
@@ -69,11 +75,22 @@
           </NavActionControl>
 
           <NavActionControl
+            v-if="canViewAssignmentBoard"
+            to="/assignments"
+            :ariaLabel="'Assignment Board'"
+            title="Assignment Board"
+          >
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M4 5.5h16M4 11.5h16M4 17.5h16" />
+              <path d="M7 3v5M13 9v5M18 15v5" />
+            </svg>
+          </NavActionControl>
+
+          <NavActionControl
             v-if="canManageUsers"
             to="/users"
             :ariaLabel="'Registered Users'"
             title="Registered Users"
-            label="Users"
           >
             <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="M8 12a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
@@ -93,6 +110,7 @@
           </NavActionControl>
 
           <NavActionControl
+            v-if="workspaceAccess.canRegisterCustomers"
             to="/CustomerRegistration"
             :ariaLabel="'New Client'"
             title="New Client Registration"
@@ -104,6 +122,7 @@
           </NavActionControl>
 
           <NavActionControl
+            v-if="workspaceAccess.canViewDirectory"
             to="/CustomerDirectory"
             :ariaLabel="'Client Directory'"
             title="Directory"
@@ -189,7 +208,11 @@
             </NavbarNotificationPopover>
           </div>
 
-          <div ref="reminderWrapRef" class="notifications-wrap">
+          <div
+            v-if="workspaceAccess.canViewReminders"
+            ref="reminderWrapRef"
+            class="notifications-wrap"
+          >
             <button
               class="notify-btn"
               type="button"
@@ -232,7 +255,11 @@
             </NavbarNotificationPopover>
           </div>
 
-          <div ref="ticketWrapRef" class="notifications-wrap">
+          <div
+            v-if="workspaceAccess.canViewOpenTicketList"
+            ref="ticketWrapRef"
+            class="notifications-wrap"
+          >
             <button
               class="notify-btn"
               type="button"
@@ -302,6 +329,8 @@ import type { ConversationSummary } from '@/types/mock'
 import { formatLocalDateTime } from '@/shared/datetime/format'
 import { buildConversationSummary } from '@/domain/conversations/utils'
 import { fetchUserAccess } from '@/services/users/accounts'
+import { fetchAssignmentBoardAccess } from '@/services/users/accounts'
+import { fetchWorkspaceAccess, type WorkspaceAccess } from '@/services/access/workspace'
 import { reminderSortKey, isTicketOpen, toBadgeCountLabel } from '@/domain/navbar/activity'
 import { useNavbarSearch } from '@/composables/navbar/useNavbarSearch'
 import { useNavbarOverlays } from '@/composables/navbar/useNavbarOverlays'
@@ -320,6 +349,19 @@ const ticketStore = useTicketStore()
 const reminderStore = useReminderStore()
 const authStore = useAuthStore()
 const canManageUsers = ref(false)
+const canViewAssignmentBoard = ref(false)
+const workspaceAccess = ref<WorkspaceAccess>({
+  canRegisterCustomers: false,
+  canViewDirectory: false,
+  canUseSearch: false,
+  canManageCustomers: false,
+  canManageVessels: false,
+  canViewReminders: false,
+  canManageReminders: false,
+  canViewOpenTicketList: false,
+  canCreateTickets: false,
+  canCreateReports: false,
+})
 
 async function refreshUserAccess() {
   try {
@@ -330,13 +372,47 @@ async function refreshUserAccess() {
   }
 }
 
+async function refreshAssignmentBoardAccess() {
+  try {
+    const access = await fetchAssignmentBoardAccess()
+    canViewAssignmentBoard.value = access.canView
+  } catch {
+    canViewAssignmentBoard.value = false
+  }
+}
+
+async function refreshWorkspaceAccess() {
+  try {
+    workspaceAccess.value = await fetchWorkspaceAccess()
+  } catch {
+    workspaceAccess.value = {
+      canRegisterCustomers: false,
+      canViewDirectory: false,
+      canUseSearch: false,
+      canManageCustomers: false,
+      canManageVessels: false,
+      canViewReminders: false,
+      canManageReminders: false,
+      canViewOpenTicketList: false,
+      canCreateTickets: false,
+      canCreateReports: false,
+    }
+  }
+}
+
 onMounted(() => {
   void refreshUserAccess()
+  void refreshAssignmentBoardAccess()
+  void refreshWorkspaceAccess()
   window.addEventListener('focus', refreshUserAccess)
+  window.addEventListener('focus', refreshAssignmentBoardAccess)
+  window.addEventListener('focus', refreshWorkspaceAccess)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('focus', refreshUserAccess)
+  window.removeEventListener('focus', refreshAssignmentBoardAccess)
+  window.removeEventListener('focus', refreshWorkspaceAccess)
 })
 
 const {
@@ -507,7 +583,12 @@ function openTicketFromMobileMenu(id: string) {
 }
 
 function goToRoute(
-  name: 'CustomerRegistration' | 'CustomerDirectory' | 'Register' | 'UserDirectory',
+  name:
+    | 'CustomerRegistration'
+    | 'CustomerDirectory'
+    | 'Register'
+    | 'UserDirectory'
+    | 'AssignmentBoard',
 ) {
   closeMobileMenu()
   router.push({ name })

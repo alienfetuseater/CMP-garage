@@ -38,6 +38,17 @@
                 Report Date
                 <input v-model="form.reportDate" type="date" required :disabled="isLockedReport" />
               </label>
+
+              <AssigneeSelect
+                v-if="canDelegateAssignments"
+                v-model="form.assignedUserId"
+                class="full-width"
+                :disabled="isLockedReport"
+              />
+              <p v-else class="assignment-summary full-width">
+                <strong>Assigned Technician</strong>
+                {{ assignedUserName || 'Unassigned' }}
+              </p>
             </div>
           </section>
 
@@ -127,9 +138,11 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import MonthlyReportDiagnosticsSection from '@/components/MonthlyReport/MonthlyReportDiagnosticsSection.vue'
+import AssigneeSelect from '@/components/Shared/AssigneeSelect.vue'
 import { apiFetch } from '@/services/http/client'
 import { useMonthlyReportStore } from '@/stores/monthlyReports'
 import { useUiStore } from '@/stores/ui'
+import { fetchAssignmentAccess } from '@/services/users/accounts'
 import type { MonthlyReport, MonthlyReportDiagnosticEntry } from '@/types/mock'
 import { formatLocalDateTime } from '@/shared/datetime/format'
 import { splitNoteHistory } from '@/domain/notes/history'
@@ -154,6 +167,8 @@ const newUpdateNote = ref('')
 const existingNoteEntries = computed(() => splitNoteHistory(existingNotes.value))
 const lockAcknowledge = ref(false)
 const isLockedReport = ref(false)
+const assignedUserName = ref('')
+const canDelegateAssignments = ref(false)
 
 type SubmitMode = 'draft' | 'complete'
 
@@ -163,6 +178,7 @@ const form = reactive({
   customerId: '',
   vesselId: '',
   reportDate: '',
+  assignedUserId: '',
   notes: '',
   diagnostics: createMonthlyReportDiagnostics(),
 })
@@ -184,6 +200,8 @@ function hydrateFromReport(report: MonthlyReport) {
   form.customerId = String(report.customerId ?? '')
   form.vesselId = String(report.vesselId ?? '')
   form.reportDate = report.reportDate ?? ''
+  form.assignedUserId = report.assignedUserId ?? ''
+  assignedUserName.value = report.assignedUserName ?? ''
   isLockedReport.value = Boolean(report.isLocked)
   existingNotes.value = report.notes ?? ''
   newUpdateNote.value = ''
@@ -265,6 +283,7 @@ async function submit(mode: SubmitMode = 'draft') {
       customerId: form.customerId,
       vesselId: form.vesselId,
       reportDate: form.reportDate,
+      assignedUserId: form.assignedUserId,
       diagnostics: { ...form.diagnostics },
       notes: isEditMode.value
         ? appendUpdateNote(existingNotes.value, newUpdateNote.value)
@@ -312,7 +331,11 @@ function goBack() {
 onMounted(hydrateFromQuery)
 onMounted(async () => {
   try {
-    await loadForEdit()
+    const [access] = await Promise.all([
+      fetchAssignmentAccess().catch(() => ({ canDelegate: false })),
+      loadForEdit(),
+    ])
+    canDelegateAssignments.value = access.canDelegate
   } catch (err) {
     error.value = err instanceof Error ? err.message : String(err)
   }

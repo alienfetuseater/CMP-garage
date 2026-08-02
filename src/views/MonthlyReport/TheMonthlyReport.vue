@@ -75,6 +75,10 @@
             <span>{{ formatReportDate(report.reportDate) }}</span>
           </div>
           <div class="summary-item">
+            <span class="summary-label">Assigned Technician</span>
+            <span>{{ report.assignedUserName || 'Unassigned' }}</span>
+          </div>
+          <div class="summary-item">
             <span class="summary-label">Created</span>
             <span>{{ formatLocalDateTime(report.createdAt) }}</span>
           </div>

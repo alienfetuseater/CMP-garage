@@ -30,6 +30,11 @@
       <MobileMenuMainList
         v-if="mobileMenuView === 'menu'"
         :show-user-management="showUserManagement"
+        :show-assignment-board="showAssignmentBoard"
+        :show-customer-registration="showCustomerRegistration"
+        :show-reminders="showReminders"
+        :show-open-tickets="showOpenTickets"
+        :show-directory="showDirectory"
         :message-badge-count-label="messageBadgeCountLabel"
         :badge-count-label="badgeCountLabel"
         :ticket-badge-count-label="ticketBadgeCountLabel"
@@ -83,7 +88,7 @@
         </button>
       </MobileMenuPanel>
 
-      <MobileMenuPanel v-else-if="mobileMenuView === 'reminders'">
+      <MobileMenuPanel v-else-if="mobileMenuView === 'reminders' && showReminders">
         <div v-if="openRemindersList.length === 0" class="notifications-empty">
           No open reminders.
         </div>
@@ -102,7 +107,7 @@
         </template>
       </MobileMenuPanel>
 
-      <MobileMenuPanel v-else>
+      <MobileMenuPanel v-else-if="mobileMenuView === 'tickets' && showOpenTickets">
         <div v-if="openTicketsList.length === 0" class="notifications-empty">No open tickets.</div>
 
         <template v-else>
@@ -133,6 +138,11 @@ import MobileMenuPanel from '@/components/NavBar/MobileMenuPanel.vue'
 
 defineProps<{
   showUserManagement: boolean
+  showAssignmentBoard: boolean
+  showCustomerRegistration: boolean
+  showReminders: boolean
+  showOpenTickets: boolean
+  showDirectory: boolean
   showMobileMenu: boolean
   mobileMenuTitle: string
   mobileMenuView: string
@@ -149,7 +159,12 @@ const emit = defineEmits<{
   (event: 'set-mobile-menu-view', view: string): void
   (
     event: 'go-to-route',
-    routeName: 'CustomerRegistration' | 'CustomerDirectory' | 'Register' | 'UserDirectory',
+    routeName:
+      | 'CustomerRegistration'
+      | 'CustomerDirectory'
+      | 'Register'
+      | 'UserDirectory'
+      | 'AssignmentBoard',
   ): void
   (event: 'open-mobile-menu-panel', view: 'messages' | 'reminders' | 'tickets'): void
   (event: 'open-archived-conversations'): void

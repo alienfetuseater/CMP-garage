@@ -106,6 +106,8 @@ export interface Ticket {
   service_title: string
   status: TicketStatus
   priority: TicketPriority
+  assignedUserId?: string
+  assignedUserName?: string
   createdAt: string
   scheduledDate: string
   notes: string
@@ -180,6 +182,8 @@ export interface MonthlyReport {
   vesselId: string
   customerName?: string
   vesselName?: string
+  assignedUserId?: string
+  assignedUserName?: string
   reportDate: string
   createdAt: string
   status?: 'draft' | 'completed'
