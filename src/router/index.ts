@@ -1,32 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import type { RouteLocationNormalized } from 'vue-router'
 import CMPHome from '../views/CMPHome.vue'
+import { fetchUserAccess } from '@/services/users/accounts'
 
 const hasAuthToken = () => Boolean(localStorage.getItem('cmp_auth_token'))
-
-const getResetToken = (route: RouteLocationNormalized): string => {
-  const tokenFromQuery =
-    (typeof route.query.token === 'string' ? route.query.token.trim() : '') ||
-    (typeof route.query.resetToken === 'string' ? route.query.resetToken.trim() : '') ||
-    (typeof route.query.code === 'string' ? route.query.code.trim() : '')
-  if (tokenFromQuery) return tokenFromQuery
-
-  const hashValue = route.hash.replace(/^#/, '')
-  if (!hashValue) return ''
-
-  const hashQuery = hashValue.includes('?')
-    ? hashValue.slice(hashValue.indexOf('?') + 1)
-    : hashValue
-  const hashParams = new URLSearchParams(hashQuery)
-  const tokenFromHashParams =
-    hashParams.get('token')?.trim() ||
-    hashParams.get('resetToken')?.trim() ||
-    hashParams.get('code')?.trim() ||
-    ''
-  if (tokenFromHashParams) return tokenFromHashParams
-
-  return /^[a-f0-9]{64}$/i.test(hashValue) ? hashValue : ''
-}
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -53,7 +29,13 @@ const router = createRouter({
       path: '/register',
       name: 'Register',
       component: () => import('../views/Auth/RegisterView.vue'),
-      meta: { requiresAuth: true, authScreen: true },
+      meta: { requiresAuth: true, authScreen: true, userManagement: true },
+    },
+    {
+      path: '/users',
+      name: 'UserDirectory',
+      component: () => import('../views/Auth/UserDirectoryView.vue'),
+      meta: { requiresAuth: true, userManagement: true },
     },
     {
       path: '/',
@@ -154,24 +136,7 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to) => {
-  const resetToken = getResetToken(to)
-  const isHashResetLink = to.hash.replace(/^#/, '').startsWith('/reset-password')
-  const isLegacyResetLink = to.path === '/reset-password-token'
-
-  if (
-    resetToken &&
-    (to.name === 'Login' ||
-      isHashResetLink ||
-      isLegacyResetLink ||
-      (to.name === 'ResetPassword' && Boolean(to.hash)))
-  ) {
-    return {
-      name: 'ResetPassword',
-      query: { token: resetToken },
-    }
-  }
-
+router.beforeEach(async (to) => {
   const isAuthed = hasAuthToken()
 
   if (to.meta.requiresAuth && !isAuthed) {
@@ -183,6 +148,14 @@ router.beforeEach((to) => {
 
   if (to.meta.guestOnly && isAuthed) {
     return { name: 'CMPHome' }
+  }
+
+  if (to.meta.userManagement) {
+    try {
+      await fetchUserAccess()
+    } catch {
+      return { name: hasAuthToken() ? 'CMPHome' : 'Login' }
+    }
   }
 
   return true

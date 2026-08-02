@@ -30,6 +30,7 @@
 
         <div ref="mobileMenuWrapRef" class="mobile-menu-wrap" @click.stop>
           <MobileNavMenu
+            :show-user-management="canManageUsers"
             :show-mobile-menu="showMobileMenu"
             :mobile-menu-title="mobileMenuTitle"
             :mobile-menu-view="mobileMenuView"
@@ -53,12 +54,26 @@
         </div>
 
         <div class="action-icons">
-          <NavActionControl to="/register" :ariaLabel="'User Registration'" title="User Registration">
+          <NavActionControl v-if="canManageUsers" to="/register" :ariaLabel="'User Registration'" title="User Registration">
             <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="M15 19.5a6.5 6.5 0 0 0-13 0" />
               <path d="M8.5 12.2a3.6 3.6 0 1 0 0-7.2 3.6 3.6 0 0 0 0 7.2Z" />
               <path d="M18 8v7" />
               <path d="M14.5 11.5h7" />
+            </svg>
+          </NavActionControl>
+
+          <NavActionControl
+            v-if="canManageUsers"
+            to="/users"
+            :ariaLabel="'Registered Users'"
+            title="Registered Users"
+            label="Users"
+          >
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M8 12a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
+              <path d="M2.5 20a5.5 5.5 0 0 1 11 0" />
+              <path d="M16 7h5M16 11h5M16 15h5" />
             </svg>
           </NavActionControl>
 
@@ -267,7 +282,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
@@ -277,6 +292,7 @@ import { useAuthStore } from '@/stores/auth'
 import type { ConversationSummary } from '@/types/mock'
 import { formatLocalDateTime } from '@/shared/datetime/format'
 import { buildConversationSummary } from '@/domain/conversations/utils'
+import { fetchUserAccess } from '@/services/users/accounts'
 import { reminderSortKey, isTicketOpen, toBadgeCountLabel } from '@/domain/navbar/activity'
 import { useNavbarSearch } from '@/composables/navbar/useNavbarSearch'
 import { useNavbarOverlays } from '@/composables/navbar/useNavbarOverlays'
@@ -294,6 +310,25 @@ const vesselStore = useVesselStore()
 const ticketStore = useTicketStore()
 const reminderStore = useReminderStore()
 const authStore = useAuthStore()
+const canManageUsers = ref(false)
+
+async function refreshUserAccess() {
+  try {
+    const access = await fetchUserAccess()
+    canManageUsers.value = access.canRead
+  } catch {
+    canManageUsers.value = false
+  }
+}
+
+onMounted(() => {
+  void refreshUserAccess()
+  window.addEventListener('focus', refreshUserAccess)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('focus', refreshUserAccess)
+})
 
 const {
   searchQuery,
@@ -462,7 +497,7 @@ function openTicketFromMobileMenu(id: string) {
   router.push({ name: 'Ticket', query: { id } })
 }
 
-function goToRoute(name: 'CustomerRegistration' | 'CustomerDirectory' | 'Register') {
+function goToRoute(name: 'CustomerRegistration' | 'CustomerDirectory' | 'Register' | 'UserDirectory') {
   closeMobileMenu()
   router.push({ name })
 }

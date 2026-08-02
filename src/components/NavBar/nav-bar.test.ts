@@ -2,6 +2,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import NavBar from './nav-bar.vue'
+import NavActionControl from './NavActionControl.vue'
+import type { Customer, Reminder, Ticket, Vessel } from '@/types/mock'
 
 const {
   routeState,
@@ -11,14 +13,16 @@ const {
   ticketStore,
   reminderStore,
   authStore,
+  fetchUserAccessMock,
 } = vi.hoisted(() => ({
   routeState: { query: {} as Record<string, string> },
   routerPush: vi.fn(),
-  customerStore: { customers: [] as any[] },
-  vesselStore: { vessels: [] as any[] },
-  ticketStore: { tickets: [] as any[] },
-  reminderStore: { reminders: [] as any[] },
-  authStore: { user: { id: 'u-1' }, logout: vi.fn() },
+  customerStore: { customers: [] as Customer[] },
+  vesselStore: { vessels: [] as Vessel[] },
+  ticketStore: { tickets: [] as Ticket[] },
+  reminderStore: { reminders: [] as Reminder[] },
+  authStore: { user: { id: 'u-1', role: 'admin' }, logout: vi.fn() },
+  fetchUserAccessMock: vi.fn(),
 }))
 
 vi.mock('vue-router', () => ({
@@ -51,6 +55,10 @@ vi.mock('@/stores/auth', () => ({
   useAuthStore: () => authStore,
 }))
 
+vi.mock('@/services/users/accounts', () => ({
+  fetchUserAccess: fetchUserAccessMock,
+}))
+
 vi.mock('@/domain/conversations/utils', () => ({
   buildConversationSummary: vi.fn(() => null),
 }))
@@ -59,10 +67,38 @@ describe('components/NavBar/nav-bar.vue', () => {
   beforeEach(() => {
     routerPush.mockReset()
     authStore.logout.mockReset()
+    authStore.user.role = 'admin'
+    fetchUserAccessMock.mockReset().mockResolvedValue({
+      canRead: true,
+      canCreate: true,
+      canEdit: true,
+    })
     customerStore.customers = []
     vesselStore.vessels = []
     ticketStore.tickets = []
     reminderStore.reminders = []
+  })
+
+  it('shows authorized users a labeled registered-users link', async () => {
+    const wrapper = mount(NavBar)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    const usersLink = wrapper.get('[title="Registered Users"]')
+    const usersControl = wrapper
+      .findAllComponents(NavActionControl)
+      .find((control) => control.props('title') === 'Registered Users')
+    expect(usersLink.text()).toContain('Users')
+    expect(usersControl?.props('to')).toBe('/users')
+  })
+
+  it('hides user management navigation from non-privileged users', async () => {
+    fetchUserAccessMock.mockRejectedValue(new Error('403 Forbidden'))
+
+    const wrapper = mount(NavBar)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(wrapper.find('[title="Registered Users"]').exists()).toBe(false)
+    expect(wrapper.find('[title="User Registration"]').exists()).toBe(false)
   })
 
   it('searches customers and navigates to customer profile on result click', async () => {

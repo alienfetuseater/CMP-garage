@@ -29,7 +29,7 @@
         <label>
           Role
           <select v-model="role" required>
-            <option v-for="option in userRoles" :key="option" :value="option">
+            <option v-for="option in availableRoles" :key="option" :value="option">
               {{ roleLabels[option] }}
             </option>
           </select>
@@ -52,10 +52,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { roleLabels, userRoles, type UserRole } from '@/domain/auth/permissions'
+import { fetchUserAccess } from '@/services/users/accounts'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -66,8 +67,23 @@ const password = ref('')
 const role = ref<UserRole>('technician')
 const formError = ref('')
 const successText = ref('')
+const canCreatePrivilegedUsers = ref(false)
 
 const errorText = computed(() => formError.value || authStore.error || '')
+const availableRoles = computed(() =>
+  canCreatePrivilegedUsers.value
+    ? userRoles
+    : userRoles.filter((option) => option !== 'admin' && option !== 'serviceManager'),
+)
+
+onMounted(async () => {
+  try {
+    const access = await fetchUserAccess()
+    canCreatePrivilegedUsers.value = access.canEdit
+  } catch {
+    canCreatePrivilegedUsers.value = false
+  }
+})
 
 async function onSubmit() {
   formError.value = ''

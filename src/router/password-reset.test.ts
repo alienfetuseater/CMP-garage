@@ -25,36 +25,4 @@ describe('password reset routing', () => {
     expect(router.currentRoute.value.params.token).toBe('path-token')
     expect(router.currentRoute.value.meta.authScreen).toBe(true)
   })
-
-  it('recovers reset tokens delivered to the login URL', async () => {
-    await router.push('/login?token=forwarded-token')
-
-    expect(router.currentRoute.value.name).toBe('ResetPassword')
-    expect(router.currentRoute.value.query.token).toBe('forwarded-token')
-  })
-
-  it('recovers hash-style reset links before the authenticated home guard runs', async () => {
-    await router.push('/#/reset-password?token=hash-route-token')
-
-    expect(router.currentRoute.value.name).toBe('ResetPassword')
-    expect(router.currentRoute.value.query.token).toBe('hash-route-token')
-    expect(router.currentRoute.value.hash).toBe('')
-  })
-
-  it('recovers a reset token stored directly in the reset-route hash', async () => {
-    await router.push('/reset-password#token=hash-token')
-
-    expect(router.currentRoute.value.name).toBe('ResetPassword')
-    expect(router.currentRoute.value.query.token).toBe('hash-token')
-    expect(router.currentRoute.value.hash).toBe('')
-  })
-
-  it('recovers legacy reset-password-token links with a raw hash token', async () => {
-    const rawToken = 'a'.repeat(64)
-    await router.push(`/reset-password-token#${rawToken}`)
-
-    expect(router.currentRoute.value.name).toBe('ResetPassword')
-    expect(router.currentRoute.value.query.token).toBe(rawToken)
-    expect(router.currentRoute.value.hash).toBe('')
-  })
 })

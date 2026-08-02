@@ -2,6 +2,7 @@
   <component
     :is="to ? RouterLink : 'button'"
     class="nav-icon-link"
+    :class="{ 'has-label': label }"
     :aria-label="ariaLabel"
     :title="title"
     v-bind="to ? { to } : {}"
@@ -9,6 +10,7 @@
     @click="handleClick"
   >
     <slot />
+    <span v-if="label" class="nav-action-label">{{ label }}</span>
   </component>
 </template>
 
@@ -19,6 +21,7 @@ const props = defineProps<{
   to?: string
   ariaLabel: string
   title: string
+  label?: string
 }>()
 
 const emit = defineEmits<{
@@ -45,5 +48,18 @@ function handleClick() {
   color: var(--color-ocean-mist);
   cursor: pointer;
   text-decoration: none;
+}
+
+.nav-icon-link.has-label {
+  width: auto;
+  padding: 0 0.8rem;
+  gap: 0.45rem;
+  border-radius: 8px;
+}
+
+.nav-action-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
 }
 </style>

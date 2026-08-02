@@ -6,8 +6,11 @@
     <button type="button" class="mobile-menu-item" @click="emit('go-to-route', 'CustomerDirectory')">
       Directory
     </button>
-    <button type="button" class="mobile-menu-item" @click="emit('go-to-route', 'Register')">
+    <button v-if="showUserManagement" type="button" class="mobile-menu-item" @click="emit('go-to-route', 'Register')">
       User Registration
+    </button>
+    <button v-if="showUserManagement" type="button" class="mobile-menu-item" @click="emit('go-to-route', 'UserDirectory')">
+      Registered Users
     </button>
     <button type="button" class="mobile-menu-item" @click="emit('open-mobile-menu-panel', 'messages')">
       Team Messages
@@ -30,13 +33,14 @@
 
 <script setup lang="ts">
 defineProps<{
+  showUserManagement: boolean
   messageBadgeCountLabel: string
   badgeCountLabel: string
   ticketBadgeCountLabel: string
 }>()
 
 const emit = defineEmits<{
-  (event: 'go-to-route', routeName: 'CustomerRegistration' | 'CustomerDirectory' | 'Register'): void
+  (event: 'go-to-route', routeName: 'CustomerRegistration' | 'CustomerDirectory' | 'Register' | 'UserDirectory'): void
   (event: 'open-mobile-menu-panel', view: 'messages' | 'reminders' | 'tickets'): void
   (event: 'open-archived-conversations'): void
   (event: 'logout'): void

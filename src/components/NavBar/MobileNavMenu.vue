@@ -29,6 +29,7 @@
 
       <MobileMenuMainList
         v-if="mobileMenuView === 'menu'"
+        :show-user-management="showUserManagement"
         :message-badge-count-label="messageBadgeCountLabel"
         :badge-count-label="badgeCountLabel"
         :ticket-badge-count-label="ticketBadgeCountLabel"
@@ -119,6 +120,7 @@ import MobileMenuMainList from '@/components/NavBar/MobileMenuMainList.vue'
 import MobileMenuPanel from '@/components/NavBar/MobileMenuPanel.vue'
 
 defineProps<{
+  showUserManagement: boolean
   showMobileMenu: boolean
   mobileMenuTitle: string
   mobileMenuView: string
@@ -133,7 +135,7 @@ defineProps<{
 const emit = defineEmits<{
   (event: 'toggle-mobile-menu'): void
   (event: 'set-mobile-menu-view', view: string): void
-  (event: 'go-to-route', routeName: 'CustomerRegistration' | 'CustomerDirectory' | 'Register'): void
+  (event: 'go-to-route', routeName: 'CustomerRegistration' | 'CustomerDirectory' | 'Register' | 'UserDirectory'): void
   (event: 'open-mobile-menu-panel', view: 'messages' | 'reminders' | 'tickets'): void
   (event: 'open-archived-conversations'): void
   (event: 'open-messages-page'): void

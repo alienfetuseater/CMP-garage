@@ -10,7 +10,7 @@ export type UserRole = (typeof userRoles)[number]
 
 export const roleLabels: Record<UserRole, string> = {
   admin: 'Administrator',
-  serviceManager: 'Service Manager',
+  serviceManager: 'Supervisor / Service Manager',
   technician: 'Technician',
   coordinator: 'Coordinator',
   viewer: 'Viewer',
@@ -35,6 +35,8 @@ export const rolePermissions = {
     'documents:send',
   ],
   serviceManager: [
+    'users:create',
+    'users:read',
     'calendar:view',
     'records:read',
     'customers:manage',

@@ -83,19 +83,19 @@ CMP Garage supports multiple administrators. The `admin` role is assigned per us
 
 | Role | Privileges |
 | --- | --- |
-| Administrator | Full operational access; view the calendar; create and manage users; assign roles; add or manage other administrators; manage system settings; delete records; send documents. |
-| Service Manager | Full day-to-day operational access, including the calendar, customers, vessels, tickets, reports, reminders, messages, record deletion, and document sending. Cannot manage users, roles, administrators, or system settings. |
+| Administrator | Full operational access; view the calendar; register and edit users; assign roles; add or manage other administrators; manage system settings; delete records; send documents. |
+| Supervisor / Service Manager | Full day-to-day operational access, including the calendar, customers, vessels, tickets, reports, reminders, messages, record deletion, and document sending. Can register ordinary staff and view registered users, but cannot create privileged accounts, edit user profiles, assign roles, manage administrators, or change system settings. |
 | Technician | Read operational records; update assigned technical work and tickets; create and update reports; use team messages. Cannot view the calendar or manage users and system settings. |
 | Coordinator | View the calendar and operational records; manage customer and vessel intake; create tickets; manage reminders and messages; send documents. Cannot administer users, roles, or system settings. |
 | Viewer | Read-only access to operational records. Cannot modify records or view the calendar. |
 
 Role and permission definitions are maintained in `src/domain/auth/permissions.ts` and mirrored by the server authorization model.
 
-### Registration Bootstrap
+### User Administration
 
-The user registration page and endpoint require an authenticated session. During initial setup, any authenticated user can create an employee account and select its role, including `admin`. This permits the first administrator and additional administrators to be established without a pre-existing administrator.
+The registration page and registered-user directory are available only to administrators and supervisors/service managers. Supervisors can create technician, coordinator, and viewer accounts. Administrators can create any role, including additional administrators and supervisors.
 
-After administrators are designated, registration should be restricted to users with the administrator-only `users:create` permission. Creating an account does not replace or log out the current user's session.
+Only administrators can edit an existing user's name, email, or role. Permission checks use the user's current database role, so role changes apply immediately even when an older login token is still active. Creating an account does not replace or log out the current user's session.
 
 ## Notes
 

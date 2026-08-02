@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, watch } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 import NavBar from './components/NavBar/nav-bar.vue'
 import { useUiStore } from '@/stores/ui'
@@ -22,8 +22,14 @@ const loadAppData = async (force = false) => {
   await uiStore.fetchAllData(force).catch(() => {})
 }
 
+const refreshAuthenticatedUser = async () => {
+  if (!authStore.token) return
+  await authStore.fetchMe()
+}
+
 onMounted(async () => {
-  await authStore.initializeAuth()
+  await refreshAuthenticatedUser()
+  window.addEventListener('focus', refreshAuthenticatedUser)
   if (!hasSession.value && !isAuthScreen.value) {
     await router.replace({ name: 'Login', query: { redirect: route.fullPath } })
     return
@@ -32,6 +38,10 @@ onMounted(async () => {
     connectRealtimeMessaging(authStore.token)
   }
   await loadAppData()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('focus', refreshAuthenticatedUser)
 })
 
 watch(
