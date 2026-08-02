@@ -305,7 +305,7 @@
 #app .assignment-board-page .assignment-card {
   border-color: var(--vscode-panel-border) !important;
   border-left-color: var(--card-accent) !important;
-  background: var(--vscode-sideBar-background) !important;
+  background: var(--card-background, var(--vscode-sideBar-background)) !important;
 }
 
 #app .assignment-board-page .card-type {

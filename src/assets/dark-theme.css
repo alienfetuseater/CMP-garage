@@ -35,3 +35,44 @@ body.theme-dark {
   --vscode-link-foreground: #8be9fd;
   --vscode-scrollbarSlider-background: rgba(98, 114, 164, 0.55);
 }
+
+body.theme-dark .assignment-board-page .column-serviceWork {
+  border-color: #ff5555;
+}
+
+body.theme-dark .assignment-board-page .column-monthlyReport {
+  border-color: #8be9fd;
+}
+
+body.theme-dark .assignment-board-page .column-diagnosis {
+  border-color: #bd93f9;
+}
+
+body.theme-dark .assignment-board-page .column-reminder {
+  border-color: #ff79c6;
+}
+
+body.theme-dark .assignment-board-page .card-repair {
+  --card-accent: #ff5555;
+  --card-background: #3b2630;
+}
+
+body.theme-dark .assignment-board-page .card-maintenance {
+  --card-accent: #ffb86c;
+  --card-background: #3b302b;
+}
+
+body.theme-dark .assignment-board-page .card-monthlyReport {
+  --card-accent: #8be9fd;
+  --card-background: #24353f;
+}
+
+body.theme-dark .assignment-board-page .card-diagnosis {
+  --card-accent: #bd93f9;
+  --card-background: #322d45;
+}
+
+body.theme-dark .assignment-board-page .card-reminder {
+  --card-accent: #ff79c6;
+  --card-background: #3a293d;
+}
