@@ -118,4 +118,36 @@ withDefaults(
     aspect-ratio: 4 / 3;
   }
 }
+
+:global(body.theme-dark) .notes-block {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  color: #f8f8f2;
+}
+
+:global(body.theme-dark) .notes-block .section-heading h3 {
+  color: #f8f8f2;
+}
+
+:global(body.theme-dark) .notes-text,
+:global(body.theme-dark) .empty-state {
+  background: #282a36;
+  border-color: #6272a4;
+  color: #f8f8f2;
+}
+
+:global(body.theme-dark) .photo-card {
+  background: #3a3f52;
+  border-color: #44475a;
+}
+
+:global(body.theme-dark) .photo-preview {
+  background: #282a36;
+}
+
+:global(body.theme-dark) .photo-meta {
+  color: #a7adce;
+}
 </style>

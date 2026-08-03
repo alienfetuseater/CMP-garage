@@ -21,7 +21,11 @@
     </div>
 
     <div class="plan-list">
-      <div v-for="(item, index) in form.requiredParts" :key="item.id" class="plan-row required-parts-row">
+      <div
+        v-for="(item, index) in form.requiredParts"
+        :key="item.id"
+        class="plan-row required-parts-row"
+      >
         <input v-model="item.completed" type="checkbox" class="plan-check" />
         <input v-model="item.text" class="plan-input" placeholder="Part name" />
         <div class="currency-field part-cost-input">
@@ -47,7 +51,13 @@
     </div>
 
     <div class="photo-actions">
-      <button type="button" class="ghost icon-button" aria-label="Browse" title="Browse" @click="openBrowsePicker">
+      <button
+        type="button"
+        class="ghost icon-button"
+        aria-label="Browse"
+        title="Browse"
+        @click="openBrowsePicker"
+      >
         <svg class="action-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path
             d="M12 16V6M12 6L8.5 9.5M12 6L15.5 9.5M5 15.5V17.5C5 18.6 5.9 19.5 7 19.5H17C18.1 19.5 19 18.6 19 17.5V15.5"
@@ -59,7 +69,13 @@
         </svg>
         <span class="action-label">Browse</span>
       </button>
-      <button type="button" class="ghost icon-button" aria-label="Take photo" title="Take photo" @click="openCameraPicker">
+      <button
+        type="button"
+        class="ghost icon-button"
+        aria-label="Take photo"
+        title="Take photo"
+        @click="openCameraPicker"
+      >
         <svg class="action-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path
             d="M4 8.5C4 7.4 4.9 6.5 6 6.5H8.4L9.5 5H14.5L15.6 6.5H18C19.1 6.5 20 7.4 20 8.5V17C20 18.1 19.1 19 18 19H6C4.9 19 4 18.1 4 17V8.5Z"
@@ -72,8 +88,22 @@
         </svg>
         <span class="action-label">Take Photo</span>
       </button>
-      <input ref="browseInput" class="sr-only" type="file" accept="image/*" multiple @change="handlePhotoSelection" />
-      <input ref="cameraInput" class="sr-only" type="file" accept="image/*" capture="environment" @change="handlePhotoSelection" />
+      <input
+        ref="browseInput"
+        class="sr-only"
+        type="file"
+        accept="image/*"
+        multiple
+        @change="handlePhotoSelection"
+      />
+      <input
+        ref="cameraInput"
+        class="sr-only"
+        type="file"
+        accept="image/*"
+        capture="environment"
+        @change="handlePhotoSelection"
+      />
     </div>
 
     <div v-if="form.summaryOfWorkPerformedPhotos.length" class="photo-grid">
@@ -156,7 +186,11 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { createTicketPhotoAttachment, derivePhotoCaption, resizeTicketPhoto } from '@/domain/tickets/photos'
+import {
+  createTicketPhotoAttachment,
+  derivePhotoCaption,
+  resizeTicketPhoto,
+} from '@/domain/tickets/photos'
 import {
   formatCurrency,
   formatCurrencyInputValue,
@@ -266,7 +300,9 @@ function syncRequiredPartCostInput(partId: string, rawValue: string) {
 
 function formatRequiredPartCostInput(partId: string) {
   const part = props.form.requiredParts.find((item) => item.id === partId)
-  const numeric = part ? Number(part.cost ?? 0) : parseCurrencyInputValue(requiredPartCostInputs.value[partId] ?? '')
+  const numeric = part
+    ? Number(part.cost ?? 0)
+    : parseCurrencyInputValue(requiredPartCostInputs.value[partId] ?? '')
   requiredPartCostInputs.value[partId] = formatCurrencyInputValue(numeric)
   if (part) part.cost = parseCurrencyInputValue(requiredPartCostInputs.value[partId])
 }
@@ -310,7 +346,9 @@ watch(
 )
 
 function removeSummaryPhoto(photoId: string) {
-  props.form.summaryOfWorkPerformedPhotos = props.form.summaryOfWorkPerformedPhotos.filter((photo) => photo.id !== photoId)
+  props.form.summaryOfWorkPerformedPhotos = props.form.summaryOfWorkPerformedPhotos.filter(
+    (photo) => photo.id !== photoId,
+  )
 }
 
 function openBrowsePicker() {
@@ -337,7 +375,10 @@ async function handlePhotoSelection(event: Event) {
       }),
     )
 
-    props.form.summaryOfWorkPerformedPhotos = [...props.form.summaryOfWorkPerformedPhotos, ...nextPhotos]
+    props.form.summaryOfWorkPerformedPhotos = [
+      ...props.form.summaryOfWorkPerformedPhotos,
+      ...nextPhotos,
+    ]
   } catch (err) {
     emit('error', err instanceof Error ? err.message : String(err))
   } finally {
@@ -580,6 +621,38 @@ textarea {
 
 textarea {
   resize: vertical;
+}
+
+:global(body.theme-dark) .ticket-execution-section {
+  background: transparent;
+  border-color: rgba(98, 114, 164, 0.28);
+  color: #f8f8f2;
+}
+
+:global(body.theme-dark) .ticket-execution-section .section-heading h3,
+:global(body.theme-dark) .ticket-execution-section .section-heading p,
+:global(body.theme-dark) .ticket-execution-section label,
+:global(body.theme-dark) .ticket-execution-section .photo-caption-label {
+  color: #f8f8f2;
+}
+
+:global(body.theme-dark) .ticket-execution-section textarea,
+:global(body.theme-dark) .ticket-execution-section input,
+:global(body.theme-dark) .ticket-execution-section .photo-caption-input,
+:global(body.theme-dark) .ticket-execution-section .currency-field,
+:global(body.theme-dark) .ticket-execution-section .currency-field input {
+  background: #282a36;
+  border-color: #6272a4;
+  color: #f8f8f2;
+}
+
+:global(body.theme-dark) .ticket-execution-section .photo-card {
+  background: #3a3f52;
+  border-color: #44475a;
+}
+
+:global(body.theme-dark) .ticket-execution-section .photo-preview {
+  background: #282a36;
 }
 
 .ghost {

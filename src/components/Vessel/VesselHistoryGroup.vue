@@ -94,11 +94,11 @@ function formatDate(value?: string | null) {
 
 <style scoped>
 .history-block {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
+  background: #313447;
+  border: 1px solid #44475a;
+  border-radius: 10px;
   padding: 18px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+  box-shadow: none;
   display: grid;
   gap: 12px;
 }
@@ -113,7 +113,7 @@ function formatDate(value?: string | null) {
 .history-header h3 {
   margin: 0;
   font-size: 1rem;
-  color: #0f172a;
+  color: #f8f8f2;
 }
 
 .history-count {
@@ -123,8 +123,8 @@ function formatDate(value?: string | null) {
   min-width: 30px;
   height: 30px;
   border-radius: 999px;
-  background: #eff6ff;
-  color: #2563eb;
+  background: #44475a;
+  color: #8be9fd;
   font-weight: 700;
   padding: 0 8px;
 }
@@ -136,11 +136,11 @@ function formatDate(value?: string | null) {
 
 .history-item {
   width: 100%;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border: 1px solid #44475a;
+  border-radius: 8px;
   padding: 12px 14px;
-  background: #f8fafc;
-  color: #0f172a;
+  background: #3a3f52;
+  color: #f8f8f2;
   text-align: left;
   cursor: pointer;
   display: grid;
@@ -149,7 +149,7 @@ function formatDate(value?: string | null) {
 }
 
 .history-item:hover {
-  background: #eff6ff;
+  background: #44475a;
 }
 
 .history-item-top,
@@ -161,7 +161,7 @@ function formatDate(value?: string | null) {
 }
 
 .history-status {
-  color: #2563eb;
+  color: #8be9fd;
   font-weight: 700;
   font-size: 0.8rem;
   text-transform: uppercase;
@@ -169,7 +169,7 @@ function formatDate(value?: string | null) {
 
 .history-empty,
 .history-loading {
-  color: #64748b;
+  color: #a7adce;
   font-size: 0.95rem;
 }
 </style>

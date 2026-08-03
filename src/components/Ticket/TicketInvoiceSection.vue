@@ -54,4 +54,19 @@ defineProps<{
   color: #0f172a;
   font-size: 1.04rem;
 }
+
+:global(body.theme-dark) .invoice-block {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  color: #f8f8f2;
+}
+
+:global(body.theme-dark) .invoice-block .section-heading h3,
+:global(body.theme-dark) .invoice-block .section-heading p,
+:global(body.theme-dark) .invoice-block .invoice-summary,
+:global(body.theme-dark) .invoice-block .invoice-grand-total {
+  color: #f8f8f2;
+}
 </style>

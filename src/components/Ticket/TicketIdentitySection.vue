@@ -250,6 +250,33 @@ textarea {
   resize: vertical;
 }
 
+:global(body.theme-dark) .ticket-identity-section {
+  background: transparent;
+  border-color: rgba(98, 114, 164, 0.28);
+  color: #f8f8f2;
+}
+
+:global(body.theme-dark) .ticket-identity-section .section-heading h3,
+:global(body.theme-dark) .ticket-identity-section .section-heading p,
+:global(body.theme-dark) .ticket-identity-section label,
+:global(body.theme-dark) .ticket-identity-section .immutable-notes {
+  color: #f8f8f2;
+}
+
+:global(body.theme-dark) .ticket-identity-section input,
+:global(body.theme-dark) .ticket-identity-section select,
+:global(body.theme-dark) .ticket-identity-section textarea {
+  background: #282a36;
+  border-color: #6272a4;
+  color: #f8f8f2;
+}
+
+:global(body.theme-dark) .ticket-identity-section .plan-section,
+:global(body.theme-dark) .ticket-identity-section .immutable-notes {
+  background: #282a36;
+  border-color: #6272a4;
+}
+
 @media (max-width: 720px) {
   .form-grid {
     grid-template-columns: 1fr;

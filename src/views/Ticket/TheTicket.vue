@@ -575,6 +575,9 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .ticket-page {
+  --profile-radius-lg: 10px;
+  --profile-radius-md: 8px;
+  --profile-radius-sm: 6px;
   min-height: calc(100vh - 24px);
   padding: 24px 16px 40px;
   display: flex;
@@ -592,7 +595,7 @@ onBeforeUnmount(() => {
 .status-card {
   background: #ffffff;
   border: 1px solid #e5e7eb;
-  border-radius: 18px;
+  border-radius: var(--profile-radius-lg);
   box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
   padding: 24px;
 }
@@ -644,7 +647,7 @@ onBeforeUnmount(() => {
   gap: 10px;
   align-items: center;
   padding: 14px 16px;
-  border-radius: 14px;
+  border-radius: var(--profile-radius-md);
   background: #eff6ff;
   color: #0f172a;
   margin-bottom: 20px;
@@ -678,7 +681,7 @@ onBeforeUnmount(() => {
 .details li {
   padding: 14px 16px;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border-radius: var(--profile-radius-md);
   background: #f8fafc;
   color: #0f172a;
 }
@@ -697,7 +700,7 @@ onBeforeUnmount(() => {
   margin: 0;
   padding: 14px 16px;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border-radius: var(--profile-radius-md);
   background: #f8fafc;
   color: #334155;
   white-space: pre-wrap;
@@ -723,7 +726,7 @@ onBeforeUnmount(() => {
   padding: 10px;
   width: var(--ticket-photo-tile-width);
   border: 1px solid #dbeafe;
-  border-radius: 16px;
+  border-radius: var(--profile-radius-lg);
   background: #f8fbff;
 }
 
@@ -732,7 +735,7 @@ onBeforeUnmount(() => {
   width: var(--ticket-photo-tile-width);
   height: var(--ticket-photo-tile-height);
   object-fit: cover;
-  border-radius: 12px;
+  border-radius: var(--profile-radius-md);
   background: #e2e8f0;
 }
 
@@ -813,7 +816,7 @@ onBeforeUnmount(() => {
   align-items: center;
   flex-wrap: wrap;
   border: 1px solid #dbeafe;
-  border-radius: 12px;
+  border-radius: var(--profile-radius-md);
   padding: 10px 12px;
   background: #f8fbff;
 }
@@ -868,7 +871,7 @@ onBeforeUnmount(() => {
   gap: 12px;
   padding: 16px;
   border: 1px solid #dbeafe;
-  border-radius: 16px;
+  border-radius: var(--profile-radius-lg);
   background: #f8fbff;
 }
 
@@ -1037,7 +1040,7 @@ onBeforeUnmount(() => {
 .notes-card {
   padding: 16px;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border-radius: var(--profile-radius-md);
   background: #f8fafc;
   color: #0f172a;
   line-height: 1.6;
@@ -1046,7 +1049,7 @@ onBeforeUnmount(() => {
 .empty-state {
   padding: 16px;
   border: 1px dashed #cbd5e1;
-  border-radius: 12px;
+  border-radius: var(--profile-radius-md);
   color: #475569;
   background: #f8fafc;
   text-align: center;

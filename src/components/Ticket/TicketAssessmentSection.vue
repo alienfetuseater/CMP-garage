@@ -6,7 +6,13 @@
     </div>
 
     <div class="photo-actions">
-      <button type="button" class="ghost icon-button" aria-label="Browse" title="Browse" @click="openBrowsePicker">
+      <button
+        type="button"
+        class="ghost icon-button"
+        aria-label="Browse"
+        title="Browse"
+        @click="openBrowsePicker"
+      >
         <svg class="action-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path
             d="M12 16V6M12 6L8.5 9.5M12 6L15.5 9.5M5 15.5V17.5C5 18.6 5.9 19.5 7 19.5H17C18.1 19.5 19 18.6 19 17.5V15.5"
@@ -18,7 +24,13 @@
         </svg>
         <span class="action-label">Browse</span>
       </button>
-      <button type="button" class="ghost icon-button" aria-label="Take photo" title="Take photo" @click="openCameraPicker">
+      <button
+        type="button"
+        class="ghost icon-button"
+        aria-label="Take photo"
+        title="Take photo"
+        @click="openCameraPicker"
+      >
         <svg class="action-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path
             d="M4 8.5C4 7.4 4.9 6.5 6 6.5H8.4L9.5 5H14.5L15.6 6.5H18C19.1 6.5 20 7.4 20 8.5V17C20 18.1 19.1 19 18 19H6C4.9 19 4 18.1 4 17V8.5Z"
@@ -31,8 +43,22 @@
         </svg>
         <span class="action-label">Take Photo</span>
       </button>
-      <input ref="browseInput" class="sr-only" type="file" accept="image/*" multiple @change="handlePhotoSelection" />
-      <input ref="cameraInput" class="sr-only" type="file" accept="image/*" capture="environment" @change="handlePhotoSelection" />
+      <input
+        ref="browseInput"
+        class="sr-only"
+        type="file"
+        accept="image/*"
+        multiple
+        @change="handlePhotoSelection"
+      />
+      <input
+        ref="cameraInput"
+        class="sr-only"
+        type="file"
+        accept="image/*"
+        capture="environment"
+        @change="handlePhotoSelection"
+      />
     </div>
 
     <div v-if="form.initialAssessmentPhotos.length" class="photo-grid">
@@ -87,7 +113,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { formatLocalDateTime } from '@/shared/datetime/format'
-import { createTicketPhotoAttachment, derivePhotoCaption, resizeTicketPhoto } from '@/domain/tickets/photos'
+import {
+  createTicketPhotoAttachment,
+  derivePhotoCaption,
+  resizeTicketPhoto,
+} from '@/domain/tickets/photos'
 import type { PlanActionItem, RequiredPartItem, TicketPhotoAttachment } from '@/types/mock'
 
 interface TicketFormState {
@@ -131,7 +161,9 @@ function openCameraPicker() {
 }
 
 function removePhoto(photoId: string) {
-  props.form.initialAssessmentPhotos = props.form.initialAssessmentPhotos.filter((photo) => photo.id !== photoId)
+  props.form.initialAssessmentPhotos = props.form.initialAssessmentPhotos.filter(
+    (photo) => photo.id !== photoId,
+  )
 }
 
 async function handlePhotoSelection(event: Event) {
@@ -314,6 +346,36 @@ input {
 
 textarea {
   resize: vertical;
+}
+
+:global(body.theme-dark) .ticket-assessment-section {
+  background: transparent;
+  border-color: rgba(98, 114, 164, 0.28);
+  color: #f8f8f2;
+}
+
+:global(body.theme-dark) .ticket-assessment-section .section-heading h3,
+:global(body.theme-dark) .ticket-assessment-section .section-heading p,
+:global(body.theme-dark) .ticket-assessment-section label,
+:global(body.theme-dark) .ticket-assessment-section .photo-caption-label {
+  color: #f8f8f2;
+}
+
+:global(body.theme-dark) .ticket-assessment-section textarea,
+:global(body.theme-dark) .ticket-assessment-section input,
+:global(body.theme-dark) .ticket-assessment-section .photo-caption-input {
+  background: #282a36;
+  border-color: #6272a4;
+  color: #f8f8f2;
+}
+
+:global(body.theme-dark) .ticket-assessment-section .photo-card {
+  background: #3a3f52;
+  border-color: #44475a;
+}
+
+:global(body.theme-dark) .ticket-assessment-section .photo-preview {
+  background: #282a36;
 }
 
 .ghost {

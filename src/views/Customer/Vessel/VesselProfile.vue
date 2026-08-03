@@ -497,6 +497,9 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .vessel-profile {
+  --profile-radius-lg: 10px;
+  --profile-radius-md: 8px;
+  --profile-radius-sm: 6px;
   min-height: calc(100vh - 24px);
   padding: 24px 16px 40px;
   display: flex;
@@ -514,7 +517,7 @@ onBeforeUnmount(() => {
 .status-card {
   background: #ffffff;
   border: 1px solid #e5e7eb;
-  border-radius: 18px;
+  border-radius: var(--profile-radius-lg);
   box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
   padding: 24px;
 }
@@ -566,7 +569,7 @@ onBeforeUnmount(() => {
 .vessel-photo-card {
   margin-top: 14px;
   border: 1px solid #dbeafe;
-  border-radius: 16px;
+  border-radius: var(--profile-radius-lg);
   background: #f8fbff;
   padding: 14px;
 }
@@ -577,7 +580,7 @@ onBeforeUnmount(() => {
 }
 
 .vessel-photo-wrap {
-  border-radius: 14px;
+  border-radius: var(--profile-radius-md);
   overflow: hidden;
   border: 1px solid #cbd5e1;
   background: #ffffff;
@@ -740,22 +743,17 @@ onBeforeUnmount(() => {
   gap: 10px;
   align-items: center;
   padding: 14px 16px;
-  border-radius: 14px;
-  background: #eff6ff;
-  color: #0f172a;
+  border-radius: var(--profile-radius-md);
+  background: #313447;
+  color: #f8f8f2;
   margin-bottom: 20px;
-}
-
-.owner-label {
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #1d4ed8;
+  border: 1px solid #44475a;
   font-weight: 700;
 }
 
 .owner-link {
   font-weight: 600;
+  color: #8be9fd;
 }
 
 .owner-card {
@@ -769,18 +767,19 @@ onBeforeUnmount(() => {
   align-items: baseline;
   gap: 10px;
   width: 100%;
+  padding: 6px 0;
 }
 
 .owner-field-label {
   font-size: 0.95rem;
-  color: #475569;
+  color: #a7adce;
   font-weight: 700;
   min-width: 72px;
 }
 
 .owner-field-value {
   font-size: 1rem;
-  color: #0f172a;
+  color: #f8f8f2;
   font-weight: 600;
   flex: 1;
 }
@@ -796,16 +795,16 @@ onBeforeUnmount(() => {
 
 .details li {
   padding: 14px 16px;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  background: #f8fafc;
-  color: #0f172a;
+  border: 1px solid #44475a;
+  border-radius: var(--profile-radius-md);
+  background: #3a3f52;
+  color: #f8f8f2;
 }
 
 .details strong {
   display: block;
   margin-bottom: 4px;
-  color: #475569;
+  color: #a7adce;
 }
 
 .related {
@@ -825,7 +824,7 @@ onBeforeUnmount(() => {
 
 .history-header h4 {
   margin: 0;
-  color: #0f172a;
+  color: #f8f8f2;
 }
 
 .history-list {
@@ -842,10 +841,11 @@ onBeforeUnmount(() => {
   gap: 10px;
   align-items: center;
   padding: 14px 16px;
-  border: 1px solid #e5e7eb;
-  border-radius: 14px;
-  background: #ffffff;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+  border: 1px solid #44475a;
+  border-radius: var(--profile-radius-md);
+  background: #313447;
+  color: #f8f8f2;
+  box-shadow: none;
   transition:
     transform 0.15s ease,
     box-shadow 0.15s ease,
@@ -854,8 +854,8 @@ onBeforeUnmount(() => {
 
 .history-item:hover {
   transform: translateY(-2px);
-  border-color: #bfdbfe;
-  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.12);
+  border-color: #6272a4;
+  box-shadow: none;
 }
 
 .history-item.clickable:hover {
@@ -864,15 +864,15 @@ onBeforeUnmount(() => {
 
 .empty-state {
   padding: 16px;
-  border: 1px dashed #cbd5e1;
-  border-radius: 12px;
-  color: #475569;
-  background: #f8fafc;
+  border: 1px dashed #44475a;
+  border-radius: var(--profile-radius-md);
+  color: #f8f8f2;
+  background: #313447;
   text-align: center;
 }
 
 .owner {
-  color: #2563eb;
+  color: #8be9fd;
   cursor: pointer;
 }
 
@@ -882,11 +882,11 @@ onBeforeUnmount(() => {
 }
 
 .monthly-reports-block {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
+  background: #313447;
+  border: 1px solid #44475a;
+  border-radius: var(--profile-radius-lg);
   padding: 18px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+  box-shadow: none;
   margin-top: 18px;
 }
 
@@ -897,11 +897,11 @@ onBeforeUnmount(() => {
 
 .monthly-reports-block .history-item {
   width: 100%;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border: 1px solid #44475a;
+  border-radius: var(--profile-radius-md);
   padding: 12px 14px;
-  background: #f8fafc;
-  color: #0f172a;
+  background: #3a3f52;
+  color: #f8f8f2;
   text-align: left;
   cursor: pointer;
   display: grid;
@@ -913,9 +913,9 @@ onBeforeUnmount(() => {
 }
 
 .monthly-reports-block .history-item:hover {
-  background: #eff6ff;
+  background: #44475a;
   transform: none;
-  border-color: #bfdbfe;
+  border-color: #6272a4;
   box-shadow: none;
 }
 
@@ -928,24 +928,24 @@ onBeforeUnmount(() => {
 }
 
 .history-status {
-  color: #2563eb;
+  color: #8be9fd;
   font-weight: 700;
   font-size: 0.8rem;
   text-transform: uppercase;
 }
 
 .modifications-block {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
+  background: #313447;
+  border: 1px solid #44475a;
+  border-radius: var(--profile-radius-lg);
   padding: 18px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+  box-shadow: none;
   margin-top: 18px;
 }
 
 .modifications-notes {
   white-space: pre-wrap;
-  color: #0f172a;
+  color: #f8f8f2;
   font-size: 0.95rem;
   line-height: 1.6;
   padding: 4px 2px;
@@ -954,13 +954,13 @@ onBeforeUnmount(() => {
 .modifications-textarea {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid #cbd5e1;
-  border-radius: 12px;
+  border: 1px solid #44475a;
+  border-radius: var(--profile-radius-md);
   padding: 12px 14px;
   font: inherit;
   font-size: 0.95rem;
-  background: #ffffff;
-  color: #0f172a;
+  background: #3a3f52;
+  color: #f8f8f2;
   resize: vertical;
 }
 
@@ -973,10 +973,10 @@ onBeforeUnmount(() => {
 }
 
 .edit-notes-btn {
-  border: 1px solid #cbd5e1;
-  background: #f8fafc;
-  color: #334155;
-  border-radius: 8px;
+  border: 1px solid #6272a4;
+  background: #44475a;
+  color: #f8f8f2;
+  border-radius: var(--profile-radius-sm);
   padding: 4px 12px;
   font-size: 0.85rem;
   font-weight: 600;
@@ -985,9 +985,9 @@ onBeforeUnmount(() => {
 }
 
 .edit-notes-btn:hover {
-  background: #eff6ff;
-  border-color: #bfdbfe;
-  color: #1d4ed8;
+  background: #6272a4;
+  border-color: #8be9fd;
+  color: #f8f8f2;
 }
 
 .error {

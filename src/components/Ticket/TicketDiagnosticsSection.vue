@@ -216,6 +216,13 @@ defineEmits<{
   color: #059669;
 }
 
+:global(body.theme-dark) .diagnostics-section,
+:global(body.theme-dark) .diagnostic-group,
+:global(body.theme-dark) .diagnostics-toggle {
+  background: transparent;
+  border-color: rgba(98, 114, 164, 0.28);
+}
+
 @media (max-width: 720px) {
   .diagnostics-heading {
     flex-direction: column;

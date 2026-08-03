@@ -76,3 +76,179 @@ body.theme-dark .assignment-board-page .card-reminder {
   --card-accent: #ff79c6;
   --card-background: #3a293d;
 }
+
+body.theme-dark .ticket-page,
+body.theme-dark .vessel-profile {
+  background: linear-gradient(180deg, #1e1f29 0%, #23253a 100%);
+}
+
+body.theme-dark .ticket-page .profile-card,
+body.theme-dark .ticket-page .status-card,
+body.theme-dark .vessel-profile .profile-card,
+body.theme-dark .vessel-profile .status-card {
+  background: #282a36 !important;
+  border-color: #44475a !important;
+  color: #f8f8f2 !important;
+  box-shadow: none !important;
+}
+
+body.theme-dark .ticket-page .back,
+body.theme-dark .vessel-profile .back {
+  color: #8be9fd;
+}
+
+body.theme-dark .ticket-page .profile-header h2,
+body.theme-dark .ticket-page .eyebrow,
+body.theme-dark .vessel-profile .profile-header h2,
+body.theme-dark .vessel-profile .eyebrow,
+body.theme-dark .ticket-page .summary-header h3,
+body.theme-dark .ticket-page .summary-eyebrow,
+body.theme-dark .vessel-profile .history-header h4,
+body.theme-dark .vessel-profile .owner-card h3,
+body.theme-dark .vessel-profile .owner-field-label,
+body.theme-dark .vessel-profile .owner-field-value,
+body.theme-dark .vessel-profile .modifications-notes,
+body.theme-dark .vessel-profile .vessel-photo-card h3 {
+  color: #f8f8f2;
+}
+
+body.theme-dark .ticket-page .summary-card,
+body.theme-dark .ticket-page .details li,
+body.theme-dark .ticket-page .notes-text,
+body.theme-dark .ticket-page .notes-card,
+body.theme-dark .ticket-page .empty-state,
+body.theme-dark .ticket-page .photo-card,
+body.theme-dark .vessel-profile .owner-card,
+body.theme-dark .vessel-profile .owner-field,
+body.theme-dark .vessel-profile .details-card,
+body.theme-dark .vessel-profile .vessel-photo-card,
+body.theme-dark .vessel-profile .monthly-reports-block,
+body.theme-dark .vessel-profile .modifications-block,
+body.theme-dark .vessel-profile .history-item,
+body.theme-dark .vessel-profile .empty-state,
+body.theme-dark .vessel-profile .modifications-textarea,
+body.theme-dark .vessel-profile .edit-notes-btn {
+  background: #313447 !important;
+  border-color: #44475a !important;
+  color: #f8f8f2 !important;
+  box-shadow: none !important;
+}
+
+body.theme-dark .ticket-page input,
+body.theme-dark .ticket-page select,
+body.theme-dark .ticket-page textarea,
+body.theme-dark .ticket-page .photo-caption-input,
+body.theme-dark .ticket-page .plan-input,
+body.theme-dark .ticket-page .currency-field,
+body.theme-dark .ticket-page .currency-field input {
+  background: #282a36 !important;
+  border-color: #6272a4 !important;
+  color: #f8f8f2 !important;
+}
+
+body.theme-dark .ticket-page .immutable {
+  background: #3a3f52 !important;
+  color: #a7adce !important;
+}
+
+body.theme-dark .ticket-page .link-pill,
+body.theme-dark .ticket-page .profile-action-btn,
+body.theme-dark .ticket-page .empty-state,
+body.theme-dark .vessel-profile .profile-action-btn,
+body.theme-dark .vessel-profile .edit-notes-btn,
+body.theme-dark .vessel-profile .owner-link,
+body.theme-dark .vessel-profile .preview-action-button,
+body.theme-dark .ticket-page .close-preview {
+  background: #44475a !important;
+  border-color: #6272a4 !important;
+  color: #f8f8f2 !important;
+}
+
+body.theme-dark .ticket-page .notes-text,
+body.theme-dark .ticket-page .notes-card,
+body.theme-dark .ticket-page .empty-state,
+body.theme-dark .ticket-page .photo-card {
+  background: #313447 !important;
+  border-color: #44475a !important;
+  color: #f8f8f2 !important;
+  box-shadow: none !important;
+}
+
+body.theme-dark .ticket-page .notes-block,
+body.theme-dark .ticket-page .plan-block,
+body.theme-dark .ticket-page .invoice-block,
+body.theme-dark .ticket-page .diagnostic-group,
+body.theme-dark .ticket-page .diagnostics-toggle,
+body.theme-dark .ticket-page .ticket-assessment-section,
+body.theme-dark .ticket-page .ticket-execution-section,
+body.theme-dark .ticket-page .ticket-identity-section {
+  background: transparent !important;
+  border-color: rgba(98, 114, 164, 0.28) !important;
+  box-shadow: none !important;
+}
+
+body.theme-dark .ticket-page .photo-preview,
+body.theme-dark .ticket-page .notes-text,
+body.theme-dark .ticket-page .invoice-summary,
+body.theme-dark .ticket-page .plan-item,
+body.theme-dark .ticket-page .part-cost {
+  color: #f8f8f2 !important;
+}
+
+body.theme-dark .ticket-page .details strong,
+body.theme-dark .ticket-page .owner-label,
+body.theme-dark .ticket-page .notes-text,
+body.theme-dark .ticket-page .photo-meta,
+body.theme-dark .ticket-page .diagnostics-toggle,
+body.theme-dark .ticket-page .diagnostics-toggle label,
+body.theme-dark .ticket-page .diagnostics-heading p,
+body.theme-dark .vessel-profile .owner-label,
+body.theme-dark .vessel-profile .history-status,
+body.theme-dark .vessel-profile .subtitle,
+body.theme-dark .vessel-profile .detail-label,
+body.theme-dark .vessel-profile .owner-field-label,
+body.theme-dark .vessel-profile .owner-field-value {
+  color: #a7adce !important;
+}
+
+body.theme-dark .ticket-page .owner-link,
+body.theme-dark .vessel-profile .owner-link,
+body.theme-dark .ticket-page .link-pill,
+body.theme-dark .ticket-page .profile-action-btn,
+body.theme-dark .vessel-profile .profile-action-btn {
+  text-decoration: none !important;
+}
+
+body.theme-dark .ticket-page .link-pill,
+body.theme-dark .ticket-page .profile-action-btn,
+body.theme-dark .vessel-profile .profile-action-btn,
+body.theme-dark .vessel-profile .edit-notes-btn,
+body.theme-dark .vessel-profile .owner-link,
+body.theme-dark .vessel-profile .preview-action-button,
+body.theme-dark .ticket-page .close-preview {
+  background: #44475a;
+  border-color: #6272a4;
+  color: #f8f8f2;
+}
+
+body.theme-dark .ticket-page .details strong,
+body.theme-dark .ticket-page .owner-label,
+body.theme-dark .ticket-page .notes-text,
+body.theme-dark .ticket-page .photo-meta,
+body.theme-dark .ticket-page .diagnostics-toggle,
+body.theme-dark .ticket-page .diagnostics-toggle label,
+body.theme-dark .ticket-page .diagnostics-heading p,
+body.theme-dark .vessel-profile .owner-label,
+body.theme-dark .vessel-profile .history-status,
+body.theme-dark .vessel-profile .subtitle,
+body.theme-dark .vessel-profile .detail-label {
+  color: #a7adce;
+}
+
+body.theme-dark .ticket-page .owner-link,
+body.theme-dark .vessel-profile .owner-link,
+body.theme-dark .ticket-page .link-pill,
+body.theme-dark .ticket-page .profile-action-btn,
+body.theme-dark .vessel-profile .profile-action-btn {
+  text-decoration: none;
+}

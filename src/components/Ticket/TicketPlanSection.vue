@@ -87,4 +87,26 @@ withDefaults(
   background: #f8fafc;
   text-align: center;
 }
+
+:global(body.theme-dark) .plan-block {
+  background: transparent;
+  color: #f8f8f2;
+}
+
+:global(body.theme-dark) .plan-block .section-heading h3,
+:global(body.theme-dark) .plan-block .section-heading p,
+:global(body.theme-dark) .plan-block .plan-item,
+:global(body.theme-dark) .plan-block .part-cost {
+  color: #f8f8f2;
+}
+
+:global(body.theme-dark) .plan-item .done {
+  color: #a7adce;
+}
+
+:global(body.theme-dark) .empty-state {
+  background: #282a36;
+  border-color: #6272a4;
+  color: #f8f8f2;
+}
 </style>
