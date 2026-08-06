@@ -94,8 +94,8 @@ function formatDate(value?: string | null) {
 
 <style scoped>
 .history-block {
-  background: #313447;
-  border: 1px solid #44475a;
+  background: var(--vscode-sideBar-background);
+  border: 1px solid var(--vscode-panel-border);
   border-radius: 10px;
   padding: 18px;
   box-shadow: none;
@@ -113,7 +113,7 @@ function formatDate(value?: string | null) {
 .history-header h3 {
   margin: 0;
   font-size: 1rem;
-  color: #f8f8f2;
+  color: var(--vscode-editor-foreground);
 }
 
 .history-count {
@@ -123,8 +123,8 @@ function formatDate(value?: string | null) {
   min-width: 30px;
   height: 30px;
   border-radius: 999px;
-  background: #44475a;
-  color: #8be9fd;
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
   font-weight: 700;
   padding: 0 8px;
 }
@@ -136,11 +136,11 @@ function formatDate(value?: string | null) {
 
 .history-item {
   width: 100%;
-  border: 1px solid #44475a;
+  border: 1px solid var(--vscode-panel-border);
   border-radius: 8px;
   padding: 12px 14px;
-  background: #3a3f52;
-  color: #f8f8f2;
+  background: var(--vscode-editor-background);
+  color: var(--vscode-editor-foreground);
   text-align: left;
   cursor: pointer;
   display: grid;
@@ -149,7 +149,7 @@ function formatDate(value?: string | null) {
 }
 
 .history-item:hover {
-  background: #44475a;
+  background: var(--vscode-list-hoverBackground);
 }
 
 .history-item-top,
@@ -161,7 +161,7 @@ function formatDate(value?: string | null) {
 }
 
 .history-status {
-  color: #8be9fd;
+  color: var(--vscode-link-foreground);
   font-weight: 700;
   font-size: 0.8rem;
   text-transform: uppercase;
@@ -169,7 +169,7 @@ function formatDate(value?: string | null) {
 
 .history-empty,
 .history-loading {
-  color: #a7adce;
+  color: var(--vscode-descriptionForeground);
   font-size: 0.95rem;
 }
 </style>

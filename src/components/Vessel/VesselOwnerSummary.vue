@@ -42,9 +42,9 @@ defineEmits<{
 }
 
 .owner-card {
-  border: 1px solid #44475a;
+  border: 1px solid var(--vscode-panel-border);
   border-radius: 10px;
-  background: #313447;
+  background: var(--vscode-sideBar-background);
   padding: 18px 20px;
   box-shadow: none;
 }
@@ -62,20 +62,20 @@ defineEmits<{
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-size: 11px;
-  color: #a7adce;
+  color: var(--vscode-descriptionForeground);
   font-weight: 700;
 }
 
 .owner-card h3 {
   margin: 0;
-  color: #f8f8f2;
+  color: var(--vscode-editor-foreground);
   font-size: 1.05rem;
 }
 
 .owner-link {
-  border: 1px solid #6272a4;
-  background: #44475a;
-  color: #f8f8f2;
+  border: 1px solid var(--vscode-input-border);
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
   border-radius: 999px;
   padding: 8px 12px;
   font-weight: 700;
@@ -93,15 +93,15 @@ defineEmits<{
   flex-direction: column;
   gap: 4px;
   padding: 12px 14px;
-  border: 1px solid #44475a;
+  border: 1px solid var(--vscode-panel-border);
   border-radius: 8px;
-  background: #3a3f52;
+  background: var(--vscode-editor-background);
   box-shadow: none;
 }
 
 .owner-field-label {
   font-size: 0.8rem;
-  color: #a7adce;
+  color: var(--vscode-descriptionForeground);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   font-weight: 700;
@@ -109,7 +109,7 @@ defineEmits<{
 
 .owner-field-value {
   font-size: 0.98rem;
-  color: #f8f8f2;
+  color: var(--vscode-editor-foreground);
   font-weight: 600;
 }
 

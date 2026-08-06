@@ -42,25 +42,20 @@ describe('views/MonthlyReport/NewMonthlyReport.vue', () => {
     mockedApiFetch.mockReset()
   })
 
-  it('renders diagnostic attachment controls before the monthly summary', async () => {
+  it('hides diagnostics and summary fields during initial creation', async () => {
+    mockedApiFetch.mockResolvedValue({ canDelegate: false })
     const wrapper = mount(NewMonthlyReport)
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Customer Name')
-    expect(wrapper.text()).toContain('Vessel Name')
-    expect(wrapper.text()).toContain('Report Date')
-    expect(wrapper.text()).toContain('Diagnostics')
-    expect(wrapper.text()).toContain('Add Comment')
-    expect(wrapper.text()).toContain('Add Photo')
-    expect(wrapper.text()).toContain('Summary of Monthly Report')
-    expect(wrapper.text().indexOf('Diagnostics')).toBeLessThan(
-      wrapper.text().indexOf('Summary of Monthly Report'),
-    )
-    expect(wrapper.text()).not.toContain('Priority')
-    expect(wrapper.text()).not.toContain('Report Title')
-    expect(wrapper.text()).not.toContain('Initial Assessment')
-    expect(wrapper.text()).not.toContain('Plan of Action')
-    expect(wrapper.text()).not.toContain('Required Parts')
+    expect(wrapper.text()).toContain('Customer Jane Harbor')
+    expect(wrapper.text()).toContain('Vessel Sea Breeze')
+    expect(wrapper.text()).toContain('Completion Date')
+    expect(wrapper.text()).toContain('Assigned Technician')
+    expect(wrapper.text()).not.toContain('Diagnostics')
+    expect(wrapper.text()).not.toContain('Add Comment')
+    expect(wrapper.text()).not.toContain('Add Photo')
+    expect(wrapper.text()).not.toContain('Summary of Monthly Report')
+    expect(wrapper.text()).not.toContain('Complete & Lock')
   })
 
   it('shows technicians the assignee without delegation controls', async () => {
@@ -90,10 +85,14 @@ describe('views/MonthlyReport/NewMonthlyReport.vue', () => {
     expect(wrapper.find('[data-testid="assignee-select"]').exists()).toBe(false)
     expect(wrapper.text()).toContain('Assigned Technician')
     expect(wrapper.text()).toContain('Taylor Tech')
+    expect(wrapper.text()).toContain('Diagnostics')
+    expect(wrapper.text()).toContain('Add Comment')
+    expect(wrapper.text()).toContain('Add Photo')
+    expect(wrapper.text()).toContain('New Summary Update')
     expect(mockedApiFetch).not.toHaveBeenCalledWith('/users/assignable')
   })
 
-  it('submits only retained report fields with N/A diagnostic defaults', async () => {
+  it('creates a draft without diagnostics or notes', async () => {
     const savedReport = {
       id: 'mr-1',
       customerId: 'c-1',
@@ -124,7 +123,6 @@ describe('views/MonthlyReport/NewMonthlyReport.vue', () => {
     await flushPromises()
     await wrapper.get('input[type="date"]').setValue('2026-07-31')
     await wrapper.get('[data-testid="assignee-select"]').setValue('user-1')
-    await wrapper.get('textarea').setValue('Monthly inspection completed')
     await wrapper.get('form').trigger('submit.prevent')
     await flushPromises()
 
@@ -138,8 +136,6 @@ describe('views/MonthlyReport/NewMonthlyReport.vue', () => {
         'assignedUserId',
         'customerId',
         'customerName',
-        'diagnostics',
-        'notes',
         'reportDate',
         'vesselId',
         'vesselName',
@@ -147,8 +143,8 @@ describe('views/MonthlyReport/NewMonthlyReport.vue', () => {
     )
     expect(payload.reportDate).toBe('2026-07-31')
     expect(payload.assignedUserId).toBe('user-1')
-    expect(payload.notes).toContain('Monthly inspection completed')
-    expect(payload.diagnostics.engine_oil).toEqual({ value: 'N/A', comment: '', photos: [] })
+    expect(payload).not.toHaveProperty('notes')
+    expect(payload).not.toHaveProperty('diagnostics')
     expect(routerPush).toHaveBeenCalledWith({ name: 'MonthlyReport', query: { id: 'mr-1' } })
   })
 })

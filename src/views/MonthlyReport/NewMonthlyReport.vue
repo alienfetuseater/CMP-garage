@@ -16,26 +16,18 @@
         <form class="report-form" @submit.prevent="submit('draft')">
           <section class="identity-section">
             <div class="form-grid">
-              <label>
-                Customer Name
-                <input
-                  v-model="form.customerName"
-                  :disabled="isEditMode"
-                  :class="{ immutable: isEditMode }"
-                />
-              </label>
+              <p class="identity-summary">
+                <strong>Customer</strong>
+                {{ form.customerName }}
+              </p>
 
-              <label>
-                Vessel Name
-                <input
-                  v-model="form.vesselName"
-                  :disabled="isEditMode"
-                  :class="{ immutable: isEditMode }"
-                />
-              </label>
+              <p class="identity-summary">
+                <strong>Vessel</strong>
+                {{ form.vesselName }}
+              </p>
 
               <label class="full-width">
-                Report Date
+                Completion Date
                 <input v-model="form.reportDate" type="date" required :disabled="isLockedReport" />
               </label>
 
@@ -53,6 +45,7 @@
           </section>
 
           <MonthlyReportDiagnosticsSection
+            v-if="isEditMode"
             :diagnostic-sections="monthlyReportDiagnosticSections"
             :diagnostics="form.diagnostics"
             :readonly="isLockedReport"
@@ -61,18 +54,13 @@
             @update-diagnostic="updateDiagnosticEntry"
           />
 
-          <section class="summary-section">
+          <section v-if="isEditMode" class="summary-section">
             <div class="section-heading">
               <!-- <h3>Summary of Monthly Report</h3>
               <p>Record the overall summary after completing the diagnostic inspection.</p> -->
             </div>
 
-            <label v-if="!isEditMode">
-              Summary of Monthly Report
-              <textarea v-model="form.notes" rows="5" />
-            </label>
-
-            <section v-else class="notes-history-block">
+            <section class="notes-history-block">
               <div v-if="existingNoteEntries.length" class="notes-stack">
                 <div
                   v-for="(entry, index) in existingNoteEntries"
@@ -96,7 +84,7 @@
             </section>
           </section>
 
-          <section v-if="!isLockedReport" class="lock-confirmation">
+          <section v-if="isEditMode && !isLockedReport" class="lock-confirmation">
             <label class="lock-checkbox-row">
               <input v-model="lockAcknowledge" type="checkbox" />
               <span>Completed monthly reports can not be reopened.</span>
@@ -107,7 +95,7 @@
             </p>
           </section>
 
-          <div v-else class="locked-banner">
+          <div v-else-if="isEditMode" class="locked-banner">
             This monthly report is completed and locked. It cannot be edited here unless unlocked by
             an admin or service manager.
           </div>
@@ -117,12 +105,13 @@
               {{ isEditMode ? 'Save Draft' : 'Create Draft' }}
             </button>
             <button
+              v-if="isEditMode"
               type="button"
               class="primary"
               :disabled="submitting || isLockedReport"
               @click="submit('complete')"
             >
-              {{ isEditMode ? 'Complete & Lock' : 'Create Completed & Lock' }}
+              Complete & Lock
             </button>
             <span v-if="submitting">Saving...</span>
             <span v-if="success" class="success">Saved</span>
@@ -179,7 +168,6 @@ const form = reactive({
   vesselId: '',
   reportDate: '',
   assignedUserId: '',
-  notes: '',
   diagnostics: createMonthlyReportDiagnostics(),
 })
 
@@ -205,7 +193,6 @@ function hydrateFromReport(report: MonthlyReport) {
   isLockedReport.value = Boolean(report.isLocked)
   existingNotes.value = report.notes ?? ''
   newUpdateNote.value = ''
-  form.notes = ''
   Object.assign(form.diagnostics, createMonthlyReportDiagnostics(report.diagnostics))
 }
 
@@ -233,12 +220,6 @@ function appendUpdateNote(previous: string, note: string): string {
   if (!trimmed) return previous
   const entry = `[${formatLocalDateTime(new Date())}] ${trimmed}`
   return previous ? `${previous}\n\n${entry}` : entry
-}
-
-function buildInitialNote(note: string): string {
-  const trimmed = note.trim()
-  if (!trimmed) return ''
-  return `[${formatLocalDateTime(new Date())}] ${trimmed}`
 }
 
 function estimateDiagnosticPhotoBytes(): number {
@@ -269,25 +250,30 @@ async function submit(mode: SubmitMode = 'draft') {
       )
     }
 
-    if (mode === 'complete' && !lockAcknowledge.value) {
+    if (isEditMode.value && mode === 'complete' && !lockAcknowledge.value) {
       throw new Error('Please acknowledge that completed monthly reports can not be reopened.')
     }
 
-    if (estimateDiagnosticPhotoBytes() > 12 * 1024 * 1024) {
+    if (isEditMode.value && estimateDiagnosticPhotoBytes() > 12 * 1024 * 1024) {
       throw new Error('Photos are too large. Please remove some photos or use smaller images.')
     }
 
-    const payload = {
+    const identityPayload = {
       customerName: form.customerName,
       vesselName: form.vesselName,
       customerId: form.customerId,
       vesselId: form.vesselId,
       reportDate: form.reportDate,
       assignedUserId: form.assignedUserId,
-      diagnostics: { ...form.diagnostics },
-      notes: isEditMode.value
-        ? appendUpdateNote(existingNotes.value, newUpdateNote.value)
-        : buildInitialNote(form.notes),
+    }
+    const payload = {
+      ...identityPayload,
+      ...(isEditMode.value
+        ? {
+            diagnostics: { ...form.diagnostics },
+            notes: appendUpdateNote(existingNotes.value, newUpdateNote.value),
+          }
+        : {}),
       ...(mode === 'complete' ? { markCompleted: true } : {}),
     }
 
@@ -419,6 +405,21 @@ onMounted(async () => {
 
 .full-width {
   grid-column: 1 / -1;
+}
+
+.identity-summary {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--vscode-panel-border);
+  background: var(--vscode-sideBar-background);
+  color: var(--vscode-sideBar-foreground);
+}
+
+.identity-summary strong {
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
 }
 
 .summary-section,

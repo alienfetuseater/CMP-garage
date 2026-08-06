@@ -744,16 +744,16 @@ onBeforeUnmount(() => {
   align-items: center;
   padding: 14px 16px;
   border-radius: var(--profile-radius-md);
-  background: #313447;
-  color: #f8f8f2;
+  background: var(--vscode-sideBar-background);
+  color: var(--vscode-sideBar-foreground);
   margin-bottom: 20px;
-  border: 1px solid #44475a;
+  border: 1px solid var(--vscode-panel-border);
   font-weight: 700;
 }
 
 .owner-link {
   font-weight: 600;
-  color: #8be9fd;
+  color: var(--vscode-link-foreground);
 }
 
 .owner-card {
@@ -772,14 +772,14 @@ onBeforeUnmount(() => {
 
 .owner-field-label {
   font-size: 0.95rem;
-  color: #a7adce;
+  color: var(--vscode-descriptionForeground);
   font-weight: 700;
   min-width: 72px;
 }
 
 .owner-field-value {
   font-size: 1rem;
-  color: #f8f8f2;
+  color: var(--vscode-editor-foreground);
   font-weight: 600;
   flex: 1;
 }
@@ -795,16 +795,16 @@ onBeforeUnmount(() => {
 
 .details li {
   padding: 14px 16px;
-  border: 1px solid #44475a;
+  border: 1px solid var(--vscode-panel-border);
   border-radius: var(--profile-radius-md);
-  background: #3a3f52;
-  color: #f8f8f2;
+  background: var(--vscode-sideBar-background);
+  color: var(--vscode-sideBar-foreground);
 }
 
 .details strong {
   display: block;
   margin-bottom: 4px;
-  color: #a7adce;
+  color: var(--vscode-descriptionForeground);
 }
 
 .related {
@@ -824,7 +824,7 @@ onBeforeUnmount(() => {
 
 .history-header h4 {
   margin: 0;
-  color: #f8f8f2;
+  color: var(--vscode-editor-foreground);
 }
 
 .history-list {
@@ -841,10 +841,10 @@ onBeforeUnmount(() => {
   gap: 10px;
   align-items: center;
   padding: 14px 16px;
-  border: 1px solid #44475a;
+  border: 1px solid var(--vscode-panel-border);
   border-radius: var(--profile-radius-md);
-  background: #313447;
-  color: #f8f8f2;
+  background: var(--vscode-sideBar-background);
+  color: var(--vscode-sideBar-foreground);
   box-shadow: none;
   transition:
     transform 0.15s ease,
@@ -854,7 +854,8 @@ onBeforeUnmount(() => {
 
 .history-item:hover {
   transform: translateY(-2px);
-  border-color: #6272a4;
+  border-color: var(--vscode-focusBorder);
+  background: var(--vscode-list-hoverBackground);
   box-shadow: none;
 }
 
@@ -864,15 +865,15 @@ onBeforeUnmount(() => {
 
 .empty-state {
   padding: 16px;
-  border: 1px dashed #44475a;
+  border: 1px dashed var(--vscode-panel-border);
   border-radius: var(--profile-radius-md);
-  color: #f8f8f2;
-  background: #313447;
+  color: var(--vscode-descriptionForeground);
+  background: var(--vscode-sideBar-background);
   text-align: center;
 }
 
 .owner {
-  color: #8be9fd;
+  color: var(--vscode-link-foreground);
   cursor: pointer;
 }
 
@@ -882,8 +883,8 @@ onBeforeUnmount(() => {
 }
 
 .monthly-reports-block {
-  background: #313447;
-  border: 1px solid #44475a;
+  background: var(--vscode-sideBar-background);
+  border: 1px solid var(--vscode-panel-border);
   border-radius: var(--profile-radius-lg);
   padding: 18px;
   box-shadow: none;
@@ -897,11 +898,11 @@ onBeforeUnmount(() => {
 
 .monthly-reports-block .history-item {
   width: 100%;
-  border: 1px solid #44475a;
+  border: 1px solid var(--vscode-panel-border);
   border-radius: var(--profile-radius-md);
   padding: 12px 14px;
-  background: #3a3f52;
-  color: #f8f8f2;
+  background: var(--vscode-editor-background);
+  color: var(--vscode-editor-foreground);
   text-align: left;
   cursor: pointer;
   display: grid;
@@ -913,9 +914,9 @@ onBeforeUnmount(() => {
 }
 
 .monthly-reports-block .history-item:hover {
-  background: #44475a;
+  background: var(--vscode-list-hoverBackground);
   transform: none;
-  border-color: #6272a4;
+  border-color: var(--vscode-focusBorder);
   box-shadow: none;
 }
 
@@ -928,15 +929,15 @@ onBeforeUnmount(() => {
 }
 
 .history-status {
-  color: #8be9fd;
+  color: var(--vscode-link-foreground);
   font-weight: 700;
   font-size: 0.8rem;
   text-transform: uppercase;
 }
 
 .modifications-block {
-  background: #313447;
-  border: 1px solid #44475a;
+  background: var(--vscode-sideBar-background);
+  border: 1px solid var(--vscode-panel-border);
   border-radius: var(--profile-radius-lg);
   padding: 18px;
   box-shadow: none;
@@ -945,7 +946,7 @@ onBeforeUnmount(() => {
 
 .modifications-notes {
   white-space: pre-wrap;
-  color: #f8f8f2;
+  color: var(--vscode-editor-foreground);
   font-size: 0.95rem;
   line-height: 1.6;
   padding: 4px 2px;
@@ -954,13 +955,13 @@ onBeforeUnmount(() => {
 .modifications-textarea {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid #44475a;
+  border: 1px solid var(--vscode-input-border);
   border-radius: var(--profile-radius-md);
   padding: 12px 14px;
   font: inherit;
   font-size: 0.95rem;
-  background: #3a3f52;
-  color: #f8f8f2;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
   resize: vertical;
 }
 
@@ -973,9 +974,9 @@ onBeforeUnmount(() => {
 }
 
 .edit-notes-btn {
-  border: 1px solid #6272a4;
-  background: #44475a;
-  color: #f8f8f2;
+  border: 1px solid var(--vscode-input-border);
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
   border-radius: var(--profile-radius-sm);
   padding: 4px 12px;
   font-size: 0.85rem;
@@ -985,13 +986,13 @@ onBeforeUnmount(() => {
 }
 
 .edit-notes-btn:hover {
-  background: #6272a4;
-  border-color: #8be9fd;
-  color: #f8f8f2;
+  background: var(--vscode-list-hoverBackground);
+  border-color: var(--vscode-focusBorder);
+  color: var(--vscode-editor-foreground);
 }
 
 .error {
-  color: #b91c1c;
+  color: var(--vscode-errorForeground);
 }
 
 @media (max-width: 1100px) {

@@ -11,6 +11,8 @@ export type WorkspaceAccess = {
   canViewOpenTicketList: boolean
   canCreateTickets: boolean
   canCreateReports: boolean
+  canUpdateReports?: boolean
+  canUnlockReports?: boolean
 }
 
 export function fetchWorkspaceAccess(): Promise<WorkspaceAccess> {

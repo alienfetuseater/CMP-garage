@@ -23,6 +23,7 @@
 
           <div class="header-actions profile-action-group">
             <button
+              v-if="canUpdateReport"
               type="button"
               class="primary profile-action-btn"
               :disabled="report.isLocked"
@@ -71,7 +72,7 @@
             </button>
           </div>
           <div class="summary-item">
-            <span class="summary-label">Report Date</span>
+            <span class="summary-label">Completion Date</span>
             <span>{{ formatReportDate(report.reportDate) }}</span>
           </div>
           <div class="summary-item">
@@ -87,9 +88,28 @@
         <MonthlyReportDiagnosticsSection
           :diagnostic-sections="monthlyReportDiagnosticSections"
           :diagnostics="diagnostics"
-          :readonly="true"
-          description="Inspection findings recorded for this monthly report."
+          :readonly="!canEditDiagnostics"
+          :description="
+            canEditDiagnostics
+              ? 'Complete the vessel inspection details for this monthly report.'
+              : 'Inspection findings recorded for this monthly report.'
+          "
+          @error="diagnosticsError = $event"
+          @update-diagnostic="updateDiagnosticEntry"
         />
+
+        <div v-if="canEditDiagnostics" class="diagnostics-actions">
+          <button
+            type="button"
+            class="primary"
+            :disabled="savingDiagnostics"
+            @click="saveDiagnostics"
+          >
+            {{ savingDiagnostics ? 'Saving...' : 'Save Diagnostics' }}
+          </button>
+          <span v-if="diagnosticsSuccess" class="success">{{ diagnosticsSuccess }}</span>
+          <span v-if="diagnosticsError" class="error">{{ diagnosticsError }}</span>
+        </div>
 
         <section class="notes-block">
           <div class="section-heading profile-section-heading">
@@ -133,24 +153,26 @@ import { computed, ref, onBeforeUnmount, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUiStore } from '@/stores/ui'
 import { useMonthlyReportStore } from '@/stores/monthlyReports'
-import { useAuthStore } from '@/stores/auth'
 import { useCustomerStore } from '@/stores/customers'
 import { useVesselStore } from '@/stores/vessels'
 import { API_BASE, apiFetch } from '@/services/http/client'
+import { fetchWorkspaceAccess } from '@/services/access/workspace'
 import MonthlyReportDiagnosticsSection from '@/components/MonthlyReport/MonthlyReportDiagnosticsSection.vue'
 import DocumentPreviewModal from '@/components/Shared/DocumentPreviewModal.vue'
-import type { MonthlyReport, MonthlyReportDiagnostics } from '@/types/mock'
+import type {
+  MonthlyReport,
+  MonthlyReportDiagnosticEntry,
+  MonthlyReportDiagnostics,
+} from '@/types/mock'
 import { formatLocalDateTime } from '@/shared/datetime/format'
 import { splitNoteHistory } from '@/domain/notes/history'
 import {
   createMonthlyReportDiagnostics,
   monthlyReportDiagnosticSections,
 } from '@/domain/monthlyReports/diagnostics'
-import { normalizeUserRole } from '@/domain/auth/permissions'
 
 const uiStore = useUiStore()
 const reportStore = useMonthlyReportStore()
-const authStore = useAuthStore()
 const customerStore = useCustomerStore()
 const vesselStore = useVesselStore()
 const route = useRoute()
@@ -170,13 +192,19 @@ const previewActionError = ref<string | null>(null)
 const unlocking = ref(false)
 const unlockSuccess = ref<string | null>(null)
 const unlockError = ref<string | null>(null)
+const savingDiagnostics = ref(false)
+const diagnosticsSuccess = ref<string | null>(null)
+const diagnosticsError = ref<string | null>(null)
+const canUpdateReports = ref(false)
+const canUnlockReports = ref(false)
 
 const diagnostics = ref<MonthlyReportDiagnostics>(createMonthlyReportDiagnostics())
 const noteEntries = computed(() => splitNoteHistory(report.value?.notes))
-const canUnlockReport = computed(() => {
-  const role = normalizeUserRole(authStore.user?.role ?? '')
-  return Boolean(report.value?.isLocked) && (role === 'admin' || role === 'serviceManager')
-})
+const canUpdateReport = computed(() => canUpdateReports.value)
+const canEditDiagnostics = computed(
+  () => canUpdateReport.value && Boolean(report.value) && !report.value?.isLocked,
+)
+const canUnlockReport = computed(() => Boolean(report.value?.isLocked) && canUnlockReports.value)
 
 function formatReportDate(value?: string) {
   if (!value) return '—'
@@ -192,7 +220,9 @@ async function load() {
     const id = String(route.query.id || '')
     if (!id) throw new Error('No report id provided')
 
-    await uiStore.fetchAllData()
+    const [, access] = await Promise.all([uiStore.fetchAllData(), fetchWorkspaceAccess()])
+    canUpdateReports.value = Boolean(access.canUpdateReports)
+    canUnlockReports.value = Boolean(access.canUnlockReports)
 
     const full = await apiFetch<MonthlyReport>(
       `/getMonthlyReportProfile?id=${encodeURIComponent(id)}`,
@@ -226,6 +256,38 @@ async function load() {
 
 function hydrateDiagnostics() {
   diagnostics.value = createMonthlyReportDiagnostics(report.value?.diagnostics)
+}
+
+function updateDiagnosticEntry(payload: { key: string; entry: MonthlyReportDiagnosticEntry }) {
+  diagnostics.value[payload.key] = payload.entry
+  diagnosticsSuccess.value = null
+}
+
+async function saveDiagnostics() {
+  if (!report.value?.id || !canEditDiagnostics.value) return
+
+  savingDiagnostics.value = true
+  diagnosticsSuccess.value = null
+  diagnosticsError.value = null
+  try {
+    const updated = await apiFetch<MonthlyReport>(
+      `/updateMonthlyReport/${encodeURIComponent(report.value.id)}`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ diagnostics: diagnostics.value }),
+      },
+    )
+    const normalized = { ...updated, id: String(updated.id ?? report.value.id) }
+    reportStore.addReport(normalized)
+    report.value = normalized
+    hydrateDiagnostics()
+    diagnosticsSuccess.value = 'Diagnostics saved.'
+  } catch (err) {
+    diagnosticsError.value = err instanceof Error ? err.message : String(err)
+  } finally {
+    savingDiagnostics.value = false
+  }
 }
 
 function editReport() {
@@ -452,6 +514,13 @@ onBeforeUnmount(() => {
   gap: 10px;
   flex-wrap: wrap;
   align-items: center;
+}
+
+.diagnostics-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
 }
 
 .profile-action-group {
